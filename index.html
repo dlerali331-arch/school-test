@@ -1,0 +1,3763 @@
+<!DOCTYPE html>
+<html lang="ckb" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>خشتەی وانەکان</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#22312D">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="خشتەی وانەکان">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&family=Aref+Ruqaa:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --chalkboard:#2B3B35;
+    --chalkboard-2:#33473F;
+    --chalk-white:#F5F3E8;
+    --chalk-yellow:#E3B94D;
+    --paper:#F1F2EA;
+    --paper-2:#FFFFFF;
+    --ink:#23303A;
+    --ink-soft:#5B6B72;
+    --rule:#C9D2CE;
+    --accent-red:#B84A3E;
+    --accent-red-soft:#F3DEDA;
+    --success:#4B7B5B;
+    --success-soft:#DCEAE0;
+    --radius:10px;
+    --shadow:0 1px 2px rgba(35,48,58,.08), 0 4px 14px rgba(35,48,58,.06);
+  }
+  *{box-sizing:border-box;}
+  body.theme-ocean{ --chalkboard:#1F3A5F; --chalkboard-2:#28496F; --chalk-yellow:#F2A65A; }
+  body.theme-purple{ --chalkboard:#3B2A4A; --chalkboard-2:#46325A; --chalk-yellow:#D4A857; }
+  body.theme-burgundy{ --chalkboard:#4A2530; --chalkboard-2:#5A2F3C; --chalk-yellow:#D9A441; }
+  body.hide-teacher-names .cell .teach{ display:none !important; }
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Vazirmatn',sans-serif;
+    font-size:15px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{max-width:1040px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
+
+  header.board{
+    background:linear-gradient(180deg,var(--chalkboard) 0%, var(--chalkboard-2) 100%);
+    color:var(--chalk-white);
+    padding:22px 18px 16px;
+    border-bottom:6px solid #1E2A26;
+    position:relative;
+  }
+  header.board::after{
+    content:"";
+    position:absolute; inset:8px 8px auto 8px; bottom:8px;
+    border:1px dashed rgba(245,243,232,.14);
+    pointer-events:none;
+  }
+  header.board h1{
+    font-family:'Aref Ruqaa', serif;
+    font-weight:700;
+    font-size:32px;
+    margin:0;
+    letter-spacing:.5px;
+    color:var(--chalk-white);
+  }
+  header.board p{
+    margin:4px 0 0;
+    color:var(--chalk-yellow);
+    font-size:13.5px;
+    font-weight:500;
+  }
+
+  nav.tabs{
+    display:flex;
+    gap:2px;
+    background:var(--chalkboard-2);
+    padding:0 12px;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  nav.tabs::-webkit-scrollbar{display:none;}
+  nav.tabs button{
+    flex:0 0 auto;
+    background:transparent;
+    border:none;
+    color:rgba(245,243,232,.65);
+    font-family:'Vazirmatn',sans-serif;
+    font-size:13.5px;
+    font-weight:600;
+    padding:12px 14px 10px;
+    cursor:pointer;
+    border-bottom:3px solid transparent;
+    white-space:nowrap;
+    transition:color .15s;
+  }
+  nav.tabs button.active{
+    color:var(--chalk-white);
+    border-bottom-color:var(--chalk-yellow);
+  }
+  nav.tabs button:hover{color:var(--chalk-white);}
+
+  main{flex:1;padding:18px 16px 60px;}
+  section{display:none;}
+  section.active{display:block;}
+
+  h2.section-title{font-size:19px;font-weight:700;margin:0 0 4px;color:var(--ink);}
+  p.section-hint{color:var(--ink-soft);font-size:13.5px;margin:0 0 16px;}
+
+  .card{
+    background:var(--paper-2);
+    border:1px solid var(--rule);
+    border-radius:var(--radius);
+    padding:16px;
+    margin-bottom:14px;
+    box-shadow:var(--shadow);
+  }
+  .card h3{font-size:15.5px;margin:0 0 12px;font-weight:700;display:flex;align-items:center;gap:8px;}
+  .card h3 .count{font-size:12px;color:var(--ink-soft);font-weight:500;background:var(--paper);padding:1px 8px;border-radius:20px;}
+
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .row.form{margin-bottom:12px;}
+  input[type=text], input[type=number], input[type=tel], input[type=time], select{
+    font-family:'Vazirmatn',sans-serif;
+    font-size:14.5px;
+    padding:9px 11px;
+    border:1px solid var(--rule);
+    border-radius:8px;
+    background:var(--paper);
+    color:var(--ink);
+    min-width:0;
+  }
+  input:focus, select:focus, button:focus-visible{outline:2px solid var(--chalk-yellow);outline-offset:1px;}
+  .grow{flex:1 1 140px;}
+  label.field-label{font-size:12.5px;color:var(--ink-soft);font-weight:600;display:block;margin:0 0 4px;}
+  .field{display:flex;flex-direction:column;gap:2px;}
+
+  button{font-family:'Vazirmatn',sans-serif;cursor:pointer;}
+  .btn{border:none;border-radius:8px;padding:9px 16px;font-size:14px;font-weight:700;display:inline-flex;align-items:center;gap:6px;}
+  .btn-primary{background:var(--chalkboard);color:var(--chalk-white);}
+  .btn-primary:hover{background:var(--chalkboard-2);}
+  .btn-accent{background:var(--chalk-yellow);color:var(--chalkboard);}
+  .btn-accent:hover{filter:brightness(1.05);}
+  .btn-ghost{background:transparent;color:var(--ink);border:1px solid var(--rule);}
+  .btn-ghost:hover{background:var(--paper);}
+  .btn-danger{background:transparent;color:var(--accent-red);border:1px solid var(--accent-red-soft);}
+  .btn-danger:hover{background:var(--accent-red-soft);}
+  .btn-whatsapp{background:#3F7A5C;color:#fff;}
+  .btn-sm{padding:5px 10px;font-size:12.5px;border-radius:6px;}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
+
+  ul.list{list-style:none;margin:0;padding:0;}
+  ul.list li{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 4px;border-bottom:1px solid var(--paper);font-size:14.5px;}
+  ul.list li:last-child{border-bottom:none;}
+  ul.list li .name{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  ul.list li .btnrow{display:flex;gap:6px;flex:none;}
+  .dot{width:10px;height:10px;border-radius:50%;flex:none;}
+  .empty{color:var(--ink-soft);font-size:13.5px;padding:10px 2px;text-align:center;}
+  .subtext{color:var(--ink-soft);font-size:12px;}
+
+  .weekday-grid{display:flex;flex-wrap:wrap;gap:8px;}
+  .weekday-chip{padding:7px 12px;border-radius:20px;border:1px solid var(--rule);font-size:13.5px;cursor:pointer;background:var(--paper);user-select:none;position:relative;z-index:1;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+  .weekday-chip.on{background:var(--chalkboard);color:var(--chalk-white);border-color:var(--chalkboard);}
+
+  .period-count-select{width:100px;}
+
+  .swatch-row{display:flex;flex-wrap:wrap;gap:8px;}
+  .swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;box-shadow:0 0 0 1px var(--rule) inset;}
+  .swatch.selected{border-color:var(--chalkboard);box-shadow:0 0 0 2px var(--paper-2), 0 0 0 4px var(--chalkboard);}
+  .checklist{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;border:1px solid var(--rule);border-radius:8px;padding:8px;background:var(--paper);}
+  .checklist label{display:flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer;}
+
+  .toggle-group{display:flex;gap:6px;margin-bottom:14px;}
+  .toggle-group button{flex:1;padding:9px;border-radius:8px;border:1px solid var(--rule);background:var(--paper-2);font-weight:600;font-size:13.5px;color:var(--ink-soft);}
+  .toggle-group button.on{background:var(--chalkboard);color:var(--chalk-white);border-color:var(--chalkboard);}
+
+  .table-wrap{overflow-x:auto;border:1px solid var(--rule);border-radius:var(--radius);background:var(--paper-2);}
+  table.grid{border-collapse:collapse;width:100%;min-width:560px;}
+  table.grid th, table.grid td{border:1px solid var(--rule);padding:0;text-align:center;vertical-align:middle;}
+  table.grid thead th{background:var(--chalkboard);color:var(--chalk-white);font-size:13px;font-weight:700;padding:10px 6px;}
+  table.grid thead th.today{color:var(--chalk-yellow);}
+  table.grid tbody th{background:var(--paper);color:var(--ink-soft);font-size:12px;font-weight:600;padding:6px 4px;width:54px;white-space:nowrap;}
+  table.grid td.cell{min-width:96px;height:58px;cursor:pointer;transition:background .1s;}
+  table.grid td.cell:hover{filter:brightness(.97);}
+  table.grid td.cell.drag-over{outline:2px dashed var(--chalkboard);outline-offset:-2px;}
+  table.grid td.cell .subj{font-size:13px;font-weight:700;}
+  table.grid td.cell .teach{font-size:11px;color:var(--ink-soft);margin-top:1px;}
+  table.grid td.cell.empty-cell{color:var(--rule);font-size:18px;}
+  table.grid td.cell.readonly{cursor:default;}
+  table.grid td.daygroup{background:var(--chalkboard);color:var(--chalk-white);font-weight:700;font-size:12.5px;writing-mode:vertical-rl;padding:6px 2px;}
+
+  .actions-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+
+  .notice{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border-radius:8px;font-size:13.5px;margin-bottom:14px;}
+  .notice.warn{background:#FBEFD9;color:#7A5A16;}
+  .notice.ok{background:var(--success-soft);color:var(--success);}
+  .print-only{display:none;}
+  #loading-overlay{position:fixed;inset:0;background:var(--paper);z-index:9999;display:flex;align-items:center;justify-content:center;transition:opacity .25s ease;}
+  #loading-overlay.hidden{opacity:0;pointer-events:none;}
+  .loading-box{text-align:center;}
+  .loading-spinner{width:38px;height:38px;border:4px solid var(--rule);border-top-color:var(--chalkboard);border-radius:50%;margin:0 auto 14px;animation:loading-spin 0.8s linear infinite;}
+  @keyframes loading-spin{to{transform:rotate(360deg);}}
+  .loading-text{font-size:13.5px;color:var(--ink-soft);font-weight:600;}
+  .install-app-btn{margin-top:12px;background:var(--chalk-yellow);color:#3a2a05;border:none;font-weight:800;font-size:14px;padding:10px 22px;border-radius:24px;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.15);}
+  .install-app-btn:active{transform:translateY(2px);box-shadow:none;}
+  #login-overlay{position:fixed;inset:0;background:var(--chalkboard);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .login-box{background:var(--paper);border-radius:var(--radius);padding:26px 22px;width:100%;max-width:360px;box-shadow:var(--shadow);}
+  .login-box h2{text-align:center;font-family:'Aref Ruqaa',serif;font-size:24px;margin-bottom:16px;}
+  .login-tabs{display:flex;gap:6px;margin-bottom:16px;}
+  .login-tab{flex:1;padding:9px;border-radius:8px;border:1px solid var(--rule);background:var(--paper-2);font-weight:600;font-size:13.5px;color:var(--ink-soft);cursor:pointer;}
+  .login-tab.on{background:var(--chalkboard);color:var(--chalk-white);border-color:var(--chalkboard);}
+  .login-panel input{width:100%;padding:10px;border:1px solid var(--rule);border-radius:8px;background:var(--paper);color:var(--ink);font-size:15px;margin-top:4px;}
+  .login-error{color:#B23A3A;font-size:13px;text-align:center;margin-top:10px;min-height:16px;}
+
+  .cover{background:var(--paper-2);border:1px solid var(--rule);border-radius:var(--radius);box-shadow:var(--shadow);padding:32px 20px;text-align:center;margin-bottom:20px;}
+  .cover h2{font-family:'Aref Ruqaa',serif;font-size:30px;margin:0 0 14px;color:var(--ink);}
+  .cover .prep{font-size:15px;font-weight:700;margin:2px 0;}
+  .cover .role{font-size:13px;color:var(--ink-soft);margin:0 0 4px;}
+  .cover .phone{font-size:13px;color:var(--ink-soft);margin:0 0 14px;direction:ltr;display:inline-block;}
+  .cover hr{border:none;border-top:1px dashed var(--rule);margin:14px auto;width:60%;}
+  .cover .disclaimer{font-size:12px;color:var(--accent-red);margin:0 0 16px;}
+  .cover .schoolinfo{display:flex;justify-content:center;gap:22px;flex-wrap:wrap;font-size:13.5px;}
+  .cover .schoolinfo b{display:block;font-size:14.5px;}
+
+  .overlay{position:fixed;inset:0;background:rgba(35,48,58,.55);display:none;align-items:flex-end;justify-content:center;z-index:50;}
+  .overlay.show{display:flex;}
+  .modal{background:var(--paper-2);width:100%;max-width:440px;border-radius:16px 16px 0 0;padding:18px 18px 22px;max-height:85vh;overflow-y:auto;animation:slideup .18s ease-out;}
+  @media (min-width:640px){.overlay{align-items:center;}.modal{border-radius:14px;}}
+  @keyframes slideup{from{transform:translateY(24px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .modal h3{margin:0 0 4px;font-size:16.5px;}
+  .modal .sub{color:var(--ink-soft);font-size:13px;margin-bottom:14px;}
+  .option-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;max-height:40vh;overflow-y:auto;}
+  .option-item{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid var(--rule);border-radius:8px;cursor:pointer;}
+  .option-item:hover{background:var(--paper);}
+  .option-item .meta{font-size:12px;color:var(--ink-soft);}
+  .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:6px;}
+  .modal-body .field{margin-bottom:10px;}
+  .modal-body select, .modal-body input{width:100%;}
+  .radio-row{display:flex;gap:14px;margin-bottom:10px;}
+  .radio-row label{display:flex;align-items:center;gap:6px;font-size:13.5px;cursor:pointer;}
+
+  footer.info{text-align:center;color:var(--ink-soft);font-size:12px;padding:14px;}
+
+  @media print{
+    @page{ size: landscape; margin: 8mm; }
+    header.board, nav.tabs, .actions-row, .toggle-group, .no-print{display:none !important;}
+    body{background:#fff;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact;}
+    *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important;}
+    .app{max-width:none;}
+    main{padding:0;}
+    h2.section-title, p.section-hint{display:none !important;}
+    .table-wrap{border:none;overflow:visible;}
+    table.grid{width:100%;table-layout:fixed;min-width:0;}
+    table.grid th, table.grid td{padding:2px !important;font-size:9.5px !important;word-break:break-word;}
+    table.grid td.cell{min-width:0;height:auto;min-height:32px;}
+    table.grid td.cell .subj{font-size:9.5px;}
+    table.grid td.cell .teach{font-size:8px;}
+    .cover{box-shadow:none;border:none;padding:10px 0 18px;}
+    section{display:none !important;}
+    section.print-target{display:block !important;}
+    details{border:none !important;box-shadow:none !important;}
+    details > summary{display:none !important;}
+    details > div{display:block !important;}
+    .report-block{page-break-before:always;padding-top:6mm;}
+    .report-block:first-child{page-break-before:auto;}
+    .print-only{display:block;}
+    .report-print-title{font-family:'Aref Ruqaa',serif;font-size:22px;font-weight:700;text-align:center;margin:0 0 4px;}
+    .report-block h3{font-family:'Aref Ruqaa',serif;font-size:19px;text-align:center;margin:0 0 14px;}
+    .report-block table.grid{width:100%;table-layout:fixed;}
+    .report-block table.grid th, .report-block table.grid td{padding:10px 4px !important;font-size:13.5px !important;}
+    .report-block table.grid td.cell{min-height:56px;}
+    .report-block table.grid td.cell .subj{font-size:14px !important;}
+    .report-block table.grid td.cell .teach{font-size:11.5px !important;}
+  }
+
+  @media (max-width:420px){
+    header.board h1{font-size:25px;}
+    .card{padding:12px;}
+  }
+
+  /* ---------------- Dashboard ---------------- */
+  .dash-clock-card{
+    background:linear-gradient(180deg,var(--chalkboard) 0%, var(--chalkboard-2) 100%);
+    color:var(--chalk-white);
+    border-radius:var(--radius);
+    padding:20px 16px 16px;
+    text-align:center;
+    margin-bottom:14px;
+    box-shadow:var(--shadow);
+  }
+  .dash-date{font-size:13.5px;color:var(--chalk-yellow);font-weight:600;margin-bottom:6px;}
+  .dash-time{font-family:'Aref Ruqaa',serif;font-size:32px;font-weight:700;letter-spacing:0.5px;direction:ltr;}
+  .dash-attendance-badge{display:inline-block;margin-top:10px;background:rgba(245,243,232,.14);padding:4px 16px;border-radius:20px;font-size:12.5px;}
+  .dash-attendance-badge:empty{display:none;}
+
+  .dash-current-card{
+    background:var(--paper-2);border:1px solid var(--rule);border-radius:var(--radius);
+    padding:16px;text-align:center;margin-bottom:14px;box-shadow:var(--shadow);
+  }
+  .dash-current-label{font-size:12.5px;color:var(--ink-soft);font-weight:600;margin-bottom:6px;}
+  .dash-current-main{font-size:21px;font-weight:800;color:var(--ink);}
+  .dash-current-sub{font-size:13px;color:var(--ink-soft);margin-top:4px;}
+  .dash-now-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(88px, 1fr));gap:6px;margin-bottom:14px;}
+  .dash-now-cell{background:var(--paper-2);border:1px solid var(--rule);border-radius:8px;padding:8px 4px;text-align:center;}
+  .dash-now-cell .now-cls{font-size:11.5px;font-weight:700;color:var(--ink);border-bottom:1px solid var(--rule);padding-bottom:5px;margin-bottom:5px;}
+  .dash-now-cell .now-subj{font-size:12px;font-weight:600;color:var(--chalkboard);}
+  .dash-now-cell.empty .now-subj{color:var(--ink-soft);font-weight:500;}
+
+  .dash-stats-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+  .dash-stat-card{flex:1 1 100px;background:var(--paper-2);border:1px solid var(--rule);border-radius:var(--radius);padding:14px 8px;text-align:center;box-shadow:var(--shadow);}
+  .dash-stat-num{font-size:24px;font-weight:800;color:var(--chalk-yellow);background:var(--chalkboard);display:inline-block;min-width:44px;border-radius:8px;padding:2px 8px;}
+  .dash-stat-label{font-size:11.5px;color:var(--ink-soft);margin-top:8px;font-weight:600;}
+
+  .dash-class-grid{display:flex;flex-direction:column;gap:8px;}
+  .dash-class-card{border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--paper-2);}
+  .dash-class-head{display:flex;align-items:center;gap:10px;padding:12px;cursor:pointer;}
+  .dash-class-badge{width:30px;height:30px;border-radius:8px;background:var(--chalkboard);color:var(--chalk-white);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:none;}
+  .dash-class-info{flex:1;min-width:0;}
+  .dash-class-name{font-weight:700;font-size:14.5px;}
+  .dash-class-now{font-size:12.5px;color:var(--ink-soft);margin-top:2px;}
+  .dash-class-caret{color:var(--ink-soft);font-size:11px;flex:none;}
+  .dash-class-detail{display:none;border-top:1px solid var(--rule);padding:6px 12px 10px;background:var(--paper);}
+  .dash-class-card.open .dash-class-detail{display:block;}
+  .dash-period-row{display:flex;align-items:center;gap:8px;padding:6px 2px;font-size:12.5px;border-bottom:1px dashed var(--rule);}
+  .dash-period-row:last-child{border-bottom:none;}
+  .dash-period-row.now{background:var(--success-soft);border-radius:6px;padding:6px 6px;}
+  .dash-period-row .p-num{width:20px;color:var(--ink-soft);font-weight:700;flex:none;}
+  .dash-period-row .p-time{width:100px;color:var(--ink-soft);direction:ltr;text-align:right;flex:none;font-size:11.5px;}
+  .dash-period-row .p-subj{flex:1;font-weight:600;}
+  .dash-period-row .p-teach{flex:none;color:var(--ink-soft);font-size:11.5px;}
+
+  @media print{
+    .dash-clock-card, .dash-current-card, .dash-stats-row, #tab-dashboard{display:none !important;}
+  }
+
+  /* ---------------- Setup nav grid ---------------- */
+  .setup-nav-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+  @media (max-width:520px){.setup-nav-grid{grid-template-columns:repeat(2,1fr);}}
+  .setup-nav-tile{background:var(--paper-2);border:1px solid var(--rule);border-radius:var(--radius);padding:16px 8px 14px;text-align:center;cursor:pointer;box-shadow:var(--shadow);transition:transform .12s, background .12s;user-select:none;}
+  .setup-nav-tile:hover{transform:translateY(-2px);}
+  .setup-nav-tile.active{background:var(--chalkboard);border-color:var(--chalkboard);}
+  .setup-nav-tile.active .setup-nav-title{color:var(--chalk-white);}
+  .setup-nav-tile.active .setup-nav-count{color:var(--chalk-yellow);}
+  .setup-nav-icon{font-size:22px;margin-bottom:6px;line-height:1;}
+  .setup-nav-title{font-size:12.5px;font-weight:700;color:var(--ink);}
+  .setup-nav-count{font-size:18px;font-weight:800;color:var(--chalkboard);margin-top:4px;}
+  .setup-panel{display:none;}
+  .setup-panel.active{display:block;}
+  @media print{ .setup-nav-grid{display:none !important;} }
+</style>
+</head>
+<body>
+<div id="loading-overlay">
+  <div class="loading-box">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">بارکردنی زانیارییەکان...</div>
+  </div>
+</div>
+<div id="login-overlay" style="display:none;">
+  <div class="login-box">
+    <h2>خشتەی وانەکان</h2>
+    <div class="login-tabs">
+      <button id="login-tab-teacher" class="login-tab on" onclick="setLoginTab('teacher')">مامۆستا</button>
+      <button id="login-tab-admin" class="login-tab" onclick="setLoginTab('admin')">بەڕێوەبەر</button>
+    </div>
+    <div id="login-panel-teacher" class="login-panel">
+      <label class="field-label">کۆدی چوونەژوورەوە</label>
+      <input type="text" id="login-teacher-code" inputmode="numeric" placeholder="بۆ نموونە: 4821" autocomplete="off">
+      <button class="btn btn-primary" style="width:100%;margin-top:10px;" onclick="teacherLogin()">چوونەژوورەوە</button>
+    </div>
+    <div id="login-panel-admin" class="login-panel" style="display:none;">
+      <label class="field-label">ئیمەیل</label>
+      <input type="email" id="login-admin-email" autocomplete="off">
+      <label class="field-label" style="margin-top:8px;">وشەی نهێنی</label>
+      <input type="password" id="login-admin-password" autocomplete="off">
+      <button class="btn btn-primary" style="width:100%;margin-top:10px;" onclick="adminLogin()">چوونەژوورەوە</button>
+    </div>
+    <div id="login-error" class="login-error"></div>
+  </div>
+</div>
+<div class="app" id="app-root" style="display:none;">
+  <header class="board">
+    <h1>خشتەی وانەکان</h1>
+    <p>بەرنامەی دروستکردنی خشتەی وانە بۆ قوتابخانە و خوێندنگا</p>
+    <button id="install-app-btn" class="install-app-btn" style="display:none;" onclick="installApp()">📲 دابەزاندنی ئەپ</button>
+    <button id="logout-btn" class="install-app-btn" style="display:none;background:var(--rule);color:var(--ink);margin-right:8px;" onclick="doLogout()">🚪 چوونەدەرەوە</button>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="dashboard" class="active">١. داشبۆرد</button>
+    <button data-tab="overview">٢. بەخێرهاتن</button>
+    <button data-tab="setup">٣. زانیاری سەرەکی</button>
+    <button data-tab="times">٤. کاتەکان</button>
+    <button data-tab="assign">٥. دابەشکردن</button>
+    <button data-tab="constraints">٦. مەرجی مامۆستا</button>
+    <button data-tab="summary">٧. پوختەی کارەکان</button>
+    <button data-tab="timetable">٨. خشتەی وانەکان</button>
+    <button data-tab="attendance">٩. غیابات</button>
+    <button data-tab="committees">١٠. لیژنەکان</button>
+  </nav>
+
+  <main>
+    <!-- DASHBOARD TAB -->
+    <section id="tab-dashboard" class="active">
+      <h2 class="section-title">داشبۆرد</h2>
+      <p class="section-hint">دیمەنی گشتی و کاتی ڕاستەقینەی خشتەی ئەمڕۆ.</p>
+
+      <div class="dash-clock-card">
+        <div class="dash-date" id="dash-date">—</div>
+        <div class="dash-time" id="dash-time">--:--:--</div>
+        <div class="dash-attendance-badge" id="dash-attendance-badge"></div>
+      </div>
+
+      <div class="dash-current-card">
+        <div class="dash-current-label">وانەی ئێستا</div>
+        <div class="dash-current-main" id="dash-current-main">—</div>
+        <div class="dash-current-sub" id="dash-current-sub"></div>
+      </div>
+
+      <div class="dash-now-grid" id="dash-now-grid"></div>
+
+      <div class="dash-stats-row">
+        <div class="dash-stat-card">
+          <div class="dash-stat-num" id="dash-stat-periods">٠</div>
+          <div class="dash-stat-label">وانە/هەفتە – هەموو قوتابخانە</div>
+        </div>
+        <div class="dash-stat-card">
+          <div class="dash-stat-num" id="dash-stat-teachers">٠</div>
+          <div class="dash-stat-label">ژمارەی مامۆستایان</div>
+        </div>
+        <div class="dash-stat-card">
+          <div class="dash-stat-num" id="dash-stat-subjects">٠</div>
+          <div class="dash-stat-label">ژمارەی بابەتەکان</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>خشتەی پۆلەکان – ئەمڕۆ <span class="count" id="dash-today-label"></span></h3>
+        <p class="section-hint" style="margin-bottom:12px;">کرتە لەسەر هەر پۆلێک بکە بۆ بینینی خشتەی تەواوی ئەمڕۆی</p>
+        <div class="dash-class-grid" id="dash-class-grid"></div>
+      </div>
+    </section>
+
+    <!-- WELCOME / OVERVIEW TAB -->
+    <section id="tab-overview" class="print-target">
+      <h2 class="section-title">بەخێرهاتن</h2>
+      <p class="section-hint">دیمەنی گشتی هەموو پۆلەکان پێکەوە، ئامادە بۆ چاپکردن.</p>
+      <div class="row form no-print">
+        <button class="btn btn-ghost" onclick="window.print()">چاپکردن (کۆمپیوتەر)</button>
+        <button class="btn btn-accent" onclick="downloadAsPrintableHTML('overview-print-area','خشتەی هەموو پۆلەکان','xshtay-hemu-polakan.html', false)">داگرتن بۆ چاپکردن (مۆبایل)</button>
+        <button class="btn btn-accent" onclick="exportExcelReport()">ئێکسپۆرت بۆ ئێکسڵ (Excel)</button>
+      </div>
+      <div id="overview-print-area">
+        <div class="cover" id="cover-page"></div>
+        <div class="table-wrap"><div id="overview-grid"></div></div>
+      </div>
+
+      <details class="card" id="report-classes-details" style="margin-top:14px;">
+        <summary class="no-print" style="cursor:pointer;font-weight:700;">ڕاپۆرتی هەر پۆلێک بە تاکی (بۆ چاپکردن، هەر پۆلێک لە لاپەڕەیەکی جیادا)</summary>
+        <div id="report-classes-content" style="margin-top:12px;"></div>
+      </details>
+      <details class="card" id="report-teachers-details" style="margin-top:14px;">
+        <summary class="no-print" style="cursor:pointer;font-weight:700;">ڕاپۆرتی هەر مامۆستایەک بە تاکی (بۆ چاپکردن، هەر مامۆستایەک لە لاپەڕەیەکی جیادا)</summary>
+        <div id="report-teachers-content" style="margin-top:12px;"></div>
+      </details>
+    </section>
+
+    <!-- SETUP TAB -->
+    <section id="tab-setup">
+      <h2 class="section-title">زانیاری قوتابخانە، پۆل، مامۆستا و وانە</h2>
+      <p class="section-hint">سەرەتا ئەم زانیاریانە زیاد بکە، پاشان لە خشتەی «دابەشکردن» دیاری بکە کام مامۆستا کام وانە بۆ کام پۆل دەڵێت.</p>
+
+      <div class="setup-nav-grid">
+        <div class="setup-nav-tile active" id="setup-nav-school" onclick="setSetupView('school')">
+          <div class="setup-nav-icon">🏫</div>
+          <div class="setup-nav-title">زانیاری قوتابخانە</div>
+        </div>
+        <div class="setup-nav-tile" id="setup-nav-classes" onclick="setSetupView('classes')">
+          <div class="setup-nav-icon">🏷️</div>
+          <div class="setup-nav-title">پۆلەکان</div>
+          <div class="setup-nav-count" id="setup-nav-count-classes">٠</div>
+        </div>
+        <div class="setup-nav-tile" id="setup-nav-teachers" onclick="setSetupView('teachers')">
+          <div class="setup-nav-icon">👩‍🏫</div>
+          <div class="setup-nav-title">مامۆستایان</div>
+          <div class="setup-nav-count" id="setup-nav-count-teachers">٠</div>
+        </div>
+        <div class="setup-nav-tile" id="setup-nav-subjects" onclick="setSetupView('subjects')">
+          <div class="setup-nav-icon">📖</div>
+          <div class="setup-nav-title">وانەکان</div>
+          <div class="setup-nav-count" id="setup-nav-count-subjects">٠</div>
+        </div>
+        <div class="setup-nav-tile" id="setup-nav-days" onclick="setSetupView('days')">
+          <div class="setup-nav-icon">📅</div>
+          <div class="setup-nav-title">ڕۆژەکانی خوێندن</div>
+          <div class="setup-nav-count" id="setup-nav-count-days">٠</div>
+        </div>
+        <div class="setup-nav-tile" id="setup-nav-students" onclick="setSetupView('students')">
+          <div class="setup-nav-icon">🧑‍🎓</div>
+          <div class="setup-nav-title">قوتابیان</div>
+          <div class="setup-nav-count" id="setup-nav-count-students">٠</div>
+        </div>
+        <div class="setup-nav-tile" id="setup-nav-data" onclick="setSetupView('data')">
+          <div class="setup-nav-icon">💾</div>
+          <div class="setup-nav-title">داتاکان</div>
+        </div>
+      </div>
+
+      <div class="setup-panel active" id="setup-panel-school">
+      <div class="card">
+        <h3>زانیاری قوتابخانە / خوێندنگە</h3>
+        <div class="row form">
+          <div class="field grow"><label class="field-label">ناوی قوتابخانە/خوێندنگە</label>
+            <input type="text" id="school-name" placeholder="بۆ نموونە: خوێندنگەی مەژتەبە" oninput="updateSchool('name',this.value)"></div>
+          <div class="field" style="width:140px"><label class="field-label">ساڵی خوێندن</label>
+            <input type="text" id="school-year" placeholder="٢٠٢٦-٢٠٢٧" oninput="updateSchool('year',this.value)"></div>
+        </div>
+        <div class="row form">
+          <div class="field grow"><label class="field-label">جۆری دەوام</label>
+            <select id="school-attendance" onchange="updateSchool('attendance',this.value)">
+              <option value="">هەڵبژاردن...</option>
+              <option value="بەیانی">بەیانی</option>
+              <option value="نیوەڕۆ">نیوەڕۆ</option>
+              <option value="تێکەڵ (بەیانی و نیوەڕۆ)">تێکەڵ (بەیانی و نیوەڕۆ)</option>
+            </select></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>ڕووکار و پیشاندان</h3>
+        <div class="row form">
+          <div class="field grow"><label class="field-label">ڕەنگی خشتەکان (تێم)</label>
+            <select id="ui-theme-select" onchange="updateTheme(this.value)">
+              <option value="chalkboard">کلاسیکی سەوز (بنەڕەت)</option>
+              <option value="ocean">شینی دەریا</option>
+              <option value="purple">مۆری شاهانە</option>
+              <option value="burgundy">سووری شەرابی</option>
+            </select></div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer;">
+          <input type="checkbox" id="ui-show-teacher" checked onchange="updateShowTeacherNames(this.checked)"> ناوی مامۆستا لە خشتەکاندا پیشان بدرێت (شاشە و پرینت)
+        </label>
+      </div>
+      </div>
+
+      <div class="setup-panel" id="setup-panel-classes">
+      <div class="card">
+        <h3>پۆلەکان <span class="count" id="count-classes">٠</span></h3>
+        <div class="row form">
+          <input type="text" id="input-class" class="grow" placeholder="ناوی پۆل، بۆ نموونە: پۆلی ١/أ">
+          <button class="btn btn-primary" onclick="addItem('classes','input-class')">زیادکردن</button>
+        </div>
+        <ul class="list" id="list-classes"></ul>
+      </div>
+      </div>
+
+      <div class="setup-panel" id="setup-panel-teachers">
+      <div class="card">
+        <h3>مامۆستایان <span class="count" id="count-teachers">٠</span></h3>
+        <div class="row form">
+          <input type="text" id="input-teacher" class="grow" placeholder="ناوی مامۆستا">
+          <input type="tel" id="input-teacher-phone" style="width:150px" placeholder="ژمارە مۆبایل" dir="ltr">
+          <button class="btn btn-primary" onclick="addTeacher()">زیادکردن</button>
+        </div>
+        <ul class="list" id="list-teachers"></ul>
+      </div>
+      </div>
+
+      <div class="setup-panel" id="setup-panel-subjects">
+      <div class="card">
+        <h3>وانەکان <span class="count" id="count-subjects">٠</span></h3>
+        <div class="row form">
+          <input type="text" id="input-subject" class="grow" placeholder="ناوی وانە، بۆ نموونە: بیرکاری">
+          <button class="btn btn-primary" onclick="addSubject()">زیادکردن</button>
+        </div>
+        <div class="field" style="margin-bottom:12px;">
+          <label class="field-label">ڕەنگی وانە لە خشتەدا</label>
+          <div class="swatch-row" id="subject-color-swatches"></div>
+          <input type="hidden" id="input-subject-color">
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;margin-bottom:12px;cursor:pointer;">
+          <input type="checkbox" id="input-subject-hard"> وانەیەکی قورسە (هەوڵ بدرێت لە وانەی ١ و ٢ی ڕۆژ دانەنرێت)
+        </label>
+        <details style="margin-bottom:12px;">
+          <summary style="cursor:pointer;font-size:13px;color:var(--ink-soft);">زیادکردنی چەند بابەت پێکەوە</summary>
+          <div style="margin-top:8px;">
+            <p class="section-hint" style="margin-bottom:6px;">هەر بابەتێک لە ڕیزێکی جیا بنووسە (یان بە کۆما جیایان بکەوە). هەریەکە ڕەنگی خۆی وەردەگرێت.</p>
+            <textarea id="bulk-subjects-input" style="width:100%;height:90px;font-family:'Vazirmatn',sans-serif;font-size:14px;padding:8px;border:1px solid var(--rule);border-radius:8px;background:var(--paper);color:var(--ink);" placeholder="بیرکاری&#10;کوردی&#10;ئینگلیزی&#10;زانست"></textarea>
+            <button class="btn btn-primary btn-sm" style="margin-top:8px;" onclick="addSubjectsBulk()">زیادکردنی هەمووی</button>
+          </div>
+        </details>
+        <ul class="list" id="list-subjects"></ul>
+      </div>
+      </div>
+
+      <div class="setup-panel" id="setup-panel-days">
+      <div class="card">
+        <h3>ڕۆژەکانی خوێندن</h3>
+        <p class="section-hint" style="margin-bottom:10px;">کرتە لەسەر ڕۆژێک بکە بۆ زیادکردنی، دووبارە کرتە بکە بۆ لابردنی.</p>
+        <div class="weekday-grid" id="weekday-grid"></div>
+      </div>
+      </div>
+
+      <div class="setup-panel" id="setup-panel-students">
+      <div class="card">
+        <h3>قوتابیان <span class="count" id="count-students">٠</span></h3>
+        <div class="row form">
+          <select id="student-class-select" class="grow" onchange="renderStudentsList()"></select>
+        </div>
+        <div class="row form">
+          <input type="text" id="input-student" class="grow" placeholder="ناوی قوتابی">
+          <button class="btn btn-primary" onclick="addStudent()">زیادکردن</button>
+        </div>
+        <details style="margin-bottom:12px;">
+          <summary style="cursor:pointer;font-size:13px;color:var(--ink-soft);">زیادکردنی چەند قوتابی پێکەوە</summary>
+          <div style="margin-top:8px;">
+            <p class="section-hint" style="margin-bottom:6px;">هەر قوتابیێک لە ڕیزێکی جیا بنووسە، بۆ پۆلی هەڵبژێردراوی سەرەوە.</p>
+            <textarea id="bulk-students-input" style="width:100%;height:110px;font-family:'Vazirmatn',sans-serif;font-size:14px;padding:8px;border:1px solid var(--rule);border-radius:8px;background:var(--paper);color:var(--ink);" placeholder="ئاراس کەریم&#10;بەرزان عەلی&#10;چیا سالار"></textarea>
+            <button class="btn btn-primary btn-sm" style="margin-top:8px;" onclick="addStudentsBulk()">زیادکردنی هەمووی</button>
+          </div>
+        </details>
+        <ul class="list" id="list-students"></ul>
+      </div>
+      </div>
+
+      <div class="setup-panel" id="setup-panel-data">
+      <div class="card">
+        <h3>داتاکان</h3>
+        <p class="section-hint" style="margin-bottom:10px;">هەموو زانیاریەکان تەنها لەناو ئەم مۆبایل/براوزەرە هەڵدەگیرێن. باشترە هەندێک جار فایلی پاڵپشتی (Backup) دابەزێنیت، تاوەکو ئەگەر هەڵگرتنی خۆکار کێشەی هەبوو، داتاکەت لەدەست نەدەیت.</p>
+        <div class="row" style="margin-bottom:10px;">
+          <button class="btn btn-ghost" onclick="exportBackup()">داگرتنی فایلی پاڵپشتی</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('import-file-input').click()">هێنانەوەی فایلی پاڵپشتی</button>
+          <input type="file" id="import-file-input" accept=".json,application/json,.txt,text/plain,*/*" style="display:none" onchange="importBackup(this.files[0])">
+        </div>
+        <div class="row" style="margin-bottom:10px;">
+          <button class="btn btn-ghost" onclick="openTextBackupCopy()">پیشاندانی وەک دەق (بۆ کۆپیکردن)</button>
+          <button class="btn btn-ghost" onclick="openTextBackupPaste()">لکاندنی دەقی پاڵپشتی</button>
+        </div>
+        <p class="section-hint" style="margin-top:-4px;margin-bottom:10px;">ئەگەر لە مۆبایلەوە فایلی داگیراو لە کۆمپیوتەرەکەت نەکرا بەفایلی .json، «پیشاندانی وەک دەق» بەکاربهێنە: دەقەکە کۆپی بکە و بینێرە بۆ خۆت بە ئیمەیل یان وەتسئەپ، پاشان لە کۆمپیوتەرەکەت لە «لکاندنی دەقی پاڵپشتی» بیلکێنە.</p>
+        <button class="btn btn-danger" onclick="resetAll()">سڕینەوەی هەموو داتاکان</button>
+      </div>
+      </div>
+    </section>
+
+    <!-- TIMES TAB -->
+    <section id="tab-times">
+      <h2 class="section-title">کاتەکان</h2>
+      <p class="section-hint">ژمارەی وانەکانی ڕۆژانە و کاتی دەستپێک و کۆتایی هەر وانەیەک دیاری بکە.</p>
+
+      <div class="card">
+        <h3>ژمارەی وانە لە ڕۆژێکدا</h3>
+        <select id="input-periods" class="period-count-select" onchange="updatePeriodsPerDay(this.value)"></select>
+      </div>
+
+      <div class="card">
+        <h3>کاتی وانەکان</h3>
+        <div id="period-times-list"></div>
+      </div>
+    </section>
+
+    <!-- ASSIGN TAB -->
+    <section id="tab-assign">
+      <h2 class="section-title">دابەشکردنی وانەکان</h2>
+      <p class="section-hint">پۆل(ەکان)، مامۆستا، بابەت و ژمارەی وانەی هەفتانە هەڵبژێرە. دەتوانیت چەند پۆل بەیەکەوە هەڵبژێریت (بۆ نموونە هەموو بەشەکانی پۆلێک).</p>
+
+      <div class="card">
+        <h3>زیادکردنی دابەشکردنێکی نوێ</h3>
+        <div class="field" style="margin-bottom:10px;">
+          <label class="field-label">پۆل(ەکان)</label>
+          <div class="checklist" id="assign-classes-checklist"></div>
+        </div>
+        <div class="row form">
+          <div class="field grow"><label class="field-label">مامۆستا</label><select id="assign-teacher"></select></div>
+          <div class="field grow"><label class="field-label">وانە</label><select id="assign-subject"></select></div>
+        </div>
+        <div class="row form">
+          <div class="field"><label class="field-label">وانە/هەفتە</label><select id="assign-periods"></select></div>
+          <div class="field"><label class="field-label">ژمارەی ڕۆژان</label><select id="assign-days"></select></div>
+          <div class="field"><label class="field-label">کەمترین لە ڕۆژێکدا</label><select id="assign-min"></select></div>
+          <div class="field"><label class="field-label">زۆرترین لە ڕۆژێکدا</label><select id="assign-max"></select></div>
+        </div>
+        <button class="btn btn-primary" onclick="addAssignment()">زیادکردن</button>
+      </div>
+
+      <div id="assign-groups"></div>
+    </section>
+
+    <!-- CONSTRAINTS TAB -->
+    <section id="tab-constraints">
+      <h2 class="section-title">مەرجی مامۆستایان</h2>
+      <p class="section-hint">مامۆستایەک هەڵبژێرە، پاشان تیک لە ڕۆژ/وانەکانی نەهاتنی بدە. کرتەیەک بۆ زیادکردن، دووبارە کرتەیەک بۆ لابردن.</p>
+
+      <div class="card">
+        <div class="row form">
+          <div class="field grow"><label class="field-label">مامۆستا</label><select id="constraint-teacher" onchange="renderConstraintGrid()"></select></div>
+        </div>
+        <div id="constraint-gap-options" style="display:none;margin-bottom:12px;">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;margin-bottom:8px;cursor:pointer;">
+            <input type="checkbox" id="constraint-gap2" onchange="toggleTeacherGapPref('gap2', this.checked)"> هەوڵبدرێت دوو وانەی بەتاڵ لەسەریەک نەبێت لە ڕۆژانی هاتنی
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer;">
+            <input type="checkbox" id="constraint-gap3" onchange="toggleTeacherGapPref('gap3', this.checked)"> هەوڵبدرێت سێ وانەی بەتاڵ لەسەریەک نەبێت لە ڕۆژانی هاتنی
+          </label>
+        </div>
+        <div id="constraint-grid-container"></div>
+        <p id="constraint-save-status" class="section-hint" style="margin-top:10px;margin-bottom:0;">✓ هەر تیکێک کە دەیدەیت، دەستبەجێ هەڵدەگیرێت — پێویست بە دوگمەی زیادکردن ناکات.</p>
+      </div>
+
+      <div id="constraint-groups"></div>
+      <button class="btn btn-danger" onclick="clearConstraints()">سڕینەوەی هەموو مەرجەکان</button>
+    </section>
+
+    <!-- SUMMARY TAB -->
+    <section id="tab-summary">
+      <h2 class="section-title">پوختەی کارەکان</h2>
+      <p class="section-hint">پێش دروستکردنی خشتە، سەیری پوختەی هەموو زانیاریەکان بکە.</p>
+
+      <div class="toggle-group">
+        <button id="summary-classes-btn" class="on" onclick="setSummaryView('classes')">پوختەی پۆلەکان</button>
+        <button id="summary-teachers-btn" onclick="setSummaryView('teachers')">پوختەی مامۆستایان</button>
+        <button id="summary-constraints-btn" onclick="setSummaryView('constraints')">پوختەی مەرجی مامۆستایان</button>
+      </div>
+
+      <div class="card summary-panel" id="summary-panel-classes">
+        <h3>پوختەی پۆلەکان</h3>
+        <ul class="list" id="summary-classes"></ul>
+      </div>
+
+      <div class="card summary-panel" id="summary-panel-teachers" style="display:none;">
+        <h3>پوختەی مامۆستایان</h3>
+        <ul class="list" id="summary-teachers"></ul>
+      </div>
+
+      <div class="card summary-panel" id="summary-panel-constraints" style="display:none;">
+        <h3>پوختەی مەرجی مامۆستایان</h3>
+        <div id="summary-constraints"></div>
+      </div>
+    </section>
+
+    <!-- TIMETABLE TAB -->
+    <section id="tab-timetable">
+      <h2 class="section-title">خشتەی وانەکان</h2>
+      <p class="section-hint">دەتوانیت بە خۆکاری خشتە دروست بکەیت، بە دەستی خانەیەک پڕ بکەیتەوە، یان خانەیەک ڕاکێشیت بۆ شوێنێکی تر.</p>
+
+      <div class="toggle-group">
+        <button id="view-pool-btn" onclick="setTimetableView('pool')">نەدانراوەکان</button>
+        <button id="view-class-btn" class="on" onclick="setTimetableView('class')">بەپێی پۆل</button>
+        <button id="view-teacher-btn" onclick="setTimetableView('teacher')">بەپێی مامۆستا</button>
+        <button id="view-all-btn" onclick="setTimetableView('all')">گشتی</button>
+        <button id="view-day-btn" onclick="setTimetableView('day')">ڕۆژێک</button>
+      </div>
+
+      <div class="row form" id="timetable-select-row">
+        <select id="timetable-select" class="grow" onchange="renderTimetableGrid()"></select>
+        <select id="timetable-day-select" style="display:none;" onchange="renderTimetableGrid()"></select>
+        <button class="btn btn-ghost btn-sm no-print" onclick="window.print()">چاپکردن (کۆمپیوتەر)</button>
+        <button class="btn btn-accent btn-sm no-print" onclick="downloadTimetableAsPrintableHTML()">داگرتن بۆ چاپکردن</button>
+        <button class="btn btn-whatsapp btn-sm no-print" id="whatsapp-btn" style="display:none" onclick="sendTeacherWhatsapp()">ناردن بە واتسئەپ</button>
+      </div>
+
+      <div class="actions-row no-print">
+        <button class="btn btn-accent" onclick="autoGenerateAll()">دروستکردنی خۆکاری بۆ هەموو پۆلەکان</button>
+        <button class="btn btn-ghost btn-sm" id="clear-class-btn" onclick="clearCurrentClass()">پاککردنەوەی ئەم پۆلە</button>
+      </div>
+
+      <div id="timetable-notice"></div>
+      <div id="pool-panel"></div>
+      <div class="table-wrap"><div id="timetable-grid"></div></div>
+    </section>
+
+    <!-- ATTENDANCE TAB -->
+    <section id="tab-attendance">
+      <h2 class="section-title">غیابات</h2>
+      <p class="section-hint" id="attendance-hint">تۆمارکردنی غیاباتی قوتابیان بۆ وانەی ئێستا.</p>
+
+      <div id="attendance-teacher-view"></div>
+      <div id="attendance-admin-view"></div>
+    </section>
+
+    <!-- COMMITTEES TAB -->
+    <section id="tab-committees">
+      <h2 class="section-title">لیژنەکانی قوتابخانە</h2>
+      <p class="section-hint">لیژنە دروست بکە، مامۆستایان (یان کەسی تر) وەک ئەندام زیاد بکە و ڕۆڵیان دیاری بکە (سەرۆک، جێگر، سکرتێر، ئەندام)، پاشان چاپی بکە.</p>
+
+      <div class="no-print">
+        <div class="card">
+          <h3>دروستکردنی لیژنەیەکی نوێ</h3>
+          <div class="row form">
+            <input type="text" id="input-committee" class="grow" list="committee-suggestions" placeholder="ناوی لیژنە، بۆ نموونە: لیژنەی تاقیکردنەوە">
+            <datalist id="committee-suggestions"></datalist>
+          </div>
+          <div class="row form">
+            <input type="text" id="input-committee-desc" class="grow" placeholder="ئەرکی لیژنە (ئارەزوومەندانە)">
+            <button class="btn btn-primary" onclick="addCommittee()">دروستکردن</button>
+          </div>
+        </div>
+
+        <div class="row form">
+          <button class="btn btn-ghost" onclick="window.print()">چاپکردن (کۆمپیوتەر)</button>
+          <button class="btn btn-accent" onclick="downloadCommitteesPrintable()">داگرتن بۆ چاپکردن (مۆبایل)</button>
+        </div>
+
+        <div id="committees-list"></div>
+      </div>
+
+      <div id="committees-print-area" class="print-only"></div>
+    </section>
+  </main>
+
+  <footer class="info">داتاکان تەنها لەناو ئەم ئامێرەدا هەڵدەگیرن و بۆ کەسی تر نایەن.</footer>
+</div>
+
+<div class="overlay" id="cell-overlay">
+  <div class="modal">
+    <h3 id="modal-title">دیاریکردنی وانە</h3>
+    <p class="sub" id="modal-sub"></p>
+    <div class="option-list" id="modal-options"></div>
+    <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">داخستن</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="edit-overlay">
+  <div class="modal">
+    <h3 id="edit-modal-title">دەستکاری</h3>
+    <div class="modal-body" id="edit-modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeEditModal()">پاشگەزبوونەوە</button>
+      <button class="btn btn-primary" onclick="saveEditModal()">هەڵگرتن</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="confirm-overlay">
+  <div class="modal">
+    <p class="sub" id="confirm-message" style="margin-bottom:16px;color:var(--ink);font-size:14.5px;"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="confirm-cancel-btn">پاشگەزبوونەوە</button>
+      <button class="btn btn-primary" id="confirm-ok-btn">بەڵێ</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="alert-overlay">
+  <div class="modal">
+    <p class="sub" id="alert-message" style="margin-bottom:16px;color:var(--ink);font-size:14.5px;"></p>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="alert-ok-btn">باشە</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="text-backup-overlay">
+  <div class="modal">
+    <h3 id="text-backup-title">داتای پاڵپشتی</h3>
+    <p class="sub" id="text-backup-hint"></p>
+    <textarea id="text-backup-area" style="width:100%;height:180px;font-family:monospace;font-size:11px;padding:8px;border:1px solid var(--rule);border-radius:8px;background:var(--paper);color:var(--ink);direction:ltr;" dir="ltr"></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeTextBackup()">داخستن</button>
+      <button class="btn btn-primary" id="text-backup-action-btn"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------------- Custom confirm/alert (native dialogs are unreliable inside embedded mobile webviews) ---------------- */
+function showAlert(message){
+  document.getElementById('alert-message').textContent = message;
+  document.getElementById('alert-overlay').classList.add('show');
+}
+let _confirmCallback = null;
+function showConfirm(message, onYes){
+  document.getElementById('confirm-message').textContent = message;
+  _confirmCallback = onYes;
+  document.getElementById('confirm-overlay').classList.add('show');
+}
+document.getElementById('alert-ok-btn').addEventListener('click', ()=>{
+  document.getElementById('alert-overlay').classList.remove('show');
+});
+document.getElementById('confirm-ok-btn').addEventListener('click', ()=>{
+  document.getElementById('confirm-overlay').classList.remove('show');
+  const cb = _confirmCallback; _confirmCallback = null;
+  if(cb) cb();
+});
+document.getElementById('confirm-cancel-btn').addEventListener('click', ()=>{
+  document.getElementById('confirm-overlay').classList.remove('show');
+  _confirmCallback = null;
+});
+</script>
+
+<script>
+/* ---------------- Constants ---------------- */
+const WEEKDAYS = ["شەممه","یەک شەممه","دوو شەممه","سێ شەممه","چوار شەممه","پێنج شەممه","هەینی"];
+const PALETTE = ['#DCE8F0','#F0DCE3','#E3E9CE','#F3E3C0','#E6DCF0','#D9EDE4','#F0E0D6','#DDE3EC','#E9E3D6','#D6E6E9','#F5D9D9','#D9F0E8','#EAD9F5','#F0EAD2','#D2E0F0','#F5E0D9','#D9D2F0','#E0F0D2','#F0D2E0','#D2F0EA'];
+const PREPARER_NAME = "دلێر علی مصظفی";
+const PREPARER_ROLE = "بەڕێوەبەری ئامادەیی کاردۆخی کوڕان";
+const PREPARER_PHONE = "07701589234";
+const JS_DAY_TO_KURDISH = ["یەک شەممه","دوو شەممه","سێ شەممه","چوار شەممه","پێنج شەممه","هەینی","شەممه"];
+const KURDISH_MONTHS = ['کانونی دووەم','شوبات','ئازار','نیسان','ئایار','حوزەیران','تەمووز','ئاب','ئەیلوول','تشرینی یەکەم','تشرینی دووەم','کانونی یەکەم'];
+
+/* ---------------- State ---------------- */
+let config = {
+  school: { name:'', year:'', attendance:'' },
+  classes: [],
+  teachers: [],
+  subjects: [],
+  assignments: [],
+  constraints: [],
+  students: [],
+  committees: [],
+  settings: { days: ["شەممه","یەک شەممه","دوو شەممه","سێ شەممه","چوار شەممه"], periodsPerDay: 6, periodTimes: [], theme: 'chalkboard', showTeacherNames: true }
+};
+let schedules = {};
+let timetableView = 'class';
+let dragSource = null;
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+
+/* ---------------- Firebase ---------------- */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBThG5V_eqbvtXHcHQni9Yb_lNpygoziow",
+  authDomain: "kshtay-wanakan.firebaseapp.com",
+  projectId: "kshtay-wanakan",
+  storageBucket: "kshtay-wanakan.firebasestorage.app",
+  messagingSenderId: "188892055543",
+  appId: "1:188892055543:web:09177cf0d092ce81e250f2",
+  measurementId: "G-2VBMWL063H"
+};
+let fbDb = null, fbDoc = null, fbSetDoc = null, fbGetDoc = null;
+let fbAuth = null, fbSignIn = null, fbSignOut = null, fbOnAuthChanged = null;
+let fbSecondaryAuth = null, fbCreateUser = null;
+let fbCollection = null, fbQuery = null, fbWhere = null, fbGetDocs = null;
+async function initFirebase(){
+  try{
+    const appMod = await import("https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js");
+    const fsMod = await import("https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js");
+    const authMod = await import("https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js");
+    const app = appMod.initializeApp(FIREBASE_CONFIG);
+    fbDb = fsMod.getFirestore(app);
+    fbDoc = fsMod.doc;
+    fbSetDoc = fsMod.setDoc;
+    fbGetDoc = fsMod.getDoc;
+    fbCollection = fsMod.collection;
+    fbQuery = fsMod.query;
+    fbWhere = fsMod.where;
+    fbGetDocs = fsMod.getDocs;
+    fbAuth = authMod.getAuth(app);
+    fbSignIn = authMod.signInWithEmailAndPassword;
+    fbSignOut = authMod.signOut;
+    fbOnAuthChanged = authMod.onAuthStateChanged;
+    // secondary app instance: lets the admin create teacher accounts
+    // without Firebase Auth switching the active session to the new user
+    const secondaryApp = appMod.initializeApp(FIREBASE_CONFIG, 'secondary');
+    fbSecondaryAuth = authMod.getAuth(secondaryApp);
+    fbCreateUser = authMod.createUserWithEmailAndPassword;
+  }catch(e){ console.log('Firebase init failed, will use local storage only', e); }
+}
+
+/* ---------------- Storage ---------------- */
+let saveTimer = null;
+function scheduleSave(){ clearTimeout(saveTimer); saveTimer = setTimeout(persistAll, 400); }
+async function persistAll(){
+  try{ localStorage.setItem('khshtay_config', JSON.stringify(config)); }catch(e){ console.log('save config to localStorage failed', e); }
+  try{ localStorage.setItem('khshtay_schedules', JSON.stringify(schedules)); }catch(e){ console.log('save schedules to localStorage failed', e); }
+  try{
+    if(fbDb && fbDoc && fbSetDoc){
+      await fbSetDoc(fbDoc(fbDb, 'school', 'main'), { config, schedules, updatedAt: Date.now() });
+    }
+  }catch(e){ console.log('save to Firestore failed (kept locally)', e); }
+}
+function applyLoadedConfig(loaded){
+  loaded = loaded || {};
+  config.school = Object.assign({name:'',year:'',attendance:''}, loaded.school||{});
+  config.classes = Array.isArray(loaded.classes) ? loaded.classes : [];
+  config.teachers = Array.isArray(loaded.teachers) ? loaded.teachers : [];
+  config.subjects = Array.isArray(loaded.subjects) ? loaded.subjects : [];
+  config.assignments = Array.isArray(loaded.assignments) ? loaded.assignments : [];
+  config.constraints = Array.isArray(loaded.constraints) ? loaded.constraints : [];
+  config.students = Array.isArray(loaded.students) ? loaded.students : [];
+  config.committees = Array.isArray(loaded.committees) ? loaded.committees : [];
+  const loadedSettings = loaded.settings || {};
+  config.settings = {
+    days: migrateSettingsDays((Array.isArray(loadedSettings.days) && loadedSettings.days.length) ? loadedSettings.days : ["شەممه","یەک شەممه","دوو شەممه","سێ شەممه","چوار شەممه"]),
+    periodsPerDay: (typeof loadedSettings.periodsPerDay === 'number' && loadedSettings.periodsPerDay>0) ? loadedSettings.periodsPerDay : 6,
+    periodTimes: Array.isArray(loadedSettings.periodTimes) ? loadedSettings.periodTimes : [],
+    theme: loadedSettings.theme || 'chalkboard',
+    showTeacherNames: (typeof loadedSettings.showTeacherNames === 'boolean') ? loadedSettings.showTeacherNames : true
+  };
+  safe(applyUiPrefs);
+}
+/* Day names can exist in several spellings (with/without space, ە/ه). Everything is normalised to the WEEKDAYS spelling
+   and duplicates are merged, so old data never produces doubled days. */
+function dayKey(d){ return String(d||'').replace(/[\s\u200c\u200b]/g,'').replace(/\u06D5/g,'\u0647').replace(/\u064A/g,'\u06CC').replace(/\u0643/g,'\u06A9'); }
+function migrateDayName(d){ const k = dayKey(d); const hit = WEEKDAYS.find(w=>dayKey(w)===k); return hit || d; }
+function migrateSettingsDays(days){
+  if(!Array.isArray(days)) return days;
+  const out = [];
+  days.forEach(d=>{ const m = migrateDayName(d); if(!out.includes(m)) out.push(m); });
+  out.sort((a,b)=>WEEKDAYS.indexOf(a)-WEEKDAYS.indexOf(b));
+  return out;
+}
+function migrateSchedulesDayKeys(sched){
+  if(!sched || typeof sched!=='object') return sched;
+  Object.keys(sched).forEach(classId=>{
+    const perClass = sched[classId];
+    if(!perClass || typeof perClass!=='object') return;
+    Object.keys(perClass).forEach(dayName=>{
+      const newName = migrateDayName(dayName);
+      if(newName!==dayName){
+        if(perClass[newName]) Object.assign(perClass[newName], perClass[dayName]);
+        else perClass[newName] = perClass[dayName];
+        delete perClass[dayName];
+      }
+    });
+  });
+  return sched;
+}
+function applyLoadedSchedules(loadedSched){
+  if(loadedSched && typeof loadedSched==='object') schedules = migrateSchedulesDayKeys(loadedSched);
+}
+async function loadAll(){
+  let loadedFromCloud = false;
+  try{
+    if(fbDb && fbDoc && fbGetDoc){
+      const snap = await fbGetDoc(fbDoc(fbDb, 'school', 'main'));
+      if(snap.exists()){
+        const data = snap.data() || {};
+        applyLoadedConfig(data.config);
+        applyLoadedSchedules(data.schedules);
+        loadedFromCloud = true;
+        try{
+          localStorage.setItem('khshtay_config', JSON.stringify(config));
+          localStorage.setItem('khshtay_schedules', JSON.stringify(schedules));
+        }catch(e){}
+      }
+    }
+  }catch(e){ console.log('load from Firestore failed, falling back to local copy', e); }
+  if(!loadedFromCloud){
+    try{
+      const raw = localStorage.getItem('khshtay_config');
+      if(raw) applyLoadedConfig(JSON.parse(raw));
+    }catch(e){ console.log('loadAll config failed', e); }
+    try{
+      const raw = localStorage.getItem('khshtay_schedules');
+      if(raw) applyLoadedSchedules(JSON.parse(raw));
+    }catch(e){ console.log('loadAll schedules failed', e); }
+  }
+}
+
+/* ---------------- Init ---------------- */
+let currentRole = null;
+let currentTeacherId = null;
+const TEACHER_EMAIL_SUFFIX = '@t.kshtay-wanakan.app';
+
+function setLoginTab(tab){
+  safe(()=>{ document.getElementById('login-tab-teacher').classList.toggle('on', tab==='teacher'); });
+  safe(()=>{ document.getElementById('login-tab-admin').classList.toggle('on', tab==='admin'); });
+  safe(()=>{ document.getElementById('login-panel-teacher').style.display = tab==='teacher' ? '' : 'none'; });
+  safe(()=>{ document.getElementById('login-panel-admin').style.display = tab==='admin' ? '' : 'none'; });
+  safe(()=>{ document.getElementById('login-error').textContent = ''; });
+}
+
+async function teacherLogin(){
+  const code = (document.getElementById('login-teacher-code').value||'').trim();
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  if(!code){ errEl.textContent = 'تکایە کۆدەکەت بنووسە'; return; }
+  if(!fbDb || !fbDoc || !fbGetDoc || !fbAuth || !fbSignIn){ errEl.textContent = 'ئێستا ناتوانرێت لۆگین بکرێت، دواتر هەوڵ بدەوە.'; return; }
+  try{
+    const snap = await fbGetDoc(fbDoc(fbDb, 'teacherLogins', code));
+    if(!snap.exists()){ errEl.textContent = 'ئەم کۆدە هەڵەیە.'; return; }
+    const data = snap.data();
+    await fbSignIn(fbAuth, data.email, code);
+  }catch(e){
+    console.log('teacher login failed', e);
+    errEl.textContent = 'کۆدەکە هەڵەیە یان کێشەیەک ڕوویدا.';
+  }
+}
+
+async function adminLogin(){
+  const email = (document.getElementById('login-admin-email').value||'').trim();
+  const pass = document.getElementById('login-admin-password').value||'';
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  if(!email || !pass){ errEl.textContent = 'تکایە ئیمەیل و وشەی نهێنی بنووسە.'; return; }
+  if(!fbAuth || !fbSignIn){ errEl.textContent = 'ئێستا ناتوانرێت لۆگین بکرێت، دواتر هەوڵ بدەوە.'; return; }
+  try{
+    await fbSignIn(fbAuth, email, pass);
+  }catch(e){
+    console.log('admin login failed', e);
+    errEl.textContent = 'ئیمەیل یان وشەی نهێنی هەڵەیە.';
+  }
+}
+
+async function doLogout(){
+  try{ if(fbAuth && fbSignOut) await fbSignOut(fbAuth); }catch(e){ console.log('logout failed', e); }
+  location.reload();
+}
+
+async function resolveUserRole(user){
+  if(user.email && user.email.endsWith(TEACHER_EMAIL_SUFFIX)){
+    currentRole = 'teacher';
+    currentTeacherId = user.email.slice(0, -TEACHER_EMAIL_SUFFIX.length).replace(/^t-/, '');
+  } else {
+    currentRole = 'admin';
+    currentTeacherId = null;
+  }
+}
+
+// Admin-only: creates (or recreates) a login code for a teacher.
+// Uses a secondary Firebase Auth instance so the admin's own session is untouched.
+async function generateTeacherCode(teacherId){
+  if(!fbSecondaryAuth || !fbCreateUser || !fbDb || !fbDoc || !fbSetDoc){
+    showAlert('ئێستا ناتوانرێت کۆد دروست بکرێت، دواتر هەوڵ بدەوە.');
+    return;
+  }
+  const teacher = config.teachers.find(t=>t.id===teacherId);
+  if(!teacher) return;
+  const code = String(Math.floor(1000 + Math.random()*9000));
+  const email = `t-${teacherId}${TEACHER_EMAIL_SUFFIX}`;
+  try{
+    await fbCreateUser(fbSecondaryAuth, email, code);
+    await fbSetDoc(fbDoc(fbDb, 'teacherLogins', code), { teacherId, email });
+    try{ await fbSignOut(fbSecondaryAuth); }catch(e){}
+    teacher.loginCode = code;
+    scheduleSave();
+    renderSetupLists();
+    showAlert(`کۆدی ${escapeHtml(teacher.name)}: ${code}\n\nئەم کۆدە بدە بە مامۆستاکە بۆ چوونەژوورەوە.`);
+  }catch(e){
+    console.log('generateTeacherCode failed', e);
+    showAlert('نەکرا کۆدەکە دروست بکرێت. دووبارە هەوڵ بدەوە.');
+  }
+}
+
+function safe(fn){ try{ fn(); }catch(e){ console.log('render step failed:', e); } }
+let appReady = false;
+
+async function startApp(){
+  try{ await loadAll(); }catch(e){ console.log('loadAll crashed', e); }
+  safe(ensurePeriodTimes);
+  safe(()=>{ document.getElementById('school-name').value = config.school.name||''; });
+  safe(()=>{ document.getElementById('school-year').value = config.school.year||''; });
+  safe(()=>{ document.getElementById('school-attendance').value = config.school.attendance||''; });
+  safe(()=>buildPeriodSelect('input-periods',1,10));
+  safe(()=>{ document.getElementById('input-periods').value = config.settings.periodsPerDay; });
+  safe(()=>buildPeriodSelect('assign-periods',1,10));
+  safe(()=>buildPeriodSelect('assign-min',1,10));
+  safe(()=>buildPeriodSelect('assign-max',1,10));
+  safe(()=>{ document.getElementById('assign-max').value = Math.min(2,10); });
+  safe(()=>buildPeriodSelect('assign-days',1,7));
+  safe(()=>{ document.getElementById('assign-days').value = Math.max(1, Math.min(config.settings.days.length,7)); });
+  safe(renderWeekdayGrid);
+  safe(renderPeriodTimesList);
+  safe(renderSetupLists);
+  safe(()=>renderSwatchPicker('subject-color-swatches','input-subject-color'));
+  safe(renderAssignSelectors);
+  safe(renderAssignGroups);
+  safe(renderConstraintSelectors);
+  safe(renderConstraintGroups);
+  safe(renderSummary);
+  safe(renderTimetableSelector);
+  safe(renderTimetableGrid);
+  safe(renderOverview);
+  safe(renderDashboard);
+  safe(renderCommittees);
+  safe(bindTabs);
+  safe(applyRoleRestrictions);
+  appReady = true;
+  setInterval(tickDashboard, 1000);
+  safe(()=>{ document.getElementById('loading-overlay').classList.add('hidden'); });
+  safe(()=>{ document.getElementById('login-overlay').style.display = 'none'; });
+  safe(()=>{ document.getElementById('app-root').style.display = ''; });
+  safe(()=>{ document.getElementById('logout-btn').style.display = (REQUIRE_LOGIN && currentRole) ? 'inline-block' : 'none'; });
+}
+
+// Set to true only after the admin Firebase account exists and the new security rules are published.
+const REQUIRE_LOGIN = false;
+
+async function init(){
+  try{ await initFirebase(); }catch(e){ console.log('initFirebase crashed', e); }
+  if(REQUIRE_LOGIN && fbAuth && fbOnAuthChanged){
+    fbOnAuthChanged(fbAuth, (user)=>{
+      if(user){
+        resolveUserRole(user).then(startApp);
+      } else {
+        safe(()=>{ document.getElementById('loading-overlay').classList.add('hidden'); });
+        safe(()=>{ document.getElementById('login-overlay').style.display = 'flex'; });
+      }
+    });
+  } else {
+    // Login not required (or Firebase Auth unavailable) — open app as admin so everything keeps working
+    currentRole = 'admin';
+    currentTeacherId = null;
+    startApp();
+  }
+}
+init();
+setTimeout(()=>{ safe(()=>{ document.getElementById('loading-overlay').classList.add('hidden'); }); }, 8000);
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch((e) => console.log('SW register failed', e));
+  });
+}
+
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  const btn = document.getElementById('install-app-btn');
+  if(btn) btn.style.display = 'inline-block';
+});
+async function installApp(){
+  if(!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  try{ await deferredInstallPrompt.userChoice; }catch(e){}
+  deferredInstallPrompt = null;
+  const btn = document.getElementById('install-app-btn');
+  if(btn) btn.style.display = 'none';
+}
+window.addEventListener('appinstalled', ()=>{
+  const btn = document.getElementById('install-app-btn');
+  if(btn) btn.style.display = 'none';
+});
+
+/* ---------------- Tabs ---------------- */
+function bindTabs(){
+  document.querySelectorAll('nav.tabs button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('main section').forEach(s=>{s.classList.remove('active','print-target');});
+      const target = document.getElementById('tab-'+btn.dataset.tab);
+      target.classList.add('active');
+      if(btn.dataset.tab==='timetable' || btn.dataset.tab==='overview' || btn.dataset.tab==='committees') target.classList.add('print-target');
+      if(btn.dataset.tab==='committees') renderCommittees();
+      if(btn.dataset.tab==='overview') renderOverview();
+      if(btn.dataset.tab==='dashboard') renderDashboard();
+      if(btn.dataset.tab==='attendance') renderAttendanceTab();
+    });
+  });
+}
+
+/* ---------------- Helpers ---------------- */
+function buildPeriodSelect(id,min,max){
+  const el = document.getElementById(id);
+  let html='';
+  for(let i=min;i<=max;i++) html+=`<option value="${i}">${toKurdishDigits(i)}</option>`;
+  el.innerHTML = html;
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toKurdishDigits(n){ const map={'0':'٠','1':'١','2':'٢','3':'٣','4':'٤','5':'٥','6':'٦','7':'٧','8':'٨','9':'٩'}; return String(n).replace(/[0-9]/g,d=>map[d]); }
+function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* ---------------- School info ---------------- */
+function updateSchool(field,val){ config.school[field]=val; renderOverview(); scheduleSave(); }
+
+const THEME_CLASSES = ['theme-ocean','theme-purple','theme-burgundy'];
+function applyUiPrefs(){
+  const theme = (config.settings && config.settings.theme) || 'chalkboard';
+  const showT = !(config.settings && config.settings.showTeacherNames === false);
+  THEME_CLASSES.forEach(c=>document.body.classList.remove(c));
+  if(theme!=='chalkboard') document.body.classList.add('theme-'+theme);
+  document.body.classList.toggle('hide-teacher-names', !showT);
+  const themeSel = document.getElementById('ui-theme-select');
+  if(themeSel) themeSel.value = theme;
+  const chk = document.getElementById('ui-show-teacher');
+  if(chk) chk.checked = showT;
+}
+function updateTheme(value){
+  config.settings.theme = value;
+  applyUiPrefs();
+  scheduleSave();
+}
+function updateShowTeacherNames(checked){
+  config.settings.showTeacherNames = !!checked;
+  applyUiPrefs();
+  scheduleSave();
+}
+
+/* ---------------- Setup: classes/teachers/subjects ---------------- */
+function addItem(kind, inputId){
+  const input = document.getElementById(inputId);
+  const name = input.value.trim();
+  if(!name) return;
+  const item = { id: uid(), name };
+  config[kind].push(item);
+  input.value='';
+  refreshAllAfterDataChange();
+}
+function renderSwatchPicker(containerId, hiddenId, selected){
+  const el = document.getElementById(containerId);
+  const chosen = selected || PALETTE[config.subjects.length % PALETTE.length];
+  el.innerHTML = PALETTE.map(c=>`<span class="swatch ${c===chosen?'selected':''}" data-color="${c}" style="background:${c}" onclick="selectSwatch('${containerId}','${hiddenId}','${c}')"></span>`).join('');
+  document.getElementById(hiddenId).value = chosen;
+}
+function selectSwatch(containerId, hiddenId, color){
+  document.getElementById(hiddenId).value = color;
+  const el = document.getElementById(containerId);
+  Array.from(el.children).forEach(s=> s.classList.toggle('selected', s.dataset.color===color));
+}
+function parseSubjectNames(raw){
+  return raw.split(/[\n,،;؛]/).map(s=>s.trim()).filter(Boolean);
+}
+function addSubject(){
+  const input = document.getElementById('input-subject');
+  const names = parseSubjectNames(input.value);
+  if(names.length===0) return;
+  const hard = document.getElementById('input-subject-hard').checked;
+  if(names.length===1){
+    const color = document.getElementById('input-subject-color').value || PALETTE[config.subjects.length % PALETTE.length];
+    config.subjects.push({ id: uid(), name: names[0], color, hard });
+  } else {
+    // several names typed into the single field — treat them as separate subjects,
+    // each getting its own colour, same as the bulk box does.
+    names.forEach(name=>{
+      const color = PALETTE[config.subjects.length % PALETTE.length];
+      config.subjects.push({ id: uid(), name, color, hard });
+    });
+  }
+  input.value='';
+  document.getElementById('input-subject-hard').checked = false;
+  refreshAllAfterDataChange();
+  renderSwatchPicker('subject-color-swatches','input-subject-color', PALETTE[config.subjects.length % PALETTE.length]);
+  if(names.length>1) showAlert(`${toKurdishDigits(names.length)} بابەت زیادکرا.`);
+}
+function addSubjectsBulk(){
+  const area = document.getElementById('bulk-subjects-input');
+  const raw = area.value;
+  if(!raw.trim()){ showAlert('تکایە لانی کەم یەک بابەت بنووسە.'); return; }
+  const names = parseSubjectNames(raw);
+  if(names.length===0){ showAlert('هیچ بابەتێک نەدۆزرایەوە.'); return; }
+  names.forEach(name=>{
+    const color = PALETTE[config.subjects.length % PALETTE.length];
+    config.subjects.push({ id: uid(), name, color, hard:false });
+  });
+  area.value = '';
+  refreshAllAfterDataChange();
+  renderSwatchPicker('subject-color-swatches','input-subject-color', PALETTE[config.subjects.length % PALETTE.length]);
+  showAlert(`${toKurdishDigits(names.length)} بابەت زیادکرا.`);
+}
+function addTeacher(){
+  const nameInput = document.getElementById('input-teacher');
+  const phoneInput = document.getElementById('input-teacher-phone');
+  const name = nameInput.value.trim();
+  if(!name) return;
+  config.teachers.push({ id: uid(), name, phone: phoneInput.value.trim() });
+  nameInput.value=''; phoneInput.value='';
+  refreshAllAfterDataChange();
+}
+
+function renderStudentClassSelect(){
+  const sel = document.getElementById('student-class-select');
+  if(!sel) return;
+  const prev = sel.value;
+  if(config.classes.length===0){
+    sel.innerHTML = '<option value="">سەرەتا پۆلێک زیاد بکە</option>';
+    return;
+  }
+  sel.innerHTML = config.classes.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+  if(prev && config.classes.some(c=>c.id===prev)) sel.value = prev;
+}
+function addStudent(){
+  const sel = document.getElementById('student-class-select');
+  const classId = sel ? sel.value : '';
+  if(!classId){ showAlert('سەرەتا پۆلێک هەڵبژێرە.'); return; }
+  const input = document.getElementById('input-student');
+  const name = input.value.trim();
+  if(!name) return;
+  config.students.push({ id: uid(), name, classId });
+  input.value = '';
+  refreshAllAfterDataChange();
+}
+function addStudentsBulk(){
+  const sel = document.getElementById('student-class-select');
+  const classId = sel ? sel.value : '';
+  if(!classId){ showAlert('سەرەتا پۆلێک هەڵبژێرە.'); return; }
+  const area = document.getElementById('bulk-students-input');
+  const names = area.value.split('\n').map(s=>s.trim()).filter(Boolean);
+  if(names.length===0){ showAlert('تکایە لانی کەم ناوی یەک قوتابی بنووسە.'); return; }
+  names.forEach(name=>{ config.students.push({ id: uid(), name, classId }); });
+  area.value = '';
+  refreshAllAfterDataChange();
+  showAlert(`${toKurdishDigits(names.length)} قوتابی زیادکرا.`);
+}
+function removeStudent(id){
+  showConfirm('ئەم قوتابییە بسڕدرێتەوە؟', ()=>{
+    config.students = config.students.filter(s=>s.id!==id);
+    refreshAllAfterDataChange();
+  });
+}
+function renderStudentsList(){
+  const sel = document.getElementById('student-class-select');
+  const classId = sel ? sel.value : '';
+  const el = document.getElementById('list-students');
+  if(!el) return;
+  const items = config.students.filter(s=>s.classId===classId);
+  if(items.length===0){ el.innerHTML = '<li class="empty">هیچ قوتابیێک زیاد نەکراوە بۆ ئەم پۆلە</li>'; return; }
+  el.innerHTML = items.map(s=>`
+    <li>
+      <span class="name">${escapeHtml(s.name)}</span>
+      <span class="btnrow">
+        <button class="btn btn-danger btn-sm" onclick="removeStudent('${s.id}')">سڕینەوە</button>
+      </span>
+    </li>`).join('');
+}
+
+function removeItem(kind, id){
+  const inUse = config.assignments.some(a=>{
+    if(kind==='classes') return a.classId===id;
+    if(kind==='teachers') return a.teacherId===id;
+    if(kind==='subjects') return a.subjectId===id;
+  });
+  if(inUse){
+    showConfirm('ئەم بابەتە لە دابەشکردنێکدا بەکارهاتووە. سڕینەوەی، دابەشکردنەکانی پەیوەست دەسڕێتەوە. بەردەوام بیت؟', ()=>doRemoveItem(kind, id));
+  } else {
+    doRemoveItem(kind, id);
+  }
+}
+function doRemoveItem(kind, id){
+  config[kind] = config[kind].filter(x=>x.id!==id);
+  config.assignments = config.assignments.filter(a=>{
+    if(kind==='classes') return a.classId!==id;
+    if(kind==='teachers') return a.teacherId!==id;
+    if(kind==='subjects') return a.subjectId!==id;
+    return true;
+  });
+  if(kind==='teachers') config.constraints = config.constraints.filter(c=>c.teacherId!==id);
+  if(kind==='teachers') (config.committees||[]).forEach(c=>{ c.members = (c.members||[]).filter(m=>m.teacherId!==id); });
+  if(kind==='classes') config.students = config.students.filter(s=>s.classId!==id);
+
+  const validAssignIds = new Set(config.assignments.map(a=>a.id));
+  if(kind==='classes') delete schedules[id];
+  Object.keys(schedules).forEach(classId=>{
+    Object.keys(schedules[classId]||{}).forEach(day=>{
+      Object.keys(schedules[classId][day]||{}).forEach(p=>{
+        const aid = schedules[classId][day][p];
+        if(aid && !validAssignIds.has(aid)) schedules[classId][day][p] = null;
+      });
+    });
+  });
+  refreshAllAfterDataChange();
+}
+
+function refreshAllAfterDataChange(){
+  renderSetupLists();
+  renderAssignSelectors();
+  renderAssignGroups();
+  renderConstraintSelectors();
+  renderConstraintGroups();
+  renderSummary();
+  renderTimetableSelector();
+  renderTimetableGrid();
+  renderOverview();
+  safe(renderCommittees);
+  scheduleSave();
+}
+
+function setSetupView(view){
+  ['school','classes','teachers','subjects','days','students','data'].forEach(v=>{
+    const panel = document.getElementById('setup-panel-'+v);
+    const tile = document.getElementById('setup-nav-'+v);
+    if(panel) panel.classList.toggle('active', v===view);
+    if(tile) tile.classList.toggle('active', v===view);
+  });
+}
+function renderSetupLists(){
+  document.getElementById('count-classes').textContent = toKurdishDigits(config.classes.length);
+  document.getElementById('count-teachers').textContent = toKurdishDigits(config.teachers.length);
+  document.getElementById('count-subjects').textContent = toKurdishDigits(config.subjects.length);
+  safe(()=>{ document.getElementById('count-students').textContent = toKurdishDigits(config.students.length); });
+  safe(()=>{ document.getElementById('setup-nav-count-classes').textContent = toKurdishDigits(config.classes.length); });
+  safe(()=>{ document.getElementById('setup-nav-count-teachers').textContent = toKurdishDigits(config.teachers.length); });
+  safe(()=>{ document.getElementById('setup-nav-count-subjects').textContent = toKurdishDigits(config.subjects.length); });
+  safe(()=>{ document.getElementById('setup-nav-count-students').textContent = toKurdishDigits(config.students.length); });
+  renderList('list-classes', config.classes, 'classes');
+  renderList('list-teachers', config.teachers, 'teachers');
+  renderList('list-subjects', config.subjects, 'subjects', true);
+  safe(renderStudentClassSelect);
+  safe(renderStudentsList);
+}
+function renderList(elId, items, kind, showDot){
+  const el = document.getElementById(elId);
+  if(items.length===0){ el.innerHTML = '<li class="empty">هیچ شتێک زیاد نەکراوە</li>'; return; }
+  el.innerHTML = items.map(it=>{
+    let extra = '';
+    if(kind==='subjects'){
+      if(it.hard) extra += ` <span class="subtext" style="color:var(--accent-red);">قورس</span>`;
+      const unplaced = getUnplacedForSubject(it.id);
+      if(unplaced>0) extra += ` <span class="subtext">(${toKurdishDigits(unplaced)} نەدانراو)</span>`;
+    }
+    return `
+    <li>
+      <span class="name">${showDot?`<span class="dot" style="background:${it.color}"></span>`:''}${escapeHtml(it.name)}${it.phone?` <span class="subtext" dir="ltr">${it.phone}</span>`:''}${extra}${kind==='teachers'?(it.loginCode?` <span class="subtext" dir="ltr">کۆد: ${it.loginCode}</span>`:''):''}</span>
+      <span class="btnrow">
+        ${kind==='teachers'?`<button class="btn btn-ghost btn-sm" onclick="generateTeacherCode('${it.id}')">${it.loginCode?'کۆدی نوێ':'دروستکردنی کۆد'}</button>`:''}
+        <button class="btn btn-ghost btn-sm" onclick="openEditItem('${kind}','${it.id}')">دەستکاری</button>
+        <button class="btn btn-danger btn-sm" onclick="removeItem('${kind}','${it.id}')">سڕینەوە</button>
+      </span>
+    </li>`;
+  }).join('');
+}
+function getPlacedCountForAssignment(assignmentId){
+  let count = 0;
+  Object.keys(schedules).forEach(classId=>{
+    Object.keys(schedules[classId]||{}).forEach(day=>{
+      Object.keys(schedules[classId][day]||{}).forEach(p=>{
+        if(schedules[classId][day][p]===assignmentId) count++;
+      });
+    });
+  });
+  return count;
+}
+function getUnplacedForSubject(subjectId){
+  return config.assignments.filter(a=>a.subjectId===subjectId)
+    .reduce((sum,a)=> sum + Math.max(0, a.periodsPerWeek - getPlacedCountForAssignment(a.id)), 0);
+}
+
+/* Weekdays */
+function renderWeekdayGrid(){
+  const el = document.getElementById('weekday-grid');
+  el.innerHTML = WEEKDAYS.map(d=>{
+    const on = config.settings.days.includes(d);
+    return `<div class="weekday-chip ${on?'on':''}" onclick="toggleDay('${d}')">${d}</div>`;
+  }).join('');
+  safe(()=>{ document.getElementById('setup-nav-count-days').textContent = toKurdishDigits(config.settings.days.length); });
+}
+function toggleDay(day){
+  const days = config.settings.days;
+  const idx = days.indexOf(day);
+  if(idx>=0 && days.length<=1){ showAlert('پێویستە لانی کەم یەک ڕۆژ هەبێت.'); return; }
+  if(idx>=0 && Object.keys(schedules).length){
+    showConfirm('گۆڕینی ڕۆژەکان دەبێتە هۆی سڕینەوەی خشتەکانی پێشوو. بەردەوام بیت؟', ()=>doToggleDay(day));
+  } else {
+    doToggleDay(day);
+  }
+}
+function doToggleDay(day){
+  const days = config.settings.days;
+  const idx = days.indexOf(day);
+  if(idx>=0){
+    days.splice(idx,1);
+  } else {
+    days.push(day);
+    days.sort((a,b)=>WEEKDAYS.indexOf(a)-WEEKDAYS.indexOf(b));
+  }
+  schedules = {};
+  renderWeekdayGrid();
+  renderConstraintSelectors();
+  renderTimetableGrid();
+  renderOverview();
+  scheduleSave();
+}
+
+/* Periods per day + times */
+function ensurePeriodTimes(){
+  const n = config.settings.periodsPerDay;
+  const times = config.settings.periodTimes;
+  let startMin = 8*60;
+  for(let i=0;i<n;i++){
+    if(!times[i]){
+      const s = startMin + i*45;
+      times[i] = { start: minToTime(s), end: minToTime(s+45) };
+    }
+  }
+  times.length = n;
+}
+function minToTime(m){ const h=Math.floor(m/60)%24, mm=m%60; return String(h).padStart(2,'0')+':'+String(mm).padStart(2,'0'); }
+
+function updatePeriodsPerDay(val){
+  const n = Math.max(1, Math.min(10, parseInt(val)||6));
+  if(n!==config.settings.periodsPerDay && Object.keys(schedules).length){
+    showConfirm('گۆڕینی ژمارەی وانەکان دەبێتە هۆی سڕینەوەی خشتەکانی پێشوو. بەردەوام بیت؟', ()=>{
+      schedules = {};
+      applyPeriodsPerDay(n);
+    });
+    // if the user cancels, the select still shows n visually until they reconsider;
+    // reset it back to the current value so it doesn't look applied.
+    document.getElementById('input-periods').value = config.settings.periodsPerDay;
+  } else {
+    applyPeriodsPerDay(n);
+  }
+}
+function applyPeriodsPerDay(n){
+  config.settings.periodsPerDay = n;
+  document.getElementById('input-periods').value = n;
+  ensurePeriodTimes();
+  renderPeriodTimesList();
+  renderConstraintSelectors();
+  renderTimetableGrid();
+  renderOverview();
+  scheduleSave();
+}
+function renderPeriodTimesList(){
+  const el = document.getElementById('period-times-list');
+  const n = config.settings.periodsPerDay;
+  let html='';
+  for(let i=0;i<n;i++){
+    const t = config.settings.periodTimes[i] || {start:'08:00',end:'08:45'};
+    html += `<div class="row form">
+      <div style="width:70px;font-weight:700;font-size:13.5px;">وانەی ${toKurdishDigits(i+1)}</div>
+      <div class="field"><label class="field-label">لە</label><input type="time" value="${t.start}" onchange="updatePeriodTime(${i},'start',this.value)"></div>
+      <div class="field"><label class="field-label">بۆ</label><input type="time" value="${t.end}" onchange="updatePeriodTime(${i},'end',this.value)"></div>
+    </div>`;
+  }
+  el.innerHTML = html;
+}
+function updatePeriodTime(idx, field, val){
+  config.settings.periodTimes[idx][field] = val;
+  renderTimetableGrid();
+  renderOverview();
+  scheduleSave();
+}
+
+function resetAll(){
+  showConfirm('دڵنیایت لە سڕینەوەی هەموو داتاکان؟ ئەم کردارە ناگەڕێتەوە.', doResetAll);
+}
+function doResetAll(){
+  config = { school:{name:'',year:'',attendance:''}, classes:[], teachers:[], subjects:[], assignments:[], constraints:[], students:[], committees:[], settings:{ days:["شەممه","یەک شەممه","دوو شەممه","سێ شەممه","چوار شەممه"], periodsPerDay:6, periodTimes:[] } };
+  schedules = {};
+  ensurePeriodTimes();
+  document.getElementById('school-name').value='';
+  document.getElementById('school-year').value='';
+  document.getElementById('school-attendance').value='';
+  document.getElementById('input-periods').value = 6;
+  renderCommittees();
+  renderWeekdayGrid();
+  renderPeriodTimesList();
+  renderSetupLists();
+  renderAssignSelectors();
+  renderAssignGroups();
+  renderConstraintSelectors();
+  renderConstraintGroups();
+  renderSummary();
+  renderTimetableSelector();
+  renderTimetableGrid();
+  renderOverview();
+  scheduleSave();
+}
+
+function downloadAsPrintableHTML(elementId, title, filename, showHeading, extraCss){
+  if(showHeading===undefined) showHeading = true;
+  if(!appReady){ showAlert('تکایە چەند چرکەیەک چاوەڕێ بکە تا زانیارییەکانت بار دەبن، پاشان دووبارە هەوڵ بدەوە.'); return; }
+  const el = document.getElementById(elementId);
+  if(!el || !el.innerHTML.trim()){ showAlert('هیچ شتێک نییە بۆ داگرتن. سەرەتا خشتەیەک دروست بکە.'); return; }
+  if(el.querySelector('.empty')){ showAlert('هیچ خشتەیەک نییە بۆ پیشاندان. سەرەتا پۆل/مامۆستا هەڵبژێرە و «دروستکردنی خۆکاری» بکە، پاشان دووبارە هەوڵ بدەوە.'); return; }
+  const csBody = getComputedStyle(document.body);
+  const themeDark = (csBody.getPropertyValue('--chalkboard')||'').trim() || '#2B3B35';
+  const themeLight = (csBody.getPropertyValue('--chalk-white')||'').trim() || '#F5F3E8';
+  const hideTeach = (config.settings && config.settings.showTeacherNames === false) ? '.cell .teach{display:none !important;}' : '';
+  const styles = `
+    *{box-sizing:border-box;-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important;}
+    body{font-family:'Vazirmatn',sans-serif;direction:rtl;background:#fff;color:#23303A;margin:16px;-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact;}
+    h2{font-family:'Aref Ruqaa',serif;font-size:26px;text-align:center;margin:0 0 10px;}
+    .cover{text-align:center;margin-bottom:22px;}
+    .cover .prep{font-weight:700;margin:2px 0;}
+    .cover .role, .cover .phone{color:#5B6B72;font-size:13px;margin:2px 0;}
+    .cover hr{border:none;border-top:1px dashed #C9D2CE;margin:12px auto;width:60%;}
+    .cover .disclaimer{color:#B84A3E;font-size:12px;margin:8px 0;}
+    .cover .schoolinfo{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;font-size:13px;margin-top:8px;}
+    .cover .schoolinfo b{display:block;font-size:14px;}
+    table.grid{border-collapse:collapse;width:100%;margin-bottom:18px;}
+    table.grid th, table.grid td{border:1px solid #C9D2CE;padding:6px;text-align:center;font-size:12.5px;}
+    table.grid thead th{background:${themeDark};color:${themeLight};font-weight:700;}
+    table.grid tbody th{background:#F1F2EA;color:#5B6B72;font-size:11.5px;}
+    table.grid td.daygroup{background:${themeDark};color:${themeLight};font-weight:700;writing-mode:vertical-rl;}
+    table.grid .subj{font-weight:700;font-size:12.5px;}
+    table.grid .teach{font-size:10.5px;color:#5B6B72;}
+    .print-hint{text-align:center;color:#5B6B72;font-size:12.5px;margin-bottom:14px;}
+    ${hideTeach}
+    ${extraCss||''}
+    @media print{ .print-hint{display:none;} @page{ size: landscape; margin:8mm; } }
+  `;
+  const html = `<!DOCTYPE html><html lang="ckb" dir="rtl"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${escapeHtml(title)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700&family=Aref+Ruqaa:wght@700&display=swap" rel="stylesheet">
+<style>${styles}</style></head><body>
+${showHeading ? `<h2>${escapeHtml(title)}</h2>` : ''}
+<p class="print-hint">ئەم لاپەڕەیە بۆ چاپکردن یان هەڵگرتن وەک PDF ئامادەکراوە — لە سەرووی شاشەکەوە دوگمەی چاپکردن/Share بەکاربهێنە.</p>
+${el.innerHTML}
+</body></html>`;
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 3000);
+  showAlert('فایلەکە دابەزێنرا. لە لیستی داگرتنەکانی مۆبایلەکەت بیکەرەوە بە Chrome یان Safari، پاشان لەوێ دوگمەی چاپکردن یان Share > Save as PDF بەکاربهێنە.');
+}
+
+function downloadTimetableAsPrintableHTML(){
+  let title = 'خشتەی وانەکان';
+  if(timetableView==='class'){
+    const id = document.getElementById('timetable-select').value;
+    const cls = config.classes.find(c=>c.id===id);
+    if(!cls){ showAlert('تکایە سەرەتا پۆلێک هەڵبژێرە.'); return; }
+    title = 'خشتەی پۆلی ' + cls.name;
+  } else if(timetableView==='teacher'){
+    const id = document.getElementById('timetable-select').value;
+    const t = config.teachers.find(x=>x.id===id);
+    if(!t){ showAlert('تکایە سەرەتا مامۆستایەک هەڵبژێرە.'); return; }
+    title = 'خشتەی مامۆستا ' + t.name;
+  } else if(timetableView==='all'){
+    title = 'خشتەی هەموو پۆلەکان';
+  } else if(timetableView==='pool'){
+    title = 'وانە نەدانراوەکان';
+  } else if(timetableView==='day'){
+    title = 'خشتەی هەموو پۆلەکان - ' + document.getElementById('timetable-day-select').value;
+  }
+  downloadAsPrintableHTML('timetable-grid', title, 'xshtaya-wanakan.html', timetableView==='day' ? false : undefined);
+}
+
+function exportExcelReport(){
+  if(!appReady){ showAlert('تکایە چەند چرکەیەک چاوەڕێ بکە تا زانیارییەکانت بار دەبن، پاشان دووبارە هەوڵ بدەوە.'); return; }
+  const aMap = assignmentsById();
+  const periods = config.settings.periodTimes;
+  const rows = [['Timetable_ID','Day_Name','Period_ID','Class_Code','Subject_Name','Teacher_ID','Conflict_Status']];
+  config.classes.forEach(cls=>{
+    const grid = schedules[cls.id] || {};
+    config.settings.days.forEach(day=>{
+      periods.forEach((t,p)=>{
+        const aid = grid[day] ? grid[day][p] : null;
+        if(!aid) return;
+        const a = aMap[aid];
+        if(!a) return;
+        const subj = config.subjects.find(s=>s.id===a.subjectId);
+        const teacher = config.teachers.find(t2=>t2.id===a.teacherId);
+        const conflict = findTeacherConflict(a.teacherId, day, p, cls.id) ? 'Conflict' : 'No Conflict';
+        rows.push([
+          uuidv4(),
+          day,
+          'P'+(p+1),
+          cls.name,
+          subj ? subj.name : '',
+          teacher ? teacher.name : '',
+          conflict
+        ]);
+      });
+    });
+  });
+  if(rows.length===1){ showAlert('هیچ خشتەیەک نییە بۆ ئێکسپۆرتکردن. سەرەتا خشتەیەک دروست بکە.'); return; }
+  const csv = rows.map(r=>r.map(csvEscape).join(',')).join('\r\n');
+  const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dateStr = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `khshtay-wanakan-export-${dateStr}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 2000);
+}
+function csvEscape(v){
+  v = String(v==null ? '' : v);
+  if(/[",\r\n]/.test(v)) v = '"' + v.replace(/"/g,'""') + '"';
+  return v;
+}
+function uuidv4(){
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c){
+    const r = Math.random()*16|0, v = c==='x' ? r : (r&0x3|0x8);
+    return v.toString(16);
+  });
+}
+
+function exportBackup(){
+  const payload = { config, schedules, exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dateStr = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `khshtay-wanakan-backup-${dateStr}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 2000);
+}
+
+let _textBackupMode = null;
+function openTextBackupCopy(){
+  _textBackupMode = 'copy';
+  const payload = { config, schedules, exportedAt: new Date().toISOString() };
+  document.getElementById('text-backup-title').textContent = 'دەقی داتای پاڵپشتی';
+  document.getElementById('text-backup-hint').textContent = 'هەموو ئەم دەقە کۆپی بکە (دەتوانیت بیبینێری بۆ خۆت بە ئیمەیل یان وەتسئەپ)، پاشان لە ئامێرەکەی تردا بە «لکاندنی دەقی پاڵپشتی» بیلکێنە.';
+  const area = document.getElementById('text-backup-area');
+  area.value = JSON.stringify(payload);
+  area.readOnly = true;
+  const btn = document.getElementById('text-backup-action-btn');
+  btn.textContent = 'کۆپیکردن';
+  btn.onclick = ()=>{
+    area.focus();
+    area.select();
+    let copied = false;
+    try{
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(area.value);
+        copied = true;
+      }
+    }catch(e){ console.log('clipboard api failed', e); }
+    if(!copied){
+      try{ document.execCommand('copy'); copied = true; }catch(e){ console.log('execCommand copy failed', e); }
+    }
+    showAlert(copied ? 'کۆپیکرا. ئێستا دەتوانیت بیلکێنیت هەر شوێنێک بتەوێت.' : 'نەتوانرا خۆکارانە کۆپی بکرێت. تکایە دەقەکە بە دەست هەڵبژێرە و کۆپی بکە (Ctrl+C).');
+  };
+  document.getElementById('text-backup-overlay').classList.add('show');
+  setTimeout(()=>{ area.focus(); area.select(); }, 50);
+}
+function openTextBackupPaste(){
+  _textBackupMode = 'paste';
+  document.getElementById('text-backup-title').textContent = 'لکاندنی دەقی پاڵپشتی';
+  document.getElementById('text-backup-hint').textContent = 'دەقی پاڵپشتی کۆپیکراو لێرە بلکێنە (Ctrl+V یان Paste)، پاشان کرتە لە «هێنانەوە» بکە.';
+  const area = document.getElementById('text-backup-area');
+  area.value = '';
+  area.readOnly = false;
+  const btn = document.getElementById('text-backup-action-btn');
+  btn.textContent = 'هێنانەوە';
+  btn.onclick = ()=>{
+    const text = area.value.trim();
+    if(!text){ showAlert('تکایە سەرەتا دەقەکە بلکێنە.'); return; }
+    try{
+      const payload = JSON.parse(text);
+      if(!payload || !payload.config){ showAlert('ئەم دەقە داتای پاڵپشتی دروست نییە.'); return; }
+      showConfirm('هێنانەوەی ئەم داتایە هەموو داتای ئێستا دەگۆڕێت. بەردەوام بیت؟', ()=>{
+        applyImportedPayload(payload);
+        closeTextBackup();
+        showAlert('داتاکان بە سەرکەوتوویی هێنرانەوە.');
+      });
+    }catch(err){
+      console.log(err);
+      showAlert('ناتوانرا ئەم دەقە بخوێنرێتەوە. دڵنیابەرەوە کە هەمان دەقی پاڵپشتیت بە تەواوی لکاندووە.');
+    }
+  };
+  document.getElementById('text-backup-overlay').classList.add('show');
+  setTimeout(()=>area.focus(), 50);
+}
+function closeTextBackup(){
+  document.getElementById('text-backup-overlay').classList.remove('show');
+}
+
+function applyImportedPayload(payload){
+  config.school = Object.assign({name:'',year:'',attendance:''}, payload.config.school||{});
+  config.classes = Array.isArray(payload.config.classes) ? payload.config.classes : [];
+  config.teachers = Array.isArray(payload.config.teachers) ? payload.config.teachers : [];
+  config.subjects = Array.isArray(payload.config.subjects) ? payload.config.subjects : [];
+  config.assignments = Array.isArray(payload.config.assignments) ? payload.config.assignments : [];
+  config.constraints = Array.isArray(payload.config.constraints) ? payload.config.constraints : [];
+  config.students = Array.isArray(payload.config.students) ? payload.config.students : [];
+  config.committees = Array.isArray(payload.config.committees) ? payload.config.committees : [];
+  const s = payload.config.settings || {};
+  config.settings = {
+    days: migrateSettingsDays((Array.isArray(s.days) && s.days.length) ? s.days : ["شەممه","یەک شەممه","دوو شەممه","سێ شەممه","چوار شەممه"]),
+    periodsPerDay: (typeof s.periodsPerDay==='number' && s.periodsPerDay>0) ? s.periodsPerDay : 6,
+    periodTimes: Array.isArray(s.periodTimes) ? s.periodTimes : []
+  };
+  schedules = migrateSchedulesDayKeys((payload.schedules && typeof payload.schedules==='object') ? payload.schedules : {});
+  ensurePeriodTimes();
+  document.getElementById('school-name').value = config.school.name||'';
+  document.getElementById('school-year').value = config.school.year||'';
+  document.getElementById('school-attendance').value = config.school.attendance||'';
+  document.getElementById('input-periods').value = config.settings.periodsPerDay;
+  renderWeekdayGrid();
+  renderPeriodTimesList();
+  renderSetupLists();
+  renderSwatchPicker('subject-color-swatches','input-subject-color');
+  renderCommittees();
+  renderAssignSelectors();
+  renderAssignGroups();
+  renderConstraintSelectors();
+  renderConstraintGroups();
+  renderSummary();
+  renderTimetableSelector();
+  renderTimetableGrid();
+  renderOverview();
+  scheduleSave();
+}
+
+function importBackup(file){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    try{
+      const payload = JSON.parse(e.target.result);
+      if(!payload || !payload.config){ showAlert('ئەم فایلە فایلێکی پاڵپشتی دروست نییە.'); return; }
+      showConfirm('هێنانەوەی ئەم فایلە هەموو داتای ئێستا دەگۆڕێت. بەردەوام بیت؟', ()=>{
+        applyImportedPayload(payload);
+        showAlert('داتاکان بە سەرکەوتوویی هێنرانەوە.');
+      });
+    }catch(err){
+      console.log(err);
+      showAlert('ناتوانرا ئەم فایلە بخوێنرێتەوە. دڵنیابەرەوە کە فایلەکە هەمان فایلی پاڵپشتی داگیراوە.');
+    }
+  };
+  reader.readAsText(file);
+  document.getElementById('import-file-input').value = '';
+}
+let editCtx = null;
+function openEditItem(kind, id){
+  editCtx = { mode:'item', kind, id };
+  const body = document.getElementById('edit-modal-body');
+  if(kind==='classes'){
+    const item = config[kind].find(x=>x.id===id);
+    document.getElementById('edit-modal-title').textContent = 'دەستکاری ناو';
+    body.innerHTML = `<div class="field"><label class="field-label">ناو</label><input type="text" id="edit-name" value="${escapeHtml(item.name)}"></div>`;
+  } else if(kind==='subjects'){
+    const item = config.subjects.find(x=>x.id===id);
+    document.getElementById('edit-modal-title').textContent = 'دەستکاری وانە';
+    body.innerHTML = `<div class="field"><label class="field-label">ناو</label><input type="text" id="edit-name" value="${escapeHtml(item.name)}"></div>
+      <div class="field"><label class="field-label">ڕەنگ</label><div class="swatch-row" id="edit-color-swatches"></div><input type="hidden" id="edit-color"></div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer;"><input type="checkbox" id="edit-hard" ${item.hard?'checked':''}> وانەیەکی قورسە (هەوڵ بدرێت لە وانەی ١ و ٢ی ڕۆژ دانەنرێت)</label>`;
+    setTimeout(()=>renderSwatchPicker('edit-color-swatches','edit-color', item.color), 0);
+  } else if(kind==='committee'){
+    const item = config.committees.find(x=>x.id===id);
+    document.getElementById('edit-modal-title').textContent = 'دەستکاری لیژنە';
+    body.innerHTML = `<div class="field"><label class="field-label">ناوی لیژنە</label><input type="text" id="edit-name" value="${escapeHtml(item.name)}"></div>
+      <div class="field"><label class="field-label">ئەرکی لیژنە</label><input type="text" id="edit-desc" value="${escapeHtml(item.description||'')}"></div>`;
+  } else if(kind==='teachers'){
+    const item = config.teachers.find(x=>x.id===id);
+    document.getElementById('edit-modal-title').textContent = 'دەستکاری مامۆستا';
+    body.innerHTML = `<div class="field"><label class="field-label">ناو</label><input type="text" id="edit-name" value="${escapeHtml(item.name)}"></div>
+      <div class="field"><label class="field-label">ژمارە مۆبایل</label><input type="tel" id="edit-phone" dir="ltr" value="${escapeHtml(item.phone||'')}"></div>`;
+  } else if(kind==='assignment'){
+    const a = config.assignments.find(x=>x.id===id);
+    const cls = config.classes.find(c=>c.id===a.classId);
+    document.getElementById('edit-modal-title').textContent = 'دەستکاری دابەشکردن — '+(cls?cls.name:'');
+    body.innerHTML = `
+      <div class="field"><label class="field-label">مامۆستا</label><select id="edit-teacher">${config.teachers.map(t=>`<option value="${t.id}" ${t.id===a.teacherId?'selected':''}>${escapeHtml(t.name)}</option>`).join('')}</select></div>
+      <div class="field"><label class="field-label">وانە</label><select id="edit-subject">${config.subjects.map(s=>`<option value="${s.id}" ${s.id===a.subjectId?'selected':''}>${escapeHtml(s.name)}</option>`).join('')}</select></div>
+      <div class="field"><label class="field-label">وانە/هەفتە</label><select id="edit-periods">${range1to10().map(n=>`<option value="${n}" ${n===a.periodsPerWeek?'selected':''}>${toKurdishDigits(n)}</option>`).join('')}</select></div>
+      <div class="field"><label class="field-label">کەمترین لە ڕۆژێکدا</label><select id="edit-min">${range1to10().map(n=>`<option value="${n}" ${n===(a.minPerDay||1)?'selected':''}>${toKurdishDigits(n)}</option>`).join('')}</select></div>
+      <div class="field"><label class="field-label">زۆرترین لە ڕۆژێکدا</label><select id="edit-max">${range1to10().map(n=>`<option value="${n}" ${n===(a.maxPerDay||2)?'selected':''}>${toKurdishDigits(n)}</option>`).join('')}</select></div>
+      <div class="field"><label class="field-label">ژمارەی ڕۆژان</label><select id="edit-days">${Array.from({length:7},(_,i)=>i+1).map(n=>`<option value="${n}" ${n===(a.daysPerWeek||config.settings.days.length)?'selected':''}>${toKurdishDigits(n)}</option>`).join('')}</select></div>`;
+  }
+  document.getElementById('edit-overlay').classList.add('show');
+}
+function closeEditModal(){ document.getElementById('edit-overlay').classList.remove('show'); editCtx=null; }
+function range1to10(){ return Array.from({length:10},(_,i)=>i+1); }
+
+function saveEditModal(){
+  if(!editCtx) return;
+  const { kind, id } = editCtx;
+  if(kind==='classes'){
+    const name = document.getElementById('edit-name').value.trim();
+    if(!name) return;
+    const item = config.classes.find(x=>x.id===id);
+    item.name = name;
+  } else if(kind==='subjects'){
+    const name = document.getElementById('edit-name').value.trim();
+    if(!name) return;
+    const item = config.subjects.find(x=>x.id===id);
+    item.name = name;
+    item.color = document.getElementById('edit-color').value || item.color;
+    item.hard = document.getElementById('edit-hard').checked;
+  } else if(kind==='committee'){
+    const name = document.getElementById('edit-name').value.trim();
+    if(!name) return;
+    const item = config.committees.find(x=>x.id===id);
+    item.name = name;
+    item.description = document.getElementById('edit-desc').value.trim();
+  } else if(kind==='teachers'){
+    const name = document.getElementById('edit-name').value.trim();
+    if(!name) return;
+    const item = config.teachers.find(x=>x.id===id);
+    item.name = name;
+    item.phone = document.getElementById('edit-phone').value.trim();
+  } else if(kind==='assignment'){
+    const a = config.assignments.find(x=>x.id===id);
+    const newTeacherId = document.getElementById('edit-teacher').value;
+    const newSubjectId = document.getElementById('edit-subject').value;
+    const newPeriods = parseInt(document.getElementById('edit-periods').value);
+    const newMin = parseInt(document.getElementById('edit-min').value);
+    const newMax = parseInt(document.getElementById('edit-max').value);
+    const newDays = parseInt(document.getElementById('edit-days').value);
+    const applyEdit = ()=>{
+      a.teacherId = newTeacherId; a.subjectId = newSubjectId; a.periodsPerWeek = newPeriods;
+      a.minPerDay = newMin; a.maxPerDay = newMax; a.daysPerWeek = newDays;
+      closeEditModal();
+      refreshAllAfterDataChange();
+    };
+    if(!isFeasibleQuota(newPeriods, newDays, newMin, newMax)){
+      showConfirm(`ئەم ژمارانە ناگونجێن: ${toKurdishDigits(newPeriods)} وانە/هەفتە ناتوانرێت دابەش بکرێت بەسەر تا ${toKurdishDigits(newDays)} ڕۆژدا بە کەمترین ${toKurdishDigits(newMin)} و زۆرترین ${toKurdishDigits(newMax)} لە ڕۆژێکدا. دەتوانیت بەردەوام بیت، بەڵام باشترە ژمارەکان بگۆڕیت. بەردەوام بم؟`, applyEdit);
+      return;
+    }
+    applyEdit();
+    return;
+  }
+  closeEditModal();
+  refreshAllAfterDataChange();
+}
+
+/* ---------------- Assignments ---------------- */
+function renderAssignSelectors(){
+  fillSelect('assign-teacher', config.teachers, 'مامۆستا هەڵبژێرە');
+  fillSelect('assign-subject', config.subjects, 'وانە هەڵبژێرە');
+  const cl = document.getElementById('assign-classes-checklist');
+  if(config.classes.length===0){ cl.innerHTML = '<div class="empty">سەرەتا پۆلێک زیاد بکە</div>'; }
+  else {
+    cl.innerHTML = config.classes.map(c=>`<label><input type="checkbox" value="${c.id}">${escapeHtml(c.name)}</label>`).join('');
+  }
+}
+function fillSelect(id, items, placeholder){
+  const el = document.getElementById(id);
+  const prev = el.value;
+  el.innerHTML = (items.length? '' : `<option value="">${placeholder}</option>`) +
+    items.map(it=>`<option value="${it.id}">${escapeHtml(it.name)}</option>`).join('');
+  if(items.some(i=>i.id===prev)) el.value = prev;
+}
+
+function isFeasibleQuota(pw, days, min, max){
+  for(let k=1;k<=days;k++){ if(min*k<=pw && pw<=max*k) return true; }
+  return false;
+}
+function addAssignment(){
+  const classIds = Array.from(document.querySelectorAll('#assign-classes-checklist input:checked')).map(i=>i.value);
+  const teacherId = document.getElementById('assign-teacher').value;
+  const subjectId = document.getElementById('assign-subject').value;
+  const periods = parseInt(document.getElementById('assign-periods').value)||1;
+  const minPerDay = parseInt(document.getElementById('assign-min').value)||1;
+  const maxPerDay = parseInt(document.getElementById('assign-max').value)||2;
+  const daysPerWeek = parseInt(document.getElementById('assign-days').value)||config.settings.days.length;
+  if(classIds.length===0 || !teacherId || !subjectId){
+    showAlert('تکایە لانی کەم یەک پۆل، مامۆستا و وانە هەڵبژێرە.');
+    return;
+  }
+  const doSave = ()=>{
+    classIds.forEach(classId=>{
+      const existing = config.assignments.find(a=>a.classId===classId && a.teacherId===teacherId && a.subjectId===subjectId);
+      if(existing){
+        existing.periodsPerWeek = periods; existing.minPerDay=minPerDay; existing.maxPerDay=maxPerDay; existing.daysPerWeek=daysPerWeek;
+      } else {
+        config.assignments.push({ id: uid(), classId, teacherId, subjectId, periodsPerWeek: periods, minPerDay, maxPerDay, daysPerWeek });
+      }
+    });
+    document.querySelectorAll('#assign-classes-checklist input:checked').forEach(i=>i.checked=false);
+    renderAssignGroups();
+    renderSummary();
+    scheduleSave();
+  };
+  if(!isFeasibleQuota(periods, daysPerWeek, minPerDay, maxPerDay)){
+    showConfirm(`ئەم ژمارانە ناگونجێن: ${toKurdishDigits(periods)} وانە/هەفتە ناتوانرێت دابەش بکرێت بەسەر تا ${toKurdishDigits(daysPerWeek)} ڕۆژدا بە کەمترین ${toKurdishDigits(minPerDay)} و زۆرترین ${toKurdishDigits(maxPerDay)} لە ڕۆژێکدا — هیچ دابەشکردنێکی ڕاست بۆ ئەمە نییە. دەتوانیت هەر بەردەوام بیت (کۆدەکە هەوڵی خۆی دەدات)، بەڵام باشترە ژمارەکان بگۆڕیت. بەردەوام بم؟`, doSave);
+  } else {
+    doSave();
+  }
+}
+
+function removeAssignment(id){
+  config.assignments = config.assignments.filter(a=>a.id!==id);
+  Object.keys(schedules).forEach(classId=>{
+    Object.keys(schedules[classId]||{}).forEach(day=>{
+      Object.keys(schedules[classId][day]||{}).forEach(p=>{
+        if(schedules[classId][day][p]===id) schedules[classId][day][p]=null;
+      });
+    });
+  });
+  renderAssignGroups();
+  renderTimetableGrid();
+  renderSummary();
+  scheduleSave();
+}
+
+function renderAssignGroups(){
+  const el = document.getElementById('assign-groups');
+  if(config.classes.length===0){
+    el.innerHTML = '<div class="card"><p class="empty">سەرەتا پۆلێک زیاد بکە.</p></div>';
+    return;
+  }
+  el.innerHTML = config.classes.map(cls=>{
+    const rows = config.assignments.filter(a=>a.classId===cls.id);
+    const teacherName = id => (config.teachers.find(t=>t.id===id)||{}).name || '—';
+    const subjectInfo = id => config.subjects.find(s=>s.id===id) || {name:'—',color:'#eee'};
+    return `<div class="card">
+      <h3>${escapeHtml(cls.name)} <span class="count">${toKurdishDigits(rows.length)}</span></h3>
+      <ul class="list">
+        ${rows.length? rows.map(a=>{
+          const subj = subjectInfo(a.subjectId);
+          return `<li>
+            <span class="name"><span class="dot" style="background:${subj.color}"></span>${escapeHtml(subj.name)} — ${escapeHtml(teacherName(a.teacherId))} <span class="subtext">(${toKurdishDigits(a.periodsPerWeek)} وانە/هەفتە، ${toKurdishDigits(a.daysPerWeek||config.settings.days.length)} ڕۆژ، ${toKurdishDigits(a.minPerDay||1)}-${toKurdishDigits(a.maxPerDay||2)} ڕۆژانە)</span></span>
+            <span class="btnrow">
+              <button class="btn btn-ghost btn-sm" onclick="openEditItem('assignment','${a.id}')">دەستکاری</button>
+              <button class="btn btn-danger btn-sm" onclick="removeAssignment('${a.id}')">سڕینەوە</button>
+            </span>
+          </li>`;
+        }).join('') : '<li class="empty">هیچ دابەشکردنێک نییە</li>'}
+      </ul>
+    </div>`;
+  }).join('');
+}
+
+/* ---------------- Teacher constraints ---------------- */
+function renderConstraintSelectors(){
+  fillSelect('constraint-teacher', config.teachers, 'مامۆستا هەڵبژێرە');
+  renderConstraintGrid();
+}
+function renderConstraintGrid(){
+  const teacherId = document.getElementById('constraint-teacher').value;
+  const container = document.getElementById('constraint-grid-container');
+  const gapWrap = document.getElementById('constraint-gap-options');
+  if(!teacherId || config.teachers.length===0){
+    container.innerHTML = '<p class="empty">سەرەتا مامۆستایەک زیاد بکە و هەڵیبژێرە.</p>';
+    gapWrap.style.display = 'none';
+    return;
+  }
+  const teacher = config.teachers.find(t=>t.id===teacherId);
+  gapWrap.style.display = 'block';
+  document.getElementById('constraint-gap2').checked = !!(teacher && teacher.avoidGap2);
+  document.getElementById('constraint-gap3').checked = !!(teacher && teacher.avoidGap3);
+
+  const days = config.settings.days;
+  const periods = config.settings.periodsPerDay;
+  let head = `<th>ڕۆژ</th><th>هەموو<br>ڕۆژ</th>` + Array.from({length:periods},(_,i)=>`<th>${toKurdishDigits(i+1)}</th>`).join('');
+  let body = '';
+  days.forEach(day=>{
+    const fullDayOff = config.constraints.some(c=>c.teacherId===teacherId && c.day===day && c.period===null);
+    body += `<tr><th>${day}</th>`;
+    body += `<td class="cell" style="cursor:pointer;background:${fullDayOff?'var(--accent-red-soft)':'var(--paper-2)'};" onclick="toggleFullDayConstraint('${teacherId}','${day}')"><input type="checkbox" ${fullDayOff?'checked':''} style="pointer-events:none;width:18px;height:18px;"></td>`;
+    for(let p=0;p<periods;p++){
+      const checked = fullDayOff || config.constraints.some(c=>c.teacherId===teacherId && c.day===day && c.period===p);
+      const clickable = !fullDayOff;
+      body += `<td class="cell" style="cursor:${clickable?'pointer':'default'};opacity:${fullDayOff?'0.5':'1'};background:${checked?'var(--accent-red-soft)':'var(--paper-2)'};" ${clickable?`onclick="togglePeriodConstraint('${teacherId}','${day}',${p})"`:''}><input type="checkbox" ${checked?'checked':''} style="pointer-events:none;width:18px;height:18px;"></td>`;
+    }
+    body += '</tr>';
+  });
+  container.innerHTML = `<div class="table-wrap"><table class="grid" style="min-width:0;"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+function flashConstraintSaved(){
+  const el = document.getElementById('constraint-save-status');
+  if(!el) return;
+  el.textContent = '✓ هەڵگیرا';
+  el.style.color = 'var(--success)';
+  el.style.fontWeight = '700';
+  clearTimeout(flashConstraintSaved._t);
+  flashConstraintSaved._t = setTimeout(()=>{
+    el.textContent = '✓ هەر تیکێک کە دەیدەیت، دەستبەجێ هەڵدەگیرێت — پێویست بە دوگمەی زیادکردن ناکات.';
+    el.style.color = '';
+    el.style.fontWeight = '';
+  }, 1500);
+}
+function toggleFullDayConstraint(teacherId, day){
+  const idx = config.constraints.findIndex(c=>c.teacherId===teacherId && c.day===day && c.period===null);
+  if(idx>=0){
+    config.constraints.splice(idx,1);
+  } else {
+    config.constraints = config.constraints.filter(c=>!(c.teacherId===teacherId && c.day===day && c.period!==null));
+    config.constraints.push({ id: uid(), teacherId, day, period: null });
+  }
+  renderConstraintGrid();
+  renderConstraintGroups();
+  renderSummary();
+  scheduleSave();
+  flashConstraintSaved();
+}
+function togglePeriodConstraint(teacherId, day, period){
+  const idx = config.constraints.findIndex(c=>c.teacherId===teacherId && c.day===day && c.period===period);
+  if(idx>=0) config.constraints.splice(idx,1);
+  else config.constraints.push({ id: uid(), teacherId, day, period });
+  renderConstraintGrid();
+  renderConstraintGroups();
+  renderSummary();
+  scheduleSave();
+  flashConstraintSaved();
+}
+function toggleTeacherGapPref(key, val){
+  const teacherId = document.getElementById('constraint-teacher').value;
+  const teacher = config.teachers.find(t=>t.id===teacherId);
+  if(!teacher) return;
+  if(key==='gap2') teacher.avoidGap2 = val;
+  if(key==='gap3') teacher.avoidGap3 = val;
+  scheduleSave();
+  flashConstraintSaved();
+}
+function removeConstraint(id){
+  config.constraints = config.constraints.filter(c=>c.id!==id);
+  renderConstraintGroups();
+  renderSummary();
+  scheduleSave();
+}
+function clearConstraints(){
+  showConfirm('هەموو مەرجەکانی مامۆستایان دەسڕدرێتەوە. بەردەوام بیت؟', ()=>{
+    config.constraints = [];
+    config.teachers.forEach(t=>{ t.avoidGap2 = false; t.avoidGap3 = false; });
+    renderConstraintGrid();
+    renderConstraintGroups();
+    renderSummary();
+    scheduleSave();
+  });
+}
+function renderConstraintGroups(){
+  const el = document.getElementById('constraint-groups');
+  if(config.teachers.length===0){ el.innerHTML=''; return; }
+  const withConstraints = config.teachers.filter(t=>
+    config.constraints.some(c=>c.teacherId===t.id) || t.avoidGap2 || t.avoidGap3
+  );
+  if(withConstraints.length===0){ el.innerHTML = '<div class="card"><p class="empty">هیچ مەرجێک زیاد نەکراوە</p></div>'; return; }
+  el.innerHTML = withConstraints.map(t=>{
+    const rows = config.constraints.filter(c=>c.teacherId===t.id);
+    const prefs = [];
+    if(t.avoidGap2) prefs.push({ key:'gap2', label:'هەوڵبدرێت دوو وانەی بەتاڵ لەسەریەک نەبێت' });
+    if(t.avoidGap3) prefs.push({ key:'gap3', label:'هەوڵبدرێت سێ وانەی بەتاڵ لەسەریەک نەبێت' });
+    const total = rows.length + prefs.length;
+    return `<div class="card"><h3>${escapeHtml(t.name)} <span class="count">${toKurdishDigits(total)}</span></h3>
+      <ul class="list">${rows.map(c=>`<li>
+        <span class="name">${c.day}${c.period!==null?` — وانەی ${toKurdishDigits(c.period+1)}`:' — هەموو ڕۆژ'}</span>
+        <button class="btn btn-danger btn-sm" onclick="removeConstraint('${c.id}')">سڕینەوە</button>
+      </li>`).join('')}${prefs.map(p=>`<li>
+        <span class="name"><span class="subtext">پەسند:</span> ${p.label}</span>
+        <button class="btn btn-danger btn-sm" onclick="removeTeacherGapPref('${t.id}','${p.key}')">سڕینەوە</button>
+      </li>`).join('')}</ul></div>`;
+  }).join('');
+}
+function removeTeacherGapPref(teacherId, key){
+  const teacher = config.teachers.find(t=>t.id===teacherId);
+  if(!teacher) return;
+  if(key==='gap2') teacher.avoidGap2 = false;
+  if(key==='gap3') teacher.avoidGap3 = false;
+  renderConstraintGrid();
+  renderConstraintGroups();
+  renderSummary();
+  scheduleSave();
+}
+function isTeacherBlocked(teacherId, day, period){
+  return config.constraints.some(c=> c.teacherId===teacherId && c.day===day && (c.period===null || c.period===period));
+}
+
+/* ---------------- Timetable ---------------- */
+function setTimetableView(v){
+  timetableView = v;
+  document.getElementById('view-pool-btn').classList.toggle('on', v==='pool');
+  document.getElementById('view-class-btn').classList.toggle('on', v==='class');
+  document.getElementById('view-teacher-btn').classList.toggle('on', v==='teacher');
+  document.getElementById('view-all-btn').classList.toggle('on', v==='all');
+  document.getElementById('view-day-btn').classList.toggle('on', v==='day');
+  document.getElementById('clear-class-btn').style.display = v==='class' ? 'inline-flex' : 'none';
+  document.getElementById('whatsapp-btn').style.display = v==='teacher' ? 'inline-flex' : 'none';
+  document.getElementById('timetable-select-row').style.display = (v==='pool' || v==='all') ? 'none' : 'flex';
+  document.getElementById('timetable-select').style.display = (v==='day') ? 'none' : '';
+  const daySel = document.getElementById('timetable-day-select');
+  daySel.style.display = v==='day' ? '' : 'none';
+  if(v==='day'){
+    const prev = daySel.value;
+    daySel.innerHTML = config.settings.days.map(d=>`<option value="${d}">${d}</option>`).join('');
+    const today = todayKurdName();
+    daySel.value = (prev && config.settings.days.includes(prev)) ? prev : (config.settings.days.includes(today) ? today : config.settings.days[0]);
+  }
+  document.getElementById('pool-panel').innerHTML = '';
+  renderTimetableSelector();
+  renderTimetableGrid();
+}
+
+function renderTimetableSelector(){
+  const el = document.getElementById('timetable-select');
+  if(timetableView==='pool' || timetableView==='all' || timetableView==='day') return;
+  const useClasses = (timetableView==='class' || timetableView==='day');
+  const items = useClasses ? config.classes : config.teachers;
+  const placeholder = useClasses ? 'پۆل هەڵبژێرە' : 'مامۆستا هەڵبژێرە';
+  const prev = el.value;
+  el.innerHTML = (items.length? '' : `<option value="">${placeholder}</option>`) +
+    items.map(it=>`<option value="${it.id}">${escapeHtml(it.name)}</option>`).join('');
+  if(items.some(i=>i.id===prev)) el.value = prev;
+}
+
+function ensureClassSchedule(classId){
+  if(!schedules[classId]) schedules[classId] = {};
+  config.settings.days.forEach(day=>{ if(!schedules[classId][day]) schedules[classId][day] = {}; });
+  return schedules[classId];
+}
+function assignmentsById(){ const map={}; config.assignments.forEach(a=>map[a.id]=a); return map; }
+
+/* ---------------- Dashboard ---------------- */
+function timeToMin(t){ const parts=String(t||'0:0').split(':'); return (parseInt(parts[0])||0)*60 + (parseInt(parts[1])||0); }
+
+function to12HourEnglish(now){
+  let h = now.getHours();
+  const ampm = h>=12 ? 'PM' : 'AM';
+  h = h % 12; if(h===0) h=12;
+  const hh = String(h).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  const ss = String(now.getSeconds()).padStart(2,'0');
+  return `${hh}:${mm}:${ss} ${ampm}`;
+}
+
+function getDashboardTimeInfo(){
+  const now = new Date();
+  const dayName = JS_DAY_TO_KURDISH[now.getDay()];
+  const days = config.settings.days;
+  const isSchoolDay = days.includes(dayName);
+  const periods = config.settings.periodTimes;
+  const nowMin = now.getHours()*60 + now.getMinutes();
+  let status = 'dayoff', periodIndex = -1, minutesLeft = 0, nextStart = null;
+  if(isSchoolDay && periods.length){
+    const firstStart = timeToMin(periods[0].start);
+    const lastEnd = timeToMin(periods[periods.length-1].end);
+    if(nowMin < firstStart){ status='before'; nextStart = periods[0].start; }
+    else if(nowMin >= lastEnd){ status='after'; }
+    else {
+      status = 'gap';
+      for(let i=0;i<periods.length;i++){
+        const s = timeToMin(periods[i].start), e = timeToMin(periods[i].end);
+        if(nowMin>=s && nowMin<e){ status='during'; periodIndex=i; minutesLeft = e-nowMin; break; }
+        if(nowMin<s){ nextStart = periods[i].start; break; }
+      }
+    }
+  }
+  return { now, dayName, isSchoolDay, status, periodIndex, minutesLeft, nextStart };
+}
+
+function tickDashboard(){
+  const info = getDashboardTimeInfo();
+  safe(renderDashNowGrid);
+  safe(()=>{
+    const dEl = document.getElementById('dash-date');
+    const tEl = document.getElementById('dash-time');
+    if(!dEl || !tEl) return;
+    const now = info.now;
+    dEl.textContent = `${info.dayName}، ${toKurdishDigits(now.getDate())} ${KURDISH_MONTHS[now.getMonth()]}، ${toKurdishDigits(now.getFullYear())}`;
+    tEl.textContent = to12HourEnglish(now);
+    const badgeEl = document.getElementById('dash-attendance-badge');
+    if(badgeEl) badgeEl.textContent = config.school.attendance || '';
+
+    const mainEl = document.getElementById('dash-current-main');
+    const subEl = document.getElementById('dash-current-sub');
+    if(mainEl && subEl){
+      if(!info.isSchoolDay){ mainEl.textContent='ئەمڕۆ ڕۆژی پشوویە'; subEl.textContent=''; }
+      else if(info.status==='before'){ mainEl.textContent='دەوام هێشتا دەست پێنەکردووە'; subEl.textContent = info.nextStart ? `دەستپێدەکات لە ${toKurdishDigits(info.nextStart)}` : ''; }
+      else if(info.status==='after'){ mainEl.textContent='دەوام تەواو بووە'; subEl.textContent=''; }
+      else if(info.status==='during'){ mainEl.textContent = `وانەی ${toKurdishDigits(info.periodIndex+1)}`; subEl.textContent = `${toKurdishDigits(info.minutesLeft)} خولەک ماوە`; }
+      else { mainEl.textContent='کاتی پشوو نێوان وانەکان'; subEl.textContent = info.nextStart ? `وانەی داهاتوو لە ${toKurdishDigits(info.nextStart)}` : ''; }
+    }
+  });
+}
+
+function renderDashboardStats(){
+  safe(()=>{
+    const totalPeriods = config.assignments.reduce((s,a)=>s+(a.periodsPerWeek||0),0);
+    document.getElementById('dash-stat-periods').textContent = toKurdishDigits(totalPeriods);
+    document.getElementById('dash-stat-teachers').textContent = toKurdishDigits(config.teachers.length);
+    document.getElementById('dash-stat-subjects').textContent = toKurdishDigits(config.subjects.length);
+  });
+}
+
+let dashOpenClass = null;
+function renderDashboardClasses(){
+  const el = document.getElementById('dash-class-grid');
+  const labelEl = document.getElementById('dash-today-label');
+  if(!el) return;
+  const info = getDashboardTimeInfo();
+  if(labelEl) labelEl.textContent = `(${info.dayName})`;
+  if(config.classes.length===0){ el.innerHTML = '<div class="empty">سەرەتا پۆلێک زیاد بکە لە بەشی «زانیاری سەرەکی»</div>'; return; }
+  const aMap = assignmentsById();
+  el.innerHTML = config.classes.map((cls, idx)=>{
+    const daySched = (schedules[cls.id] && schedules[cls.id][info.dayName]) ? schedules[cls.id][info.dayName] : {};
+    let nowText = 'ئەمڕۆ دەوام نییە';
+    if(info.isSchoolDay){
+      if(info.status==='during'){
+        const aid = daySched[info.periodIndex];
+        const a = aid ? aMap[aid] : null;
+        if(a){
+          const subj = config.subjects.find(s=>s.id===a.subjectId) || {name:'؟'};
+          const teacher = config.teachers.find(t=>t.id===a.teacherId) || {name:'؟'};
+          nowText = `${escapeHtml(subj.name)} · ${escapeHtml(teacher.name)}`;
+        } else nowText = 'کاتی بەتاڵ';
+      }
+      else if(info.status==='before') nowText = 'هێشتا دەوام دەست پێنەکردووە';
+      else if(info.status==='after') nowText = 'دەوام تەواو بووە';
+      else nowText = 'کاتی پشوو نێوان وانەکان';
+    }
+    const isOpen = dashOpenClass===cls.id;
+    let detailHTML;
+    if(!info.isSchoolDay){
+      detailHTML = '<div class="empty">ئەمڕۆ ڕۆژی دەوام نییە</div>';
+    } else {
+      const periods = config.settings.periodTimes;
+      detailHTML = periods.map((t,p)=>{
+        const aid = daySched[p];
+        const a = aid ? aMap[aid] : null;
+        const subj = a ? (config.subjects.find(s=>s.id===a.subjectId) || {name:'؟'}) : null;
+        const teacher = a ? (config.teachers.find(t2=>t2.id===a.teacherId) || {name:'؟'}) : null;
+        const isNow = (p===info.periodIndex && info.status==='during');
+        return `<div class="dash-period-row${isNow?' now':''}">
+          <span class="p-num">${toKurdishDigits(p+1)}</span>
+          <span class="p-time">${toKurdishDigits(t.start)}–${toKurdishDigits(t.end)}</span>
+          <span class="p-subj">${subj?escapeHtml(subj.name):'—'}</span>
+          <span class="p-teach">${teacher?escapeHtml(teacher.name):''}</span>
+        </div>`;
+      }).join('');
+    }
+    return `<div class="dash-class-card${isOpen?' open':''}" id="dash-cls-${cls.id}">
+      <div class="dash-class-head" onclick="toggleDashClass('${cls.id}')">
+        <div class="dash-class-badge">${toKurdishDigits(idx+1)}</div>
+        <div class="dash-class-info">
+          <div class="dash-class-name">${escapeHtml(cls.name)}</div>
+          <div class="dash-class-now">${nowText}</div>
+        </div>
+        <div class="dash-class-caret">${isOpen?'▲':'▼'}</div>
+      </div>
+      <div class="dash-class-detail">${detailHTML}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleDashClass(id){
+  dashOpenClass = (dashOpenClass===id) ? null : id;
+  renderDashboardClasses();
+}
+
+function renderDashNowGrid(){
+  const el = document.getElementById('dash-now-grid');
+  if(!el) return;
+  const info = getDashboardTimeInfo();
+  if(config.classes.length===0){ el.innerHTML = ''; return; }
+  const aMap = assignmentsById();
+  el.innerHTML = config.classes.map((cls)=>{
+    const daySched = (schedules[cls.id] && schedules[cls.id][info.dayName]) ? schedules[cls.id][info.dayName] : {};
+    let subjName = '—';
+    let isEmpty = true;
+    if(info.isSchoolDay && info.status==='during'){
+      const aid = daySched[info.periodIndex];
+      const a = aid ? aMap[aid] : null;
+      const subj = a ? (config.subjects.find(s=>s.id===a.subjectId)) : null;
+      if(subj){ subjName = subj.name; isEmpty = false; }
+    }
+    return `<div class="dash-now-cell${isEmpty?' empty':''}">
+      <div class="now-cls">${escapeHtml(cls.name)}</div>
+      <div class="now-subj">${escapeHtml(subjName)}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderDashboard(){
+  ensurePeriodTimes();
+  renderDashboardStats();
+  renderDashboardClasses();
+  renderDashNowGrid();
+  tickDashboard();
+}
+function todayKurdName(){
+  const jsToKurd = {6:0,0:1,1:2,2:3,3:4,4:5,5:6};
+  return WEEKDAYS[jsToKurd[new Date().getDay()]];
+}
+
+function renderTimetableGrid(){
+  const el = document.getElementById('timetable-grid');
+  const notice = document.getElementById('timetable-notice');
+  const poolPanel = document.getElementById('pool-panel');
+  notice.innerHTML='';
+  const days = config.settings.days;
+  const periods = config.settings.periodsPerDay;
+  const todayName = todayKurdName();
+  const aMap = assignmentsById();
+
+  if(timetableView==='all'){
+    poolPanel.innerHTML='';
+    el.innerHTML = buildFullGridHTML();
+    return;
+  }
+
+  if(timetableView==='pool'){
+    poolPanel.innerHTML='';
+    if(config.assignments.length===0){
+      el.innerHTML = '<div class="empty" style="padding:30px;">هیچ دابەشکردنێک نییە</div>';
+      return;
+    }
+    const rows = config.assignments.map(a=>{
+      const placed = getPlacedCountForAssignment(a.id);
+      const left = a.periodsPerWeek - placed;
+      if(left<=0) return null;
+      const cls = config.classes.find(c=>c.id===a.classId)||{name:'؟'};
+      const subj = config.subjects.find(s=>s.id===a.subjectId)||{name:'؟',color:'#eee'};
+      const teacher = config.teachers.find(t=>t.id===a.teacherId)||{name:'؟'};
+      return `<li><span class="name"><span class="dot" style="background:${subj.color}"></span>${escapeHtml(cls.name)} — ${escapeHtml(subj.name)} — ${escapeHtml(teacher.name)}</span><span class="subtext">${toKurdishDigits(left)} لە ${toKurdishDigits(a.periodsPerWeek)} نەدانراوە</span></li>`;
+    }).filter(Boolean);
+    el.innerHTML = rows.length ? `<ul class="list">${rows.join('')}</ul>` : '<div class="notice ok" style="margin:10px;">✓ هەموو وانەکان دانراون</div>';
+    return;
+  }
+
+  const selId = document.getElementById('timetable-select').value;
+  if(timetableView==='day'){
+    poolPanel.innerHTML='';
+    if(config.classes.length===0){ el.innerHTML = '<div class="empty" style="padding:30px;">سەرەتا پۆلێک زیاد بکە</div>'; return; }
+    const dayName = document.getElementById('timetable-day-select').value;
+    let head = '<th>وانە</th><th>کات</th>' + config.classes.map(c=>`<th>${escapeHtml(c.name)}</th>`).join('');
+    let rows = '';
+    for(let p=0;p<periods;p++){
+      const time = (config.settings.periodTimes||[])[p];
+      let cells = '';
+      config.classes.forEach(cls=>{
+        const daySched = (schedules[cls.id] && schedules[cls.id][dayName]) ? schedules[cls.id][dayName] : {};
+        const aid = daySched[p];
+        const a = aid ? aMap[aid] : null;
+        if(a){
+          const subj = config.subjects.find(s=>s.id===a.subjectId)||{name:'؟',color:'#eee'};
+          const teacher = config.teachers.find(t=>t.id===a.teacherId)||{name:'؟'};
+          cells += `<td class="cell readonly" style="background:${subj.color}"><div class="subj">${escapeHtml(subj.name)}</div><div class="teach">${escapeHtml(teacher.name)}</div></td>`;
+        } else cells += `<td class="cell empty-cell readonly">—</td>`;
+      });
+      rows += `<tr><th>${toKurdishDigits(p+1)}</th><th style="font-size:11px;">${time?`${toKurdishDigits(time.start)}–${toKurdishDigits(time.end)}`:''}</th>${cells}</tr>`;
+    }
+    el.innerHTML = `
+      <div style="text-align:center;margin:6px 0 12px;">
+        <div style="font-family:'Aref Ruqaa',serif;font-size:20px;font-weight:700;">خشتەی وانەکانی ڕۆژانە</div>
+        <div style="font-size:15px;font-weight:700;margin-top:4px;">${dayName}${config.school.name?` — ${escapeHtml(config.school.name)}`:''}</div>
+      </div>
+      <div class="table-wrap" style="overflow-x:auto;"><table class="grid"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
+    return;
+  }
+  if(!selId){
+    poolPanel.innerHTML='';
+    el.innerHTML = `<div class="empty" style="padding:30px;">${timetableView==='class'?'سەرەتا پۆلێک زیاد و هەڵبژێرە':'سەرەتا مامۆستایەک زیاد و هەڵبژێرە'}</div>`;
+    return;
+  }
+  let headHtml = `<th>وانە</th>` + days.map(d=>`<th class="${d===todayName?'today':''}">${d}</th>`).join('');
+  let bodyHtml = '';
+
+  if(timetableView==='class'){
+    // unplaced-for-this-class panel, draggable onto the grid below
+    const poolItems = config.assignments.filter(a=>a.classId===selId).map(a=>{
+      const left = a.periodsPerWeek - getPlacedCountForAssignment(a.id);
+      return {a, left};
+    }).filter(x=>x.left>0);
+    if(poolItems.length===0){
+      poolPanel.innerHTML='';
+    } else {
+      poolPanel.innerHTML = `<div class="card no-print"><h3>وانە نەدانراوەکانی ئەم پۆلە <span class="count">${toKurdishDigits(poolItems.length)}</span></h3>
+        <p class="section-hint" style="margin-bottom:8px;">ڕایانبکێشە بۆ سەر خانەیەکی بەتاڵی خشتەی خوارەوە.</p>
+        <div class="row" style="gap:8px;">
+        ${poolItems.map(({a,left})=>{
+          const subj = config.subjects.find(s=>s.id===a.subjectId)||{name:'؟',color:'#eee'};
+          const teacher = config.teachers.find(t=>t.id===a.teacherId)||{name:'؟'};
+          return `<div class="option-item" style="cursor:grab;background:${subj.color};border-color:transparent;" draggable="true" ondragstart="onPoolDragStart(event,'${a.id}')">
+            <span class="name">${escapeHtml(subj.name)} — ${escapeHtml(teacher.name)}</span>
+            <span class="meta">${toKurdishDigits(left)}</span>
+          </div>`;
+        }).join('')}
+        </div></div>`;
+    }
+    const grid = ensureClassSchedule(selId);
+    for(let p=0;p<periods;p++){
+      bodyHtml += `<tr><th>${toKurdishDigits(p+1)}</th>`;
+      days.forEach(day=>{
+        const aid = grid[day][p];
+        const a = aid ? aMap[aid] : null;
+        const cellId = `cell-${day}-${p}`;
+        if(a){
+          const subj = config.subjects.find(s=>s.id===a.subjectId) || {name:'؟',color:'#eee'};
+          const teacher = config.teachers.find(t=>t.id===a.teacherId) || {name:'؟'};
+          bodyHtml += `<td class="cell" id="${cellId}" style="background:${subj.color}" draggable="true"
+            ondragstart="onCellDragStart(event,'${selId}','${day}',${p})"
+            ondragover="onCellDragOver(event)" ondragleave="onCellDragLeave(event)"
+            ondrop="onCellDrop(event,'${selId}','${day}',${p})"
+            onclick="openCellModal('${selId}','${day}',${p})">
+            <div class="subj">${escapeHtml(subj.name)}</div>
+            <div class="teach">${escapeHtml(teacher.name)}</div>
+          </td>`;
+        } else {
+          bodyHtml += `<td class="cell empty-cell" id="${cellId}"
+            ondragover="onCellDragOver(event)" ondragleave="onCellDragLeave(event)"
+            ondrop="onCellDrop(event,'${selId}','${day}',${p})"
+            onclick="openCellModal('${selId}','${day}',${p})">+</td>`;
+        }
+      });
+      bodyHtml += `</tr>`;
+    }
+  } else {
+    poolPanel.innerHTML='';
+    for(let p=0;p<periods;p++){
+      bodyHtml += `<tr><th>${toKurdishDigits(p+1)}</th>`;
+      days.forEach(day=>{
+        let found = null, foundClass = null;
+        for(const cls of config.classes){
+          const grid = schedules[cls.id];
+          if(grid && grid[day] && grid[day][p]){
+            const a = aMap[grid[day][p]];
+            if(a && a.teacherId===selId){ found = a; foundClass = cls; break; }
+          }
+        }
+        if(found){
+          const subj = config.subjects.find(s=>s.id===found.subjectId) || {name:'؟',color:'#eee'};
+          bodyHtml += `<td class="cell readonly" style="background:${subj.color}"><div class="subj">${escapeHtml(subj.name)}</div><div class="teach">${escapeHtml(foundClass.name)}</div></td>`;
+        } else {
+          bodyHtml += `<td class="cell empty-cell readonly">—</td>`;
+        }
+      });
+      bodyHtml += `</tr>`;
+    }
+  }
+  el.innerHTML = `<table class="grid"><thead><tr>${headHtml}</tr></thead><tbody>${bodyHtml}</tbody></table>`;
+}
+
+/* Drag and drop */
+function onPoolDragStart(ev, assignmentId){
+  dragSource = { type:'pool', assignmentId };
+  ev.dataTransfer.effectAllowed = 'move';
+}
+function onCellDragStart(ev, classId, day, period){
+  dragSource = { type:'cell', classId, day, period };
+  ev.dataTransfer.effectAllowed = 'move';
+}
+function onCellDragLeave(ev){ ev.currentTarget.classList.remove('drag-over'); }
+function onCellDragOver(ev){ ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
+function onCellDrop(ev, classId, day, period){
+  ev.preventDefault();
+  ev.currentTarget.classList.remove('drag-over');
+  if(!dragSource) return;
+
+  if(dragSource.type==='pool'){
+    const a = assignmentsById()[dragSource.assignmentId];
+    dragSource = null;
+    if(!a || a.classId!==classId){ showAlert('ئەم وانەیە بۆ ئەم پۆلە نییە.'); return; }
+    const grid = ensureClassSchedule(classId);
+    if(grid[day][period]){ showAlert('ئەم خانەیە پڕە، سەرەتا بەتاڵی بکەرەوە.'); return; }
+    if(isTeacherBlocked(a.teacherId, day, period)){ showAlert('ناتوانرێت: ئەم مامۆستایە مەرجی نەهاتنی هەیە لەم ڕۆژ/وانەدا.'); return; }
+    const conflict = findTeacherConflict(a.teacherId, day, period, classId);
+    if(conflict){ showAlert(`ناتوانرێت: مامۆستا "${config.teachers.find(t=>t.id===a.teacherId).name}" لەم کاتەدا لە پۆلی "${conflict}"دا وانەی هەیە.`); return; }
+    grid[day][period] = a.id;
+    renderTimetableGrid();
+    renderSetupLists();
+    renderOverview();
+    scheduleSave();
+    return;
+  }
+
+  if(dragSource.classId!==classId){ dragSource=null; return; }
+  if(dragSource.day===day && dragSource.period===period){ dragSource=null; return; }
+
+  const grid = ensureClassSchedule(classId);
+  const sourceAid = grid[dragSource.day][dragSource.period];
+  const targetAid = grid[day][period] || null;
+  const aMap = assignmentsById();
+  const sourceA = aMap[sourceAid];
+
+  const conflict1 = findTeacherConflict(sourceA.teacherId, day, period, classId, dragSource.day, dragSource.period);
+  if(conflict1){ showAlert(`ناتوانرێت: مامۆستا "${sourceA.teacherId===sourceA.teacherId?config.teachers.find(t=>t.id===sourceA.teacherId).name:''}" لەم کاتەدا لە پۆلی "${conflict1}"دا وانەی هەیە.`); dragSource=null; return; }
+  if(isTeacherBlocked(sourceA.teacherId, day, period)){ showAlert('ناتوانرێت: مامۆستا لەم ڕۆژ/وانەدا مەرجی نەهاتنی هەیە.'); dragSource=null; return; }
+
+  if(targetAid){
+    const targetA = aMap[targetAid];
+    const conflict2 = findTeacherConflict(targetA.teacherId, dragSource.day, dragSource.period, classId, day, period);
+    if(conflict2){ showAlert(`ناتوانرێت: مامۆستا "${config.teachers.find(t=>t.id===targetA.teacherId).name}" لەم کاتەدا لە پۆلی "${conflict2}"دا وانەی هەیە.`); dragSource=null; return; }
+    if(isTeacherBlocked(targetA.teacherId, dragSource.day, dragSource.period)){ showAlert('ناتوانرێت: ئەو مامۆستایە لەو ڕۆژ/وانەدا مەرجی نەهاتنی هەیە.'); dragSource=null; return; }
+  }
+
+  grid[day][period] = sourceAid;
+  grid[dragSource.day][dragSource.period] = targetAid;
+  dragSource = null;
+  renderTimetableGrid();
+  renderOverview();
+  scheduleSave();
+}
+
+/* Cell edit modal */
+let modalCtx = null;
+function openCellModal(classId, day, period){
+  modalCtx = { classId, day, period };
+  const cls = config.classes.find(c=>c.id===classId);
+  const options = config.assignments.filter(a=>a.classId===classId);
+  document.getElementById('modal-title').textContent = 'دیاریکردنی وانە';
+  document.getElementById('modal-sub').textContent = `${cls.name} — ${day} — وانەی ${toKurdishDigits(period+1)}`;
+  const optEl = document.getElementById('modal-options');
+  if(options.length===0){
+    optEl.innerHTML = '<div class="empty">هیچ دابەشکردنێک بۆ ئەم پۆلە نییە. سەرەتا لە خشتەی «دابەشکردن» زیادی بکە.</div>';
+  } else {
+    optEl.innerHTML = options.map(a=>{
+      const subj = config.subjects.find(s=>s.id===a.subjectId) || {name:'؟',color:'#eee'};
+      const teacher = config.teachers.find(t=>t.id===a.teacherId) || {name:'؟'};
+      return `<div class="option-item" onclick="chooseCellOption('${a.id}')">
+        <span class="name"><span class="dot" style="background:${subj.color}"></span>${escapeHtml(subj.name)} — ${escapeHtml(teacher.name)}</span>
+        <span class="meta">${toKurdishDigits(a.periodsPerWeek)} وانە/هەفتە</span>
+      </div>`;
+    }).join('') + `<div class="option-item" onclick="chooseCellOption(null)"><span class="name">بەتاڵکردنەوەی خانە</span><span class="meta">✕</span></div>`;
+  }
+  document.getElementById('cell-overlay').classList.add('show');
+}
+function closeModal(){ document.getElementById('cell-overlay').classList.remove('show'); modalCtx=null; }
+function chooseCellOption(assignmentId){
+  if(!modalCtx) return;
+  const { classId, day, period } = modalCtx;
+  if(assignmentId){
+    const a = config.assignments.find(x=>x.id===assignmentId);
+    if(isTeacherBlocked(a.teacherId, day, period)){
+      showAlert('ناتوانرێت: ئەم مامۆستایە مەرجی نەهاتنی هەیە لەم ڕۆژ/وانەدا.');
+      return;
+    }
+    const conflict = findTeacherConflict(a.teacherId, day, period, classId);
+    if(conflict){
+      showConfirm(`مامۆستا "${config.teachers.find(t=>t.id===a.teacherId).name}" لەم کاتەدا لە پۆلی "${conflict}"دا وانەی هەیە. دەتەوێت بەردەوام بیت؟`, ()=>placeCellOption(classId, day, period, assignmentId));
+      return;
+    }
+  }
+  placeCellOption(classId, day, period, assignmentId);
+}
+function placeCellOption(classId, day, period, assignmentId){
+  const grid = ensureClassSchedule(classId);
+  grid[day][period] = assignmentId;
+  closeModal();
+  renderTimetableGrid();
+  renderSetupLists();
+  renderOverview();
+  scheduleSave();
+}
+function findTeacherConflict(teacherId, day, period, excludeClassId, ignoreDay, ignorePeriod){
+  const aMap = assignmentsById();
+  for(const cls of config.classes){
+    if(cls.id===excludeClassId) continue;
+    const grid = schedules[cls.id];
+    if(grid && grid[day] && grid[day][period]){
+      if(ignoreDay!==undefined && day===ignoreDay && period===ignorePeriod) continue;
+      const a = aMap[grid[day][period]];
+      if(a && a.teacherId===teacherId) return cls.name;
+    }
+  }
+  return null;
+}
+
+function clearCurrentClass(){
+  const classId = document.getElementById('timetable-select').value;
+  if(!classId) return;
+  showConfirm('خشتەی ئەم پۆلە بەتاڵ دەکرێتەوە. بەردەوام بیت؟', ()=>{
+    schedules[classId] = {};
+    ensureClassSchedule(classId);
+    renderTimetableGrid();
+    renderSetupLists();
+    renderOverview();
+    scheduleSave();
+  });
+}
+
+function sendTeacherWhatsapp(){
+  const teacherId = document.getElementById('timetable-select').value;
+  const teacher = config.teachers.find(t=>t.id===teacherId);
+  if(!teacher){ showAlert('سەرەتا مامۆستایەک هەڵبژێرە.'); return; }
+  if(!teacher.phone){ showAlert('سەرەتا ژمارە مۆبایلی ئەم مامۆستایە زیاد بکە لە خشتەی «زانیاری سەرەکی».'); return; }
+  const aMap = assignmentsById();
+  const days = config.settings.days;
+  const periods = config.settings.periodsPerDay;
+  let text = `خشتەی وانەی مامۆستا: ${teacher.name}\n\n`;
+  days.forEach(day=>{
+    let line = `${day}: `;
+    let items=[];
+    for(let p=0;p<periods;p++){
+      for(const cls of config.classes){
+        const grid = schedules[cls.id];
+        if(grid && grid[day] && grid[day][p]){
+          const a = aMap[grid[day][p]];
+          if(a && a.teacherId===teacherId){
+            const subj = config.subjects.find(s=>s.id===a.subjectId)||{name:'؟'};
+            items.push(`وانەی ${p+1} (${subj.name} - ${cls.name})`);
+          }
+        }
+      }
+    }
+    line += items.length? items.join('، ') : 'بەتاڵ';
+    text += line + '\n';
+  });
+  const phone = teacher.phone.replace(/[^0-9]/g,'');
+  const waPhone = phone.startsWith('0') ? '964'+phone.slice(1) : phone;
+  window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(text)}`, '_blank');
+}
+
+/* ---------------- Auto-generation ---------------- */
+/* ----------------------------------------------------------------------
+   Real CSP backtracking search (not random-restart heuristics):
+   - Each period-unit to place is a "variable".
+   - Its "domain" is every (day, period) slot that doesn't violate a hard
+     rule (class already busy, teacher already busy, teacher blocked by
+     مەرجی مامۆستا, or that subject's daily maximum for that class).
+   - MRV (minimum-remaining-values): at every step we place the variable
+     with the FEWEST legal options left — this is what lets the search
+     detect a dead end early and backtrack, instead of discovering the
+     problem only after most of the schedule is already filled.
+   - Forward checking: a variable whose domain becomes empty immediately
+     fails that branch, so we back up and try a different earlier choice
+     rather than plowing ahead into a schedule that can't be completed.
+   - Preferences (a teacher's requested days, avoiding period 1/2 for hard
+     subjects, balancing a class's daily load) are used to ORDER which
+     value we try first, not as hard limits — so they're honoured whenever
+     possible, and only give way when the schedule truly can't fit them.
+   - A step budget keeps this bounded on very large inputs; if it's hit,
+     whatever was placed so far is kept and the remainder is filled in
+     with a best-effort pass, same as before.
+---------------------------------------------------------------------- */
+let GEN_CAP = {};
+function autoGenerateAll(relax, attempt){
+  attempt = attempt||0;
+  if(config.assignments.length===0){
+    showAlert('سەرەتا لە خشتەی «دابەشکردن» وانەکان دابەش بکە.');
+    return;
+  }
+  const days = config.settings.days;
+  const periods = config.settings.periodsPerDay;
+  // Strict rule first: a subject only repeats on the same day when it has more lessons than available days.
+  // (Only if that cannot be satisfied does the generator fall back to the user's own زۆرترین لە ڕۆژێکدا.)
+  GEN_CAP = {};
+  config.assignments.forEach(a=>{
+    const userMax = a.maxPerDay||2;
+    if(relax){ GEN_CAP[a.id] = userMax; return; }
+    const elig = days.filter(d=>!isTeacherBlocked(a.teacherId, d, null)).length || days.length;
+    const nd = Math.max(1, Math.min(a.daysPerWeek||days.length, elig));
+    GEN_CAP[a.id] = Math.min(userMax, Math.max(a.minPerDay||1, Math.ceil(a.periodsPerWeek/nd)));
+  });
+  const subjMap = {}; config.subjects.forEach(s=> subjMap[s.id]=s);
+  const teacherMap = {}; config.teachers.forEach(t=> teacherMap[t.id]=t);
+
+  const localSchedules = {};
+  config.classes.forEach(c=>{ localSchedules[c.id] = {}; days.forEach(d=> localSchedules[c.id][d] = {}); });
+  const teacherOccupied = {};
+  const classSubjectDayCount = {};
+  const classDayTotal = {};
+  config.classes.forEach(c=>{
+    classSubjectDayCount[c.id] = {}; classDayTotal[c.id] = {};
+    days.forEach(d=>{ classSubjectDayCount[c.id][d] = {}; classDayTotal[c.id][d] = 0; });
+  });
+
+  // A teacher's preferred day-set (from مەرجی مامۆستا + ژمارەی ڕۆژان), shared
+  // across all of that teacher's subjects so they concentrate on the same days.
+  const teacherDayPool = {};
+  function getTeacherDayPool(teacherId){
+    if(!teacherDayPool[teacherId]){
+      const eligible = days.filter(d=>!isTeacherBlocked(teacherId, d, null));
+      teacherDayPool[teacherId] = shuffle(eligible.length ? eligible : days.slice());
+    }
+    return teacherDayPool[teacherId];
+  }
+  function preferredDaysFor(a){
+    const pool = getTeacherDayPool(a.teacherId);
+    const dpw = Math.min(a.daysPerWeek || pool.length, pool.length) || 1;
+    return pool.slice(0, dpw);
+  }
+
+  function computeDomain(unit){
+    const a = unit.assignment;
+    const dom = [];
+    for(const day of days){
+      if(isTeacherBlocked(a.teacherId, day, null)) continue;
+      const dayCount = (classSubjectDayCount[a.classId][day]||{})[a.subjectId] || 0;
+      if(dayCount >= (GEN_CAP[a.id]||a.maxPerDay||2)) continue;
+      for(let p=0;p<periods;p++){
+        if(localSchedules[a.classId][day][p]) continue;
+        const key = day+'|'+p;
+        if(teacherOccupied[a.teacherId] && teacherOccupied[a.teacherId].has(key)) continue;
+        if(isTeacherBlocked(a.teacherId, day, p)) continue;
+        dom.push({day, p});
+      }
+    }
+    return dom;
+  }
+  function scoreCandidate(unit, day, p){
+    const a = unit.assignment;
+    let score = 0;
+    if(!preferredDaysFor(a).includes(day)) score += 100;
+    const subj = subjMap[a.subjectId];
+    if(subj && subj.hard && p < 2) score += 20;
+    score += classDayTotal[a.classId][day] || 0;
+
+    // minPerDay preference: once a day has some of this subject but fewer than
+    // the requested minimum, prefer topping that day up before starting a new
+    // (thinner) day — this is what makes "کەمترین" actually mean something.
+    const minPerDay = a.minPerDay || 1;
+    const currentCount = (classSubjectDayCount[a.classId][day]||{})[a.subjectId] || 0;
+    if(currentCount>0 && currentCount<minPerDay) score -= 30;
+    else if(currentCount===0) score += 10;
+    // Spread the subject over as many days as requested (ژمارەی ڕۆژان): a 2nd/3rd lesson of the
+    // same subject on one day is strongly discouraged, and so is opening more days than requested.
+    if(currentCount>=Math.max(1,minPerDay)) score += 400 * currentCount;
+    if(currentCount===0){
+      let usedDays = 0;
+      for(const dd of days){ if(((classSubjectDayCount[a.classId][dd]||{})[a.subjectId]||0)>0) usedDays++; }
+      if(usedDays >= (a.daysPerWeek || days.length)) score += 250;
+    }
+
+    const teacher = teacherMap[a.teacherId];
+    if(teacher && (teacher.avoidGap2 || teacher.avoidGap3)){
+      const occupied = [];
+      for(let q=0;q<periods;q++){
+        const key = day+'|'+q;
+        if(teacherOccupied[a.teacherId] && teacherOccupied[a.teacherId].has(key)) occupied.push(q);
+      }
+      if(occupied.length>0){
+        const minDist = Math.min(...occupied.map(q=>Math.abs(q-p)));
+        score += minDist * 5; // prefer slots close to this teacher's other periods that day, to avoid leaving gaps
+      }
+    }
+    return score;
+  }
+  function place(unit, day, p){
+    const a = unit.assignment;
+    localSchedules[a.classId][day][p] = a.id;
+    teacherOccupied[a.teacherId] = teacherOccupied[a.teacherId] || new Set();
+    teacherOccupied[a.teacherId].add(day+'|'+p);
+    classSubjectDayCount[a.classId][day][a.subjectId] = (classSubjectDayCount[a.classId][day][a.subjectId]||0)+1;
+    classDayTotal[a.classId][day] = (classDayTotal[a.classId][day]||0)+1;
+  }
+  function unplace(unit, day, p){
+    const a = unit.assignment;
+    localSchedules[a.classId][day][p] = null;
+    teacherOccupied[a.teacherId].delete(day+'|'+p);
+    classSubjectDayCount[a.classId][day][a.subjectId]--;
+    classDayTotal[a.classId][day]--;
+  }
+
+  let units = [];
+  config.assignments.forEach(a=>{ for(let i=0;i<a.periodsPerWeek;i++) units.push({ assignment:a }); });
+  units = shuffle(units);
+
+  let steps = 0;
+  const MAX_STEPS = 150000;
+  const DEADLINE = Date.now() + (relax ? 3000 : 450); // hard time limit so the page never freezes
+  let aborted = false;
+
+  function backtrack(remaining){
+    if(remaining.length===0) return true;
+    steps++;
+    if(steps > MAX_STEPS || ((steps & 15)===0 && Date.now() > DEADLINE)){ aborted = true; return false; }
+
+    // MRV: choose the variable with the fewest remaining legal options
+    let bestIdx = 0, bestDomain = null;
+    for(let i=0;i<remaining.length;i++){
+      const dom = computeDomain(remaining[i]);
+      if(bestDomain===null || dom.length < bestDomain.length){
+        bestDomain = dom; bestIdx = i;
+        if(dom.length===0) break;
+      }
+    }
+    if(bestDomain.length===0) return false; // forward-checking failure: dead end, backtrack
+
+    const unit = remaining[bestIdx];
+    const rest = remaining.slice(0,bestIdx).concat(remaining.slice(bestIdx+1));
+    const ordered = bestDomain
+      .map(c=>({ day:c.day, p:c.p, score: scoreCandidate(unit, c.day, c.p) }))
+      .sort((x,y)=> x.score - y.score);
+
+    for(const choice of ordered){
+      place(unit, choice.day, choice.p);
+      if(backtrack(rest)) return true;
+      if(aborted) return false; // keep the partial result frozen instead of unwinding it
+      unplace(unit, choice.day, choice.p);
+    }
+    return false;
+  }
+
+  backtrack(units);
+
+  // Whatever the search (or step budget) couldn't place, fill in with a
+  // best-effort pass so the schedule is never left more empty than it has to be.
+  let unplaced = 0;
+  config.assignments.forEach(a=>{
+    let placedCount = 0;
+    days.forEach(d=> Object.values(localSchedules[a.classId][d]).forEach(v=>{ if(v===a.id) placedCount++; }));
+    let deficit = a.periodsPerWeek - placedCount;
+    const cntOn = d=> Object.values(localSchedules[a.classId][d]).filter(v=>v===a.id).length;
+    for(const strict of (relax ? [true,false] : [true])){
+      while(deficit>0){
+        let placedOne = false;
+        // days where this subject appears least come first (spreads lessons instead of stacking them)
+        const order = shuffle(days.slice()).sort((x,y)=>cntOn(x)-cntOn(y));
+        for(const day of order){
+          if(strict && cntOn(day) >= (GEN_CAP[a.id]||a.maxPerDay||2)) continue;
+          if(isTeacherBlocked(a.teacherId, day, null)) continue;
+          for(let p=0;p<periods;p++){
+            if(localSchedules[a.classId][day][p]) continue;
+            const key = day+'|'+p;
+            if(teacherOccupied[a.teacherId] && teacherOccupied[a.teacherId].has(key)) continue;
+            if(isTeacherBlocked(a.teacherId, day, p)) continue;
+            place({assignment:a}, day, p);
+            placedOne = true;
+            break;
+          }
+          if(placedOne) break;
+        }
+        if(!placedOne) break;
+        deficit--;
+      }
+    }
+    unplaced += deficit;
+  });
+
+  if(!relax && unplaced>0){ return autoGenerateAll(attempt<7 ? false : true, attempt+1); }
+
+  // Repair pass: if a subject is stacked twice on one day while it should use more days,
+  // swap that lesson with a lesson on an unused day when both teachers are free.
+  (function repairSpread(){
+    const aMap = {}; config.assignments.forEach(x=> aMap[x.id]=x);
+    const cnt = (cid,d,id)=> Object.values(localSchedules[cid][d]).filter(v=>v===id).length;
+    const tFree = (t,d,pp)=> !(teacherOccupied[t] && teacherOccupied[t].has(d+'|'+pp)) && !isTeacherBlocked(t,d,pp);
+    for(let round=0; round<4; round++){
+      let changed = false;
+      config.assignments.forEach(a=>{
+        const cid = a.classId, want = Math.min(a.daysPerWeek||days.length, a.periodsPerWeek);
+        let guard = 0;
+        while(guard++ < 6){
+          const used = days.filter(d=>cnt(cid,d,a.id)>0).length;
+          if(used >= want) break;
+          const X = days.find(d=>cnt(cid,d,a.id)>=2);
+          if(!X) break;
+          let done = false;
+          for(const Y of days){
+            if(done) break;
+            if(cnt(cid,Y,a.id)>0) continue;
+            for(let pp=0; pp<periods && !done; pp++){
+              if(localSchedules[cid][X][pp]!==a.id) continue;
+              for(let q=0; q<periods && !done; q++){
+                const bid = localSchedules[cid][Y][q] || null;
+                const b = bid ? aMap[bid] : null;
+                if(!tFree(a.teacherId, Y, q)) continue;
+                if(b){
+                  // b moves Y,q -> X,pp
+                  if(!(teacherOccupied[b.teacherId] && teacherOccupied[b.teacherId].has(X+'|'+pp)) && !isTeacherBlocked(b.teacherId,X,pp)){}
+                  else continue;
+                  if(cnt(cid,X,b.id) >= (GEN_CAP[b.id]||b.maxPerDay||2)) continue;
+                  if(cnt(cid,X,b.id) >= 1) continue; // don't create a new double for b
+                }
+                // apply
+                teacherOccupied[a.teacherId].delete(X+'|'+pp);
+                teacherOccupied[a.teacherId].add(Y+'|'+q);
+                if(b){
+                  teacherOccupied[b.teacherId].delete(Y+'|'+q);
+                  teacherOccupied[b.teacherId].add(X+'|'+pp);
+                }
+                localSchedules[cid][Y][q] = a.id;
+                localSchedules[cid][X][pp] = b ? b.id : null;
+                const csd = classSubjectDayCount[cid];
+                csd[X][a.subjectId]--; csd[Y][a.subjectId] = (csd[Y][a.subjectId]||0)+1;
+                if(b){ csd[Y][b.subjectId]--; csd[X][b.subjectId] = (csd[X][b.subjectId]||0)+1; }
+                else { classDayTotal[cid][X]--; classDayTotal[cid][Y]++; }
+                done = true; changed = true;
+              }
+            }
+          }
+          if(!done) break;
+        }
+      });
+      if(!changed) break;
+    }
+  })();
+
+  schedules = localSchedules;
+  balanceClassDays();
+  scheduleSave();
+  renderTimetableGrid();
+  renderSetupLists();
+  renderOverview();
+
+  const notice = document.getElementById('timetable-notice');
+  if(unplaced>0){
+    const budgetNote = aborted ? ' (گەڕانی تەواو کاتی زۆری خایاند، بۆیە باشترین ئەنجامی دۆزراوە بەکارهێنرا.)' : '';
+    notice.innerHTML = `<div class="notice warn">⚠ ${toKurdishDigits(unplaced)} وانە نەتوانرا دابنرێت، لەبەر ئەوەی کات، مامۆستا یان مەرجەکانی مامۆستا تەواو بوون.${budgetNote} دەتوانیت ژمارەی وانەکانی ڕۆژانە زیاد بکەیت، وانەی هەفتانەی هەندێک بابەت کەم بکەیتەوە، یان زۆرترین/کەمترینی ڕۆژانە بگۆڕیت.</div>`;
+  } else {
+    notice.innerHTML = `<div class="notice ok">✓ خشتەی هەموو پۆلەکان بە سەرکەوتوویی دروستکرا (بە گەڕانی تەواو پشکنرا).</div>`;
+    setTimeout(()=>{ if(notice) notice.innerHTML=''; }, 5000);
+  }
+}
+
+// After the main placement, smooth out each class's total periods per day
+// (e.g. 28 periods over 5 days -> 6,6,6,5,5 instead of some days much fuller
+// than others), by moving single periods from the busiest day to the
+// quietest day whenever that move doesn't break a teacher's availability,
+// another class's schedule, or that subject's own daily limit.
+function balanceClassDays(){
+  const days = config.settings.days;
+  const periods = config.settings.periodsPerDay;
+  const aMap = assignmentsById();
+  config.classes.forEach(cls=>{
+    const grid = schedules[cls.id];
+    if(!grid) return;
+    let guard = 0;
+    while(guard++ < 200){
+      const totals = days.map(d => Object.values(grid[d]||{}).filter(Boolean).length);
+      let maxIdx=0, minIdx=0;
+      totals.forEach((t,i)=>{ if(t>totals[maxIdx]) maxIdx=i; if(t<totals[minIdx]) minIdx=i; });
+      if(totals[maxIdx]-totals[minIdx] <= 1) break;
+      const maxDay = days[maxIdx], minDay = days[minIdx];
+      let moved = false;
+      for(let p=0; p<periods && !moved; p++){
+        const aid = grid[maxDay][p];
+        if(!aid) continue;
+        const a = aMap[aid];
+        if(!a) continue;
+        for(let p2=0; p2<periods; p2++){
+          if(grid[minDay][p2]) continue;
+          if(isTeacherBlocked(a.teacherId, minDay, p2)) continue;
+          if(findTeacherConflict(a.teacherId, minDay, p2, cls.id)) continue;
+          const sameSubjCount = Object.keys(grid[minDay]).filter(k=>grid[minDay][k]===aid).length;
+          if(sameSubjCount >= (GEN_CAP[a.id]||a.maxPerDay||2)) continue;
+          grid[minDay][p2] = aid;
+          grid[maxDay][p] = null;
+          moved = true;
+          break;
+        }
+      }
+      if(!moved) break;
+    }
+  });
+}
+
+/* ---------------- Summary ---------------- */
+function setSummaryView(view){
+  ['classes','teachers','constraints'].forEach(v=>{
+    const panel = document.getElementById('summary-panel-'+v);
+    const btn = document.getElementById('summary-'+v+'-btn');
+    if(panel) panel.style.display = (v===view) ? '' : 'none';
+    if(btn) btn.classList.toggle('on', v===view);
+  });
+}
+function renderSummary(){
+  const clsEl = document.getElementById('summary-classes');
+  if(config.classes.length===0){ clsEl.innerHTML = '<li class="empty">هیچ پۆلێک زیاد نەکراوە</li>'; }
+  else {
+    clsEl.innerHTML = config.classes.map(c=>{
+      const total = config.assignments.filter(a=>a.classId===c.id).reduce((s,a)=>s+a.periodsPerWeek,0);
+      return `<li><span class="name">${escapeHtml(c.name)}</span><span class="subtext">${toKurdishDigits(total)} وانە/هەفتە</span></li>`;
+    }).join('');
+  }
+
+  const teachEl = document.getElementById('summary-teachers');
+  if(config.teachers.length===0){ teachEl.innerHTML = '<li class="empty">هیچ مامۆستایەک زیاد نەکراوە</li>'; }
+  else {
+    teachEl.innerHTML = config.teachers.map(t=>{
+      const total = config.assignments.filter(a=>a.teacherId===t.id).reduce((s,a)=>s+a.periodsPerWeek,0);
+      return `<li><span class="name">${escapeHtml(t.name)}</span><span class="subtext">${toKurdishDigits(total)} وانە/هەفتە</span></li>`;
+    }).join('');
+  }
+
+  const constEl = document.getElementById('summary-constraints');
+  if(config.teachers.length===0){ constEl.innerHTML = '<p class="empty">هیچ مامۆستایەک زیاد نەکراوە</p>'; return; }
+  constEl.innerHTML = config.teachers.map(t=>{
+    const cons = config.constraints.filter(c=>c.teacherId===t.id);
+    const assigns = config.assignments.filter(a=>a.teacherId===t.id);
+    let lines = [];
+    cons.forEach(c=>{
+      if(c.period===null) lines.push(`ڕۆژی ${c.day} نایەت`);
+      else lines.push(`لە ڕۆژی ${c.day} وانەی ${toKurdishDigits(c.period+1)} نایەت`);
+    });
+    if(t.avoidGap2) lines.push('پەسند: هەوڵبدرێت دوو وانەی بەتاڵ لەسەریەک نەبێت');
+    if(t.avoidGap3) lines.push('پەسند: هەوڵبدرێت سێ وانەی بەتاڵ لەسەریەک نەبێت');
+    assigns.forEach(a=>{
+      const subj = config.subjects.find(s=>s.id===a.subjectId)||{name:'؟'};
+      const cls = config.classes.find(cl=>cl.id===a.classId)||{name:'؟'};
+      lines.push(`${escapeHtml(subj.name)} (${escapeHtml(cls.name)}): ${toKurdishDigits(a.periodsPerWeek)} وانە/هەفتە بۆ ${toKurdishDigits(a.daysPerWeek||config.settings.days.length)} ڕۆژ، ${toKurdishDigits(a.minPerDay||1)}-${toKurdishDigits(a.maxPerDay||2)} لە ڕۆژێکدا`);
+    });
+    if(lines.length===0) return '';
+    return `<div style="margin-bottom:12px;"><b>${escapeHtml(t.name)}</b><ul class="list">${lines.map(l=>`<li><span class="name">${l}</span></li>`).join('')}</ul></div>`;
+  }).join('') || '<p class="empty">هیچ مەرج یان دابەشکردنێک نییە</p>';
+}
+
+/* ---------------- Overview / cover ---------------- */
+function buildFullGridHTML(){
+  if(config.classes.length===0){
+    return '<div class="empty" style="padding:30px;">سەرەتا پۆلێک زیاد بکە</div>';
+  }
+  const aMap = assignmentsById();
+  const days = config.settings.days;
+  const periods = config.settings.periodsPerDay;
+
+  let head = `<th>ڕۆژ</th><th>وانە</th>` + config.classes.map(c=>`<th>${escapeHtml(c.name)}</th>`).join('');
+  let body = '';
+  days.forEach(day=>{
+    for(let p=0;p<periods;p++){
+      body += '<tr>';
+      if(p===0) body += `<td class="daygroup" rowspan="${periods}">${day}</td>`;
+      body += `<th>${toKurdishDigits(p+1)}</th>`;
+      config.classes.forEach(cls=>{
+        const grid = schedules[cls.id];
+        const aid = grid && grid[day] ? grid[day][p] : null;
+        const a = aid ? aMap[aid] : null;
+        if(a){
+          const subj = config.subjects.find(s=>s.id===a.subjectId) || {name:'؟',color:'#eee'};
+          const teacher = config.teachers.find(t=>t.id===a.teacherId) || {name:'؟'};
+          body += `<td class="cell readonly" style="background:${subj.color}"><div class="subj">${escapeHtml(subj.name)}</div><div class="teach">${escapeHtml(teacher.name)}</div></td>`;
+        } else {
+          body += `<td class="cell empty-cell readonly">—</td>`;
+        }
+      });
+      body += '</tr>';
+    }
+  });
+  return `<table class="grid"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+}
+
+function renderOverview(){
+  const cover = document.getElementById('cover-page');
+  cover.innerHTML = `
+    <h2>خشتەی وانەکانی ڕۆژانە</h2>
+    <p class="prep no-print">ئامادەکردنی: ${escapeHtml(PREPARER_NAME)}</p>
+    <p class="role no-print">${escapeHtml(PREPARER_ROLE)}</p>
+    <p class="phone no-print">${toKurdishDigits(PREPARER_PHONE)}</p>
+    <hr class="no-print">
+    <p class="disclaimer no-print">هیچ کەس و لایەنێک مافی دەستکاری و بڵاوکردنەوەی ئەم بەرهەمەی نیە</p>
+    <div class="schoolinfo">
+      <div><b>${escapeHtml(config.school.name)||'—'}</b>ناوی قوتابخانە</div>
+      <div><b>${escapeHtml(config.school.year)||'—'}</b>ساڵی خوێندن</div>
+      <div class="no-print"><b>${escapeHtml(config.school.attendance)||'—'}</b>جۆری دەوام</div>
+    </div>`;
+
+  const el = document.getElementById('overview-grid');
+  el.innerHTML = buildFullGridHTML();
+  if(config.classes.length===0){
+    document.getElementById('report-classes-content').innerHTML = '';
+    document.getElementById('report-teachers-content').innerHTML = '';
+    return;
+  }
+  const aMap = assignmentsById();
+  const days = config.settings.days;
+  const periods = config.settings.periodsPerDay;
+  renderReports(aMap, days, periods);
+}
+
+function miniGridTable(headLabel, rowsFn){
+  const days = config.settings.days;
+  const periods = config.settings.periodsPerDay;
+  let head = `<th>وانە</th>` + days.map(d=>`<th>${d}</th>`).join('');
+  let body = '';
+  for(let p=0;p<periods;p++){
+    body += `<tr><th>${toKurdishDigits(p+1)}</th>`;
+    days.forEach(day=>{ body += rowsFn(day,p); });
+    body += '</tr>';
+  }
+  return `<table class="grid" style="min-width:0;"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+}
+
+function renderReports(aMap, days, periods){
+  const clsEl = document.getElementById('report-classes-content');
+  clsEl.innerHTML = config.classes.map(cls=>{
+    const grid = schedules[cls.id];
+    const table = miniGridTable(cls.name, (day,p)=>{
+      const aid = grid && grid[day] ? grid[day][p] : null;
+      const a = aid ? aMap[aid] : null;
+      if(a){
+        const subj = config.subjects.find(s=>s.id===a.subjectId) || {name:'؟',color:'#eee'};
+        const teacher = config.teachers.find(t=>t.id===a.teacherId) || {name:'؟'};
+        return `<td class="cell readonly" style="background:${subj.color}"><div class="subj">${escapeHtml(subj.name)}</div><div class="teach">${escapeHtml(teacher.name)}</div></td>`;
+      }
+      return `<td class="cell empty-cell readonly">—</td>`;
+    });
+    return `<div class="report-block" style="margin-bottom:22px;">
+      <div class="print-only report-print-title">خشتەی وانەکانی ڕۆژانە</div>
+      <h3 style="margin-bottom:8px;">${escapeHtml(cls.name)}</h3>
+      <div class="table-wrap">${table}</div>
+    </div>`;
+  }).join('');
+
+  const teachEl = document.getElementById('report-teachers-content');
+  if(config.teachers.length===0){ teachEl.innerHTML = '<p class="empty">هیچ مامۆستایەک زیاد نەکراوە</p>'; return; }
+  teachEl.innerHTML = config.teachers.map(t=>{
+    const table = miniGridTable(t.name, (day,p)=>{
+      let found=null, foundClass=null;
+      for(const cls of config.classes){
+        const grid = schedules[cls.id];
+        if(grid && grid[day] && grid[day][p]){
+          const a = aMap[grid[day][p]];
+          if(a && a.teacherId===t.id){ found=a; foundClass=cls; break; }
+        }
+      }
+      if(found){
+        const subj = config.subjects.find(s=>s.id===found.subjectId) || {name:'؟',color:'#eee'};
+        return `<td class="cell readonly" style="background:${subj.color}"><div class="subj">${escapeHtml(subj.name)}</div><div class="teach">${escapeHtml(foundClass.name)}</div></td>`;
+      }
+      return `<td class="cell empty-cell readonly">—</td>`;
+    });
+    return `<div class="report-block" style="margin-bottom:22px;">
+      <div class="print-only report-print-title">خشتەی وانەکانی ڕۆژانە</div>
+      <h3 style="margin-bottom:8px;">${escapeHtml(t.name)}</h3>
+      <div class="table-wrap">${table}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------------- Committees ---------------- */
+const COMMITTEE_ROLES = ['سەرۆک','جێگری سەرۆک','سکرتێر','ئەندام'];
+const COMMITTEE_SUGGESTIONS = ['لیژنەی تاقیکردنەوە','لیژنەی ڕەفتار و دیسپلین','لیژنەی چالاکی','لیژنەی ئاسایش و سەلامەتی','لیژنەی کتێبخانە','لیژنەی بەخێرهێنان و ڕێکخستن'];
+
+function committeePrintCss(dark, light){
+  return `
+    .committee-title{font-family:'Aref Ruqaa',serif;font-size:26px;text-align:center;margin:0 0 4px;}
+    .committee-sub{text-align:center;color:#5B6B72;font-size:13px;margin:0 0 18px;}
+    .committee-block{margin-bottom:26px;page-break-inside:avoid;break-inside:avoid;}
+    .committee-block h3{font-family:'Aref Ruqaa',serif;font-size:20px;text-align:center;margin:0 0 4px;}
+    .committee-block .c-desc{text-align:center;color:#5B6B72;font-size:13px;margin:0 0 10px;}
+    table.committee-table{border-collapse:collapse;width:100%;}
+    table.committee-table th, table.committee-table td{border:1px solid #C9D2CE;padding:9px 6px;text-align:center;font-size:13.5px;}
+    table.committee-table thead th{background:${dark};color:${light};font-weight:700;}
+    table.committee-table td.num{width:48px;}
+    table.committee-table td.sign{width:26%;}
+  `;
+}
+safe(()=>{
+  const st = document.createElement('style');
+  st.textContent = committeePrintCss('var(--chalkboard)','var(--chalk-white)');
+  document.head.appendChild(st);
+});
+
+function committeeMemberName(m){
+  if(m.teacherId){
+    const t = config.teachers.find(x=>x.id===m.teacherId);
+    return t ? t.name : '؟';
+  }
+  return m.name || '؟';
+}
+function sortedCommitteeMembers(c){
+  return (c.members||[]).slice().sort((a,b)=>COMMITTEE_ROLES.indexOf(a.role)-COMMITTEE_ROLES.indexOf(b.role));
+}
+function committeeRoleOptions(selected){
+  return COMMITTEE_ROLES.map(r=>`<option value="${r}" ${r===selected?'selected':''}>${r}</option>`).join('');
+}
+
+function addCommittee(){
+  if(!Array.isArray(config.committees)) config.committees = [];
+  const nameEl = document.getElementById('input-committee');
+  const descEl = document.getElementById('input-committee-desc');
+  const name = nameEl.value.trim();
+  if(!name){ showAlert('تکایە ناوی لیژنەکە بنووسە.'); return; }
+  config.committees.push({ id: uid(), name, description: descEl.value.trim(), members: [] });
+  nameEl.value = ''; descEl.value = '';
+  renderCommittees();
+  scheduleSave();
+}
+function removeCommittee(id){
+  showConfirm('ئەم لیژنەیە بسڕدرێتەوە؟', ()=>{
+    config.committees = config.committees.filter(c=>c.id!==id);
+    renderCommittees();
+    scheduleSave();
+  });
+}
+function addCommitteeMember(cid){
+  const c = config.committees.find(x=>x.id===cid);
+  if(!c) return;
+  const teacherId = document.getElementById('cm-t-'+cid).value;
+  const extName = document.getElementById('cm-n-'+cid).value.trim();
+  const role = document.getElementById('cm-r-'+cid).value;
+  if(!teacherId && !extName){ showAlert('مامۆستایەک هەڵبژێرە یان ناوی ئەندامێک بنووسە.'); return; }
+  if(role==='سەرۆک' && c.members.some(m=>m.role==='سەرۆک')){ showAlert('ئەم لیژنەیە پێشتر سەرۆکی هەیە.'); return; }
+  if(extName) c.members.push({ id: uid(), name: extName, role });
+  else c.members.push({ id: uid(), teacherId, role });
+  renderCommittees();
+  scheduleSave();
+}
+function removeCommitteeMember(cid, mid){
+  const c = config.committees.find(x=>x.id===cid);
+  if(!c) return;
+  c.members = c.members.filter(m=>m.id!==mid);
+  renderCommittees();
+  scheduleSave();
+}
+function setCommitteeMemberRole(cid, mid, role){
+  const c = config.committees.find(x=>x.id===cid);
+  if(!c) return;
+  const m = c.members.find(x=>x.id===mid);
+  if(!m) return;
+  if(role==='سەرۆک' && c.members.some(x=>x.id!==mid && x.role==='سەرۆک')){
+    showAlert('ئەم لیژنەیە پێشتر سەرۆکی هەیە.');
+    renderCommittees();
+    return;
+  }
+  m.role = role;
+  renderCommittees();
+  scheduleSave();
+}
+
+function committeeCardHTML(c){
+  const members = sortedCommitteeMembers(c);
+  const used = new Set(members.filter(m=>m.teacherId).map(m=>m.teacherId));
+  const avail = config.teachers.filter(t=>!used.has(t.id));
+  const membersHtml = members.length ? members.map(m=>`
+    <li>
+      <span class="name">${escapeHtml(committeeMemberName(m))}${m.teacherId?'':' <span class="subtext">(دەرەکی)</span>'}</span>
+      <span class="btnrow">
+        <select style="padding:5px 8px;font-size:12.5px;" onchange="setCommitteeMemberRole('${c.id}','${m.id}',this.value)">${committeeRoleOptions(m.role)}</select>
+        <button class="btn btn-danger btn-sm" onclick="removeCommitteeMember('${c.id}','${m.id}')">لابردن</button>
+      </span>
+    </li>`).join('') : '<li class="empty">هێشتا ئەندامێک زیاد نەکراوە</li>';
+  return `<div class="card">
+    <h3>${escapeHtml(c.name)} <span class="count">${toKurdishDigits(members.length)}</span></h3>
+    ${c.description?`<p class="section-hint" style="margin-bottom:10px;">${escapeHtml(c.description)}</p>`:''}
+    <ul class="list">${membersHtml}</ul>
+    <div class="row form" style="margin-top:10px;">
+      <select id="cm-t-${c.id}" class="grow"><option value="">مامۆستا هەڵبژێرە...</option>${avail.map(t=>`<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('')}</select>
+      <input type="text" id="cm-n-${c.id}" class="grow" placeholder="یان ناوی ئەندامێکی تر بنووسە">
+      <select id="cm-r-${c.id}">${committeeRoleOptions('ئەندام')}</select>
+      <button class="btn btn-primary btn-sm" onclick="addCommitteeMember('${c.id}')">زیادکردنی ئەندام</button>
+    </div>
+    <div class="row" style="margin-top:4px;">
+      <button class="btn btn-ghost btn-sm" onclick="openEditItem('committee','${c.id}')">دەستکاری</button>
+      <button class="btn btn-danger btn-sm" onclick="removeCommittee('${c.id}')">سڕینەوەی لیژنە</button>
+    </div>
+  </div>`;
+}
+
+function renderCommittees(){
+  if(!Array.isArray(config.committees)) config.committees = [];
+  const dl = document.getElementById('committee-suggestions');
+  if(dl && !dl.children.length) dl.innerHTML = COMMITTEE_SUGGESTIONS.map(s=>`<option value="${s}">`).join('');
+  const el = document.getElementById('committees-list');
+  if(el){
+    el.innerHTML = config.committees.length
+      ? config.committees.map(committeeCardHTML).join('')
+      : '<div class="card"><p class="empty">هیچ لیژنەیەک زیاد نەکراوە. لە سەرەوە ناوی لیژنەیەک بنووسە و «دروستکردن» بکە.</p></div>';
+  }
+  renderCommitteesPrint();
+}
+
+function renderCommitteesPrint(){
+  const el = document.getElementById('committees-print-area');
+  if(!el) return;
+  const list = config.committees || [];
+  if(list.length===0){ el.innerHTML = '<div class="empty">هیچ لیژنەیەک نییە.</div>'; return; }
+  const sub = [config.school.name, config.school.year].filter(Boolean).map(escapeHtml).join(' — ');
+  el.innerHTML = `<h2 class="committee-title">لیژنەکانی قوتابخانە</h2>${sub?`<div class="committee-sub">${sub}</div>`:''}` +
+    list.map(c=>{
+      const members = sortedCommitteeMembers(c);
+      const rows = members.length ? members.map((m,i)=>`<tr>
+          <td class="num">${toKurdishDigits(i+1)}</td>
+          <td>${escapeHtml(committeeMemberName(m))}</td>
+          <td>${escapeHtml(m.role)}</td>
+          <td class="sign"></td>
+        </tr>`).join('') : '<tr><td colspan="4">—</td></tr>';
+      return `<div class="committee-block">
+        <h3>${escapeHtml(c.name)}</h3>
+        ${c.description?`<div class="c-desc">${escapeHtml(c.description)}</div>`:''}
+        <table class="committee-table">
+          <thead><tr><th>ژ</th><th>ناو</th><th>ڕۆڵ</th><th>واژۆ</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+    }).join('');
+}
+
+function downloadCommitteesPrintable(){
+  if(!appReady){ showAlert('تکایە چەند چرکەیەک چاوەڕێ بکە تا زانیارییەکانت بار دەبن، پاشان دووبارە هەوڵ بدەوە.'); return; }
+  if(!(config.committees||[]).length){ showAlert('سەرەتا لیژنەیەک دروست بکە.'); return; }
+  const cs = getComputedStyle(document.body);
+  const dark = (cs.getPropertyValue('--chalkboard')||'').trim() || '#2B3B35';
+  const light = (cs.getPropertyValue('--chalk-white')||'').trim() || '#F5F3E8';
+  downloadAsPrintableHTML('committees-print-area','لیژنەکانی قوتابخانە','lijnakan.html', false, committeePrintCss(dark, light));
+}
+
+/* ---------------- Roles ---------------- */
+function applyRoleRestrictions(){
+  const teacherOnlyTabs = ['dashboard','attendance'];
+  document.querySelectorAll('nav.tabs button').forEach(btn=>{
+    const tab = btn.dataset.tab;
+    if(!REQUIRE_LOGIN && tab==='attendance'){ btn.style.display = 'none'; return; }
+    if(currentRole==='teacher'){
+      btn.style.display = teacherOnlyTabs.includes(tab) ? '' : 'none';
+    } else {
+      btn.style.display = '';
+    }
+  });
+  if(currentRole==='teacher'){
+    const attBtn = document.querySelector('nav.tabs button[data-tab="attendance"]');
+    if(attBtn) attBtn.click();
+  }
+}
+
+/* ---------------- Attendance ---------------- */
+function todayDateStr(d){
+  d = d || new Date();
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function attendanceDocId(classId, dateStr, periodIndex){
+  return `${classId}__${dateStr}__p${periodIndex}`;
+}
+
+function findTeacherCurrentPeriod(){
+  const info = getDashboardTimeInfo();
+  if(!info.isSchoolDay || info.status!=='during') return { info, match:null };
+  const aMap = assignmentsById();
+  for(const cls of config.classes){
+    const daySched = schedules[cls.id] && schedules[cls.id][info.dayName];
+    if(!daySched) continue;
+    const aid = daySched[info.periodIndex];
+    if(!aid) continue;
+    const a = aMap[aid];
+    if(a && a.teacherId===currentTeacherId){
+      const subject = config.subjects.find(s=>s.id===a.subjectId) || {name:'؟'};
+      return { info, match: { cls, assignment:a, subject } };
+    }
+  }
+  return { info, match:null };
+}
+
+function renderAttendanceTab(){
+  safe(()=>{ document.getElementById('attendance-teacher-view').style.display = currentRole==='teacher' ? '' : 'none'; });
+  safe(()=>{ document.getElementById('attendance-admin-view').style.display = currentRole==='admin' ? '' : 'none'; });
+  if(currentRole==='teacher') renderAttendanceTeacherView();
+  else renderAttendanceAdminView();
+}
+
+let attendanceCurrentDocId = null;
+let attendanceCurrentRecord = null;
+let attendanceEditable = true;
+
+async function renderAttendanceTeacherView(){
+  const el = document.getElementById('attendance-teacher-view');
+  if(!el) return;
+  const { info, match } = findTeacherCurrentPeriod();
+  if(!info.isSchoolDay){
+    el.innerHTML = '<div class="card"><p class="empty">ئەمڕۆ ڕۆژی دەوام نییە.</p></div>';
+    return;
+  }
+  if(info.status!=='during'){
+    el.innerHTML = '<div class="card"><p class="empty">لە ئێستادا لەناو وانەدا نیت. کاتێک وانەیەکت هەبێت، ئێرە خۆی خشتەی قوتابیانی پیشان دەدات.</p></div>';
+    return;
+  }
+  if(!match){
+    el.innerHTML = '<div class="card"><p class="empty">وانەی ئێستا بۆ تۆ نییە.</p></div>';
+    return;
+  }
+  const { cls, subject } = match;
+  const dateStr = todayDateStr(info.now);
+  const docId = attendanceDocId(cls.id, dateStr, info.periodIndex);
+  attendanceCurrentDocId = docId;
+  const students = config.students.filter(s=>s.classId===cls.id);
+
+  let record = null;
+  try{
+    if(fbDb && fbDoc && fbGetDoc){
+      const snap = await fbGetDoc(fbDoc(fbDb, 'attendance', docId));
+      if(snap.exists()) record = snap.data();
+    }
+  }catch(e){ console.log('load attendance failed', e); }
+  attendanceCurrentRecord = record;
+
+  let editable = true;
+  let lockMsg = '';
+  if(record && record.submittedAt){
+    const minsSince = (Date.now() - record.submittedAt) / 60000;
+    if(minsSince > 5){ editable = false; lockMsg = 'ئەم ٥ خولەکە بۆ گۆڕین تێپەڕیوە. ئەگەر هەڵەیەک هەیە، پەیوەندی بە بەڕێوەبەر بکە.'; }
+  }
+  attendanceEditable = editable;
+
+  if(students.length===0){
+    el.innerHTML = `<div class="card"><h3>${escapeHtml(cls.name)} — وانەی ${toKurdishDigits(info.periodIndex+1)} — ${escapeHtml(subject.name)}</h3><p class="empty">هیچ قوتابیێک بۆ ئەم پۆلە زیاد نەکراوە. لە بەشی «زانیاری سەرەکی → قوتابیان» زیادیان بکە.</p></div>`;
+    return;
+  }
+
+  const entries = (record && record.entries) || {};
+  el.innerHTML = `
+    <div class="card">
+      <h3>${escapeHtml(cls.name)} — وانەی ${toKurdishDigits(info.periodIndex+1)} — ${escapeHtml(subject.name)}</h3>
+      ${lockMsg?`<p class="notice warn">${lockMsg}</p>`:''}
+      <ul class="list" id="attendance-student-list">
+        ${students.map(s=>{
+          const cur = entries[s.id] || 'present';
+          return `<li>
+            <span class="name">${escapeHtml(s.name)}</span>
+            <span class="btnrow att-toggle" data-student="${s.id}">
+              <button type="button" class="btn btn-sm ${cur==='present'?'btn-primary':'btn-ghost'}" onclick="setAttendanceMark('${s.id}','present')" ${editable?'':'disabled'}>ئامادەیە</button>
+              <button type="button" class="btn btn-sm ${cur==='absent'?'btn-danger':'btn-ghost'}" onclick="setAttendanceMark('${s.id}','absent')" ${editable?'':'disabled'}>غایب</button>
+              <button type="button" class="btn btn-sm ${cur==='leave'?'btn-accent':'btn-ghost'}" onclick="setAttendanceMark('${s.id}','leave')" ${editable?'':'disabled'}>مۆڵەت</button>
+            </span>
+          </li>`;
+        }).join('')}
+      </ul>
+      <button class="btn btn-primary" style="width:100%;margin-top:10px;" onclick="submitAttendance('${cls.id}','${dateStr}',${info.periodIndex},'${subject.id||''}')" ${editable?'':'disabled'}>${record?'نوێکردنەوەی تۆمار':'ناردنی غیابات'}</button>
+    </div>`;
+  if(!attendanceCurrentRecord) attendanceCurrentRecord = { entries: {} };
+  else if(!attendanceCurrentRecord.entries) attendanceCurrentRecord.entries = {};
+}
+
+function setAttendanceMark(studentId, mark){
+  if(!attendanceEditable) return;
+  if(!attendanceCurrentRecord) attendanceCurrentRecord = { entries:{} };
+  if(!attendanceCurrentRecord.entries) attendanceCurrentRecord.entries = {};
+  attendanceCurrentRecord.entries[studentId] = mark;
+  const row = document.querySelector(`.att-toggle[data-student="${studentId}"]`);
+  if(row){
+    row.querySelectorAll('button').forEach(b=>{ b.classList.remove('btn-primary','btn-danger','btn-accent'); b.classList.add('btn-ghost'); });
+    const idx = mark==='present'?0:(mark==='absent'?1:2);
+    const btn = row.children[idx];
+    btn.classList.remove('btn-ghost');
+    btn.classList.add(mark==='present'?'btn-primary':(mark==='absent'?'btn-danger':'btn-accent'));
+  }
+}
+
+async function submitAttendance(classId, dateStr, periodIndex, subjectId){
+  if(!fbDb || !fbDoc || !fbSetDoc){ showAlert('ئێستا ناتوانرێت تۆمار بکرێت، دواتر هەوڵ بدەوە.'); return; }
+  const docId = attendanceDocId(classId, dateStr, periodIndex);
+  const entries = (attendanceCurrentRecord && attendanceCurrentRecord.entries) || {};
+  const cleanEntries = {};
+  Object.keys(entries).forEach(sid=>{ if(entries[sid]!=='present') cleanEntries[sid] = entries[sid]; });
+  const record = {
+    classId, date: dateStr, periodIndex, subjectId,
+    teacherId: currentTeacherId,
+    entries: cleanEntries,
+    submittedAt: (attendanceCurrentRecord && attendanceCurrentRecord.submittedAt) || Date.now(),
+    updatedAt: Date.now()
+  };
+  try{
+    await fbSetDoc(fbDoc(fbDb, 'attendance', docId), record);
+    showAlert('غیابات تۆمارکرا.');
+    renderAttendanceTeacherView();
+  }catch(e){
+    console.log('submitAttendance failed', e);
+    showAlert('نەکرا تۆمار بکرێت، هەوڵ بدەوە.');
+  }
+}
+
+/* Admin: browse/edit attendance for any class/day/period, no time lock */
+function renderAttendanceAdminView(){
+  const el = document.getElementById('attendance-admin-view');
+  if(!el) return;
+  const todayStr = todayDateStr();
+  el.innerHTML = `
+    <div class="card">
+      <h3>پشکنینی غیابات</h3>
+      <div class="row form">
+        <select id="att-admin-class" class="grow" onchange="loadAdminAttendance()"></select>
+        <input type="date" id="att-admin-date" value="${todayStr}" onchange="loadAdminAttendance()">
+        <select id="att-admin-period" onchange="loadAdminAttendance()"></select>
+      </div>
+      <div id="att-admin-result"></div>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <h3>کۆی غیابات و ئاگاداری</h3>
+      <p class="section-hint" style="margin-bottom:10px;">٣ وانەی غایب لە ڕۆژێکدا یان زیاتر = ١ ڕۆژی غیابات؛ کەمتریش پێکەوە کۆدەکرێنەوە. ١٢ ڕۆژ=ئینزاری١، ٢١ ڕۆژ=ئینزاری٢، ٢٦ ڕۆژ=فەسڵ.</p>
+      <div class="row form">
+        <select id="att-summary-class" class="grow"></select>
+        <button class="btn btn-primary btn-sm" onclick="renderAttendanceSummary()">پیشاندان</button>
+      </div>
+      <div id="att-summary-result"></div>
+    </div>`;
+  const classSel = document.getElementById('att-admin-class');
+  classSel.innerHTML = config.classes.length ? config.classes.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('') : '<option value="">هیچ پۆلێک نییە</option>';
+  const periodSel = document.getElementById('att-admin-period');
+  periodSel.innerHTML = (config.settings.periodTimes||[]).map((t,i)=>`<option value="${i}">وانەی ${toKurdishDigits(i+1)}</option>`).join('');
+  loadAdminAttendance();
+  const sumSel = document.getElementById('att-summary-class');
+  sumSel.innerHTML = classSel.innerHTML;
+}
+
+async function loadAdminAttendance(){
+  const resEl = document.getElementById('att-admin-result');
+  if(!resEl) return;
+  const classId = document.getElementById('att-admin-class').value;
+  const dateStr = document.getElementById('att-admin-date').value;
+  const periodIndex = parseInt(document.getElementById('att-admin-period').value, 10) || 0;
+  if(!classId || !dateStr){ resEl.innerHTML = ''; return; }
+  const students = config.students.filter(s=>s.classId===classId);
+  let record = null;
+  try{
+    if(fbDb && fbDoc && fbGetDoc){
+      const snap = await fbGetDoc(fbDoc(fbDb, 'attendance', attendanceDocId(classId, dateStr, periodIndex)));
+      if(snap.exists()) record = snap.data();
+    }
+  }catch(e){ console.log('admin load attendance failed', e); }
+  if(students.length===0){ resEl.innerHTML = '<p class="empty">هیچ قوتابیێک بۆ ئەم پۆلە نییە.</p>'; return; }
+  const entries = (record && record.entries) || {};
+  window.__adminAttEntries = Object.assign({}, entries);
+  resEl.innerHTML = `
+    <ul class="list" style="margin-top:10px;">
+      ${students.map(s=>{
+        const cur = entries[s.id] || 'present';
+        return `<li>
+          <span class="name">${escapeHtml(s.name)}</span>
+          <span class="btnrow att-toggle-admin" data-student="${s.id}">
+            <button type="button" class="btn btn-sm ${cur==='present'?'btn-primary':'btn-ghost'}" onclick="setAdminAttendanceMark('${s.id}','present')">ئامادەیە</button>
+            <button type="button" class="btn btn-sm ${cur==='absent'?'btn-danger':'btn-ghost'}" onclick="setAdminAttendanceMark('${s.id}','absent')">غایب</button>
+            <button type="button" class="btn btn-sm ${cur==='leave'?'btn-accent':'btn-ghost'}" onclick="setAdminAttendanceMark('${s.id}','leave')">مۆڵەت</button>
+          </span>
+        </li>`;
+      }).join('')}
+    </ul>
+    <button class="btn btn-primary" style="width:100%;margin-top:10px;" onclick="saveAdminAttendance('${classId}','${dateStr}',${periodIndex})">پاشەکەوتکردن</button>
+    ${!record?'<p class="section-hint" style="margin-top:6px;">هێشتا هیچ تۆمارێک بۆ ئەم وانەیە نییە؛ هەموو قوتابیان بە بنەڕەت ئامادەن.</p>':''}
+  `;
+}
+function setAdminAttendanceMark(studentId, mark){
+  if(!window.__adminAttEntries) window.__adminAttEntries = {};
+  window.__adminAttEntries[studentId] = mark;
+  const row = document.querySelector(`.att-toggle-admin[data-student="${studentId}"]`);
+  if(row){
+    row.querySelectorAll('button').forEach(b=>{ b.classList.remove('btn-primary','btn-danger','btn-accent'); b.classList.add('btn-ghost'); });
+    const idx = mark==='present'?0:(mark==='absent'?1:2);
+    const btn = row.children[idx];
+    btn.classList.remove('btn-ghost');
+    btn.classList.add(mark==='present'?'btn-primary':(mark==='absent'?'btn-danger':'btn-accent'));
+  }
+}
+async function saveAdminAttendance(classId, dateStr, periodIndex){
+  if(!fbDb || !fbDoc || !fbSetDoc){ showAlert('ئێستا ناتوانرێت پاشەکەوت بکرێت.'); return; }
+  const entries = window.__adminAttEntries || {};
+  const cleanEntries = {};
+  Object.keys(entries).forEach(sid=>{ if(entries[sid]!=='present') cleanEntries[sid] = entries[sid]; });
+  const docId = attendanceDocId(classId, dateStr, periodIndex);
+  try{
+    let existing = null;
+    try{ const snap = await fbGetDoc(fbDoc(fbDb, 'attendance', docId)); if(snap.exists()) existing = snap.data(); }catch(e){}
+    const record = Object.assign({}, existing, {
+      classId, date: dateStr, periodIndex,
+      entries: cleanEntries,
+      updatedAt: Date.now(),
+      updatedByAdmin: true
+    });
+    if(!record.submittedAt) record.submittedAt = Date.now();
+    await fbSetDoc(fbDoc(fbDb, 'attendance', docId), record);
+    showAlert('پاشەکەوت کرا.');
+  }catch(e){
+    console.log('saveAdminAttendance failed', e);
+    showAlert('نەکرا پاشەکەوت بکرێت.');
+  }
+}
+
+/* Absence-day rollup and 12/21/26 warning escalation, computed per class on demand */
+async function computeClassAbsenceSummary(classId){
+  const students = config.students.filter(s=>s.classId===classId);
+  if(!fbDb || !fbCollection || !fbQuery || !fbWhere || !fbGetDocs) return null;
+  const q = fbQuery(fbCollection(fbDb,'attendance'), fbWhere('classId','==',classId));
+  const snap = await fbGetDocs(q);
+  const perStudent = {};
+  students.forEach(s=>{ perStudent[s.id] = { byDateAbsent:{}, leaveDates:{} }; });
+  snap.forEach(docSnap=>{
+    const d = docSnap.data();
+    const date = d.date;
+    const entries = d.entries || {};
+    Object.keys(entries).forEach(sid=>{
+      if(!perStudent[sid]) return;
+      const mark = entries[sid];
+      if(mark==='absent') perStudent[sid].byDateAbsent[date] = (perStudent[sid].byDateAbsent[date]||0) + 1;
+      else if(mark==='leave') perStudent[sid].leaveDates[date] = true;
+    });
+  });
+  return students.map(s=>{
+    const rec = perStudent[s.id];
+    let fullDays = 0, leftover = 0;
+    Object.values(rec.byDateAbsent).forEach(count=>{
+      if(count>=3) fullDays += 1; else leftover += count;
+    });
+    fullDays += Math.floor(leftover/3);
+    const leaveDays = Object.keys(rec.leaveDates).length;
+    let warning = '', warnClass = '';
+    if(fullDays>=26){ warning='فەسڵ'; warnClass='btn-danger'; }
+    else if(fullDays>=21){ warning='ئینزاری دووەم'; warnClass='btn-danger'; }
+    else if(fullDays>=12){ warning='ئینزاری یەکەم'; warnClass='notice warn'; }
+    return { student:s, absentDays: fullDays, leaveDays, warning, warnClass };
+  }).sort((a,b)=>b.absentDays-a.absentDays);
+}
+
+async function renderAttendanceSummary(){
+  const classId = document.getElementById('att-summary-class').value;
+  const resEl = document.getElementById('att-summary-result');
+  if(!classId){ resEl.innerHTML = '<p class="empty">پۆلێک هەڵبژێرە.</p>'; return; }
+  resEl.innerHTML = '<p class="empty">چاوەڕێ بکە...</p>';
+  const rows = await computeClassAbsenceSummary(classId);
+  if(!rows){ resEl.innerHTML = '<p class="empty">ئێستا ناتوانرێت بارگاوی بکرێت.</p>'; return; }
+  if(rows.length===0){ resEl.innerHTML = '<p class="empty">هیچ قوتابیێک بۆ ئەم پۆلە نییە.</p>'; return; }
+  resEl.innerHTML = `<ul class="list" style="margin-top:10px;">
+    ${rows.map(r=>`<li>
+      <span class="name">${escapeHtml(r.student.name)} <span class="subtext">(${toKurdishDigits(r.absentDays)} ڕۆژ غیابات${r.leaveDays?` · ${toKurdishDigits(r.leaveDays)} ڕۆژ مۆڵەت`:''})</span></span>
+      ${r.warning?`<span class="btnrow"><span class="btn btn-sm ${r.warnClass}" style="cursor:default;">${r.warning}</span></span>`:''}
+    </li>`).join('')}
+  </ul>`;
+}
+</script>
+</body>
+</html>
