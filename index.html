@@ -37,6 +37,16 @@
   body.theme-ocean{ --chalkboard:#1F3A5F; --chalkboard-2:#28496F; --chalk-yellow:#F2A65A; }
   body.theme-purple{ --chalkboard:#3B2A4A; --chalkboard-2:#46325A; --chalk-yellow:#D4A857; }
   body.theme-burgundy{ --chalkboard:#4A2530; --chalkboard-2:#5A2F3C; --chalk-yellow:#D9A441; }
+  body.theme-teal{ --chalkboard:#0F4C5C; --chalkboard-2:#195E70; --chalk-yellow:#F0B95A; }
+  body.theme-charcoal{ --chalkboard:#2E2F36; --chalkboard-2:#3B3D46; --chalk-yellow:#E8C15A; }
+  #home-welcome{max-width:900px;margin:18px auto 0;padding:0 16px;text-align:center;font-size:22px;font-weight:800;color:var(--chalkboard);}
+  #home-welcome .hw-name{color:var(--accent-red);}
+  #home-themes{max-width:900px;margin:0 auto 26px;padding:0 16px;text-align:center;}
+  #home-themes .ht-label{font-size:13px;color:var(--ink-soft);margin-bottom:8px;}
+  #home-themes .ht-dot{display:inline-block;width:38px;height:38px;border-radius:50%;margin:0 6px;border:3px solid #fff;box-shadow:0 0 0 2px var(--rule);cursor:pointer;vertical-align:middle;}
+  #home-themes .ht-dot.sel{box-shadow:0 0 0 3px var(--chalk-yellow);transform:scale(1.12);}
+  #att-students .list .name, #attendance-admin-view .list .name{font-size:19px;font-weight:700;}
+  #att-students .list .btn, #attendance-admin-view .list .btn{font-size:15px;padding:9px 14px;}
   body.hide-teacher-names .cell .teach{ display:none !important; }
   html,body{margin:0;padding:0;}
   body{
@@ -436,7 +446,7 @@
     <button id="logout-btn" class="install-app-btn" style="display:none;background:var(--rule);color:var(--ink);margin-right:8px;" onclick="doLogout()">🚪 چوونەدەرەوە</button>
   </header>
 
-  <div id="home-screen"><div class="home-grid" id="home-grid"></div></div>
+  <div id="home-screen"><div id="home-welcome"></div><div class="home-grid" id="home-grid"></div><div id="home-themes"></div></div>
   <div id="home-bar" class="no-print"><button type="button" onclick="goBack()">↩ گەڕانەوە</button><span id="home-bar-title" style="color:var(--chalk-white);font-weight:600;"></span></div>
 
   <nav class="tabs" style="display:none;">
@@ -592,6 +602,8 @@
               <option value="ocean">شینی دەریا</option>
               <option value="purple">مۆری شاهانە</option>
               <option value="burgundy">سووری شەرابی</option>
+              <option value="teal">تیل</option>
+              <option value="charcoal">خۆڵەمێشی</option>
             </select></div>
         </div>
         <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer;">
@@ -1083,7 +1095,7 @@ const FIREBASE_CONFIG = {
 let fbDb = null, fbDoc = null, fbSetDoc = null, fbGetDoc = null;
 let fbAuth = null, fbSignIn = null, fbSignOut = null, fbOnAuthChanged = null;
 let fbSecondaryAuth = null, fbCreateUser = null;
-let fbDeleteDoc = null;
+let fbDeleteDoc = null, fbServerTimestamp = null;
 let fbCollection = null, fbQuery = null, fbWhere = null, fbGetDocs = null;
 async function initFirebase(){
   try{
@@ -1100,6 +1112,7 @@ async function initFirebase(){
     fbWhere = fsMod.where;
     fbGetDocs = fsMod.getDocs;
     fbDeleteDoc = fsMod.deleteDoc;
+    fbServerTimestamp = fsMod.serverTimestamp;
     fbAuth = authMod.getAuth(app);
     fbSignIn = authMod.signInWithEmailAndPassword;
     fbSignOut = authMod.signOut;
@@ -1123,6 +1136,7 @@ function attQueueGet(){ try{ return JSON.parse(localStorage.getItem(attQueueKey(
 function attQueueSet(q){ try{ localStorage.setItem(attQueueKey(), JSON.stringify(q)); }catch(e){} updatePendingBar(); }
 function attQueueAdd(docId, record){
   const q = attQueueGet().filter(x=>x.docId!==docId);
+  record = Object.assign({}, record); delete record.createdAt;
   q.push({ docId, record, queuedAt: Date.now() });
   attQueueSet(q);
 }
@@ -1143,7 +1157,7 @@ async function flushAttQueue(manual){
   try{
     for(const item of q.slice()){
       try{
-        await withTimeout(fbSetDoc(fbDoc(fbDb, 'attendance', item.docId), item.record), 15000);
+        await withTimeout(fbSetDoc(fbDoc(fbDb, 'attendance', item.docId), Object.assign({}, item.record, { createdAt: fbServerTimestamp() })), 15000);
         sent++;
         attQueueSet(attQueueGet().filter(x=>x.docId!==item.docId));
       }catch(e){
@@ -1714,9 +1728,38 @@ function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const
 /* ---------------- School info ---------------- */
 function updateSchool(field,val){ config.school[field]=val; renderOverview(); scheduleSave(); }
 
-const THEME_CLASSES = ['theme-ocean','theme-purple','theme-burgundy'];
+const THEME_CLASSES = ['theme-ocean','theme-purple','theme-burgundy','theme-teal','theme-charcoal'];
+const THEME_CHOICES = [
+  { id:'chalkboard', color:'#2B3B35', name:'سەوز' },
+  { id:'ocean', color:'#1F3A5F', name:'شین' },
+  { id:'purple', color:'#3B2A4A', name:'مۆر' },
+  { id:'burgundy', color:'#4A2530', name:'سووری شەرابی' },
+  { id:'teal', color:'#0F4C5C', name:'تیل' },
+  { id:'charcoal', color:'#2E2F36', name:'خۆڵەمێشی' }
+];
+function personalThemeGet(){ try{ return localStorage.getItem('khshtay_ui_theme') || ''; }catch(e){ return ''; } }
+function setPersonalTheme(id){
+  try{ localStorage.setItem('khshtay_ui_theme', id); }catch(e){}
+  applyUiPrefs();
+  renderHomeExtras();
+}
+function renderHomeExtras(){
+  const w = document.getElementById('home-welcome'), t = document.getElementById('home-themes');
+  if(!w || !t) return;
+  const top = currentScreen==='home';
+  if(!top){ w.style.display='none'; t.style.display='none'; return; }
+  let who = '';
+  if(currentRole==='teacher'){
+    const tc = (config.teachers||[]).find(x=>x.id===currentTeacherId);
+    who = `بەخێر بێیت <span class="hw-name">${escapeHtml(tc ? tc.name : '')}</span> مامۆستا`;
+  } else who = 'بەخێر بێیت بەڕێوەبەر';
+  w.innerHTML = who; w.style.display='';
+  const cur = personalThemeGet() || ((config.settings && config.settings.theme) || 'chalkboard');
+  t.innerHTML = '<div class="ht-label">ڕەنگی ڕووکاری بەرنامە هەڵبژێرە</div>' + THEME_CHOICES.map(c=>`<span class="ht-dot ${c.id===cur?'sel':''}" title="${c.name}" style="background:${c.color}" onclick="setPersonalTheme('${c.id}')"></span>`).join('');
+  t.style.display='';
+}
 function applyUiPrefs(){
-  const theme = (config.settings && config.settings.theme) || 'chalkboard';
+  const theme = personalThemeGet() || (config.settings && config.settings.theme) || 'chalkboard';
   const showT = !(config.settings && config.settings.showTeacherNames === false);
   THEME_CLASSES.forEach(c=>document.body.classList.remove(c));
   if(theme!=='chalkboard') document.body.classList.add('theme-'+theme);
@@ -4639,6 +4682,7 @@ function renderHome(group){
   else list = HOME_CARDS.filter(c=>c.top);
   grid.innerHTML = list.map(c=>`<button type="button" class="home-card ${c.cls||''}" onclick="showScreen('${c.id}')"><span class="hc-ico">${c.ico}</span><span>${c.title}</span><span class="hc-sub">${c.sub}</span><span class="hc-badge" data-badge="${c.id}"></span></button>`).join('');
   safe(updateLeaveBadges);
+  safe(renderHomeExtras);
 }
 function goBack(){
   const card = HOME_CARDS.find(c=>c.id===currentScreen);
@@ -5593,8 +5637,11 @@ async function getAttRecord(docId){
 async function setAttRecord(docId, record){
   if(currentRole==='teacher'){
     if(!attFbReady()){ attQueueAdd(docId, record); return 'queued'; }
-    try{ await withTimeout(fbSetDoc(fbDoc(fbDb, 'attendance', docId), record), 12000); return 'cloud'; }
-    catch(e){
+    try{
+      const rec = Object.assign({}, record);
+      if(!rec.createdAt) rec.createdAt = fbServerTimestamp();
+      await withTimeout(fbSetDoc(fbDoc(fbDb, 'attendance', docId), rec), 12000); return 'cloud';
+    }catch(e){
       console.log('teacher save failed', e);
       if(e && e.code==='permission-denied') return false;
       attQueueAdd(docId, record); return 'queued';
@@ -5747,6 +5794,16 @@ function setAttGrade(v){ attForm.gradeKey=v; attForm.classId=''; attForm.periodI
 function setAttClass(id){ attForm.classId=id; attForm.periodIndex=null; refreshAttForm(); }
 function setAttPeriod(v){ attForm.periodIndex = v==='' ? null : parseInt(v,10); refreshAttForm(); }
 
+const ATT_EDIT_MS = 10*60*1000;
+// A teacher may change a record for 10 minutes after it was registered (server time); the Firestore rules enforce the same limit.
+function attEditInfo(rec){
+  if(currentRole!=='teacher' || !rec) return { editable:true, left:0 };
+  if(rec.createdAt && rec.createdAt.toMillis){
+    const left = rec.createdAt.toMillis() + ATT_EDIT_MS - Date.now();
+    return { editable: left>0, left: Math.max(0,left) };
+  }
+  return attQueueGet().some(x=>x.docId===attForm.docId) ? { editable:true, left:0, queued:true } : { editable:false, left:0 };
+}
 async function renderAttStudents(){
   const el = document.getElementById('att-students');
   const btn = document.getElementById('att-submit');
@@ -5770,7 +5827,8 @@ async function renderAttStudents(){
       (rows||[]).forEach(r=>{ summary[r.student.id] = r; });
     }catch(e){ console.log('absence summary failed', e); }
   }
-  const lockedRec = currentRole==='teacher' && !!rec; // a teacher can add a record but never change it
+  const editInfo = attEditInfo(rec);
+  const lockedRec = currentRole==='teacher' && !!rec && !editInfo.editable; // a teacher can change a record only for 10 minutes
   if(attForm.docId!==docId) return;
   attForm.summary = summary;
   const classStudents = config.students.filter(s=>s.classId===attForm.classId);
@@ -5784,7 +5842,7 @@ async function renderAttStudents(){
   const when = rec && rec.updatedAt ? new Date(rec.updatedAt).toLocaleString('en-GB') : '';
   el.innerHTML = `
     <div class="field-label" style="margin:14px 0 4px;">قوتابیان <span class="count">${toKurdishDigits(students.length)}</span></div>
-    ${rec?(lockedRec?`<p class="notice warn">ئەم وانەیە پێشتر تۆمارکراوە (${escapeHtml(when)}) و ناتوانرێت بگۆڕدرێت. ئەگەر هەڵەیەک هەیە بەڕێوەبەر ئاگادار بکەرەوە.</p>`:`<p class="notice warn">ئەم وانەیە پێشتر تۆمارکراوە (${escapeHtml(when)}). ناردنی نوێ تۆمارەکە نوێ دەکاتەوە.</p>`):''}
+    ${rec?(lockedRec?`<p class="notice warn">ئەم وانەیە پێشتر تۆمارکراوە (${escapeHtml(when)}) و ناتوانرێت بگۆڕدرێت. ئەگەر هەڵەیەک هەیە بەڕێوەبەر ئاگادار بکەرەوە.</p>`:`<p class="notice warn">ئەم وانەیە پێشتر تۆمارکراوە (${escapeHtml(when)}).${currentRole==='teacher' ? (editInfo.queued ? ' هێشتا نەنێردراوە، دەتوانیت بیگۆڕیت.' : ' دەتوانیت تا ' + toKurdishDigits(Math.max(1,Math.ceil(editInfo.left/60000))) + ' خولەکی تر بیگۆڕیت.') : ' ناردنی نوێ تۆمارەکە نوێ دەکاتەوە.'}</p>`):''}
     <ul class="list">
       ${students.map(s=>{
         const cur = attForm.marks[s.id] || 'present';
@@ -5895,8 +5953,9 @@ async function submitAttendance(){
   if(!attForm.teacherId || !attForm.classId || attForm.periodIndex==null){
     showAlert('تکایە مامۆستا، پۆل، لق و وانە هەڵبژێرە.'); return;
   }
-  if(currentRole==='teacher' && attForm.record){ showAlert('ئەم وانەیە پێشتر تۆمارکراوە و ناتوانرێت بگۆڕدرێت.'); return; }
-  if(!attForm.hasSig){ showAlert('تکایە سەرەتا واژۆ بکە.'); return; }
+  if(currentRole==='teacher' && attForm.record && !attEditInfo(attForm.record).editable){ showAlert('ماوەی گۆڕین (١٠ خولەک) تەواو بووە. بەڕێوەبەر ئاگادار بکەرەوە.'); return; }
+  const oldSig = attForm.record && attForm.record.signature;
+  if(!attForm.hasSig && !oldSig){ showAlert('تکایە سەرەتا واژۆ بکە.'); return; }
   const lesson = teacherLessonsOnDay(attForm.teacherId, attDayName()).find(l=>l.cls.id===attForm.classId && l.periodIndex===attForm.periodIndex);
   const students = config.students.filter(s=>s.classId===attForm.classId);
   const entries = {};
@@ -5911,12 +5970,12 @@ async function submitAttendance(){
     teacherId: attForm.teacherId,
     ownerTid: attForm.teacherId,
     entries,
-    signature: canvas.toDataURL('image/png'),
+    signature: attForm.hasSig ? canvas.toDataURL('image/png') : oldSig,
     submittedAt: (attForm.record && attForm.record.submittedAt) || Date.now(),
     updatedAt: Date.now()
   });
   const mode = await setAttRecord(docId, record);
-  if(!mode){ showAlert('نەکرا تۆمار بکرێت، هەوڵ بدەوە.'); return; }
+  if(!mode){ showAlert(currentRole==='teacher' && attForm.record ? 'نەکرا بگۆڕدرێت: ماوەی ١٠ خولەک تەواو بووە یان پەیوەندی نییە.' : 'نەکرا تۆمار بکرێت، هەوڵ بدەوە.'); return; }
   showAlert(mode==='queued' ? 'ئینتەرنێت نییە: غیابەکە لەسەر مۆبایلەکەت هەڵگیرا و کاتێک ئینتەرنێت هات خۆکارانە دەنێردرێت. تکایە لاپەڕەکە مەسڕەوە و ئەپەکە هەر بهێڵەرەوە.' : 'غیابات تۆمارکرا.');
   clearAttSignature();
   let crossed = [];
