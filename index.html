@@ -1410,6 +1410,7 @@ function applyLoadedConfig(loaded){
   config.committeeNames = Array.isArray(loaded.committeeNames) ? loaded.committeeNames : [];
   config.myCommittees = Array.isArray(loaded.myCommittees) ? loaded.myCommittees : [];
   config.myExamForm = Array.isArray(loaded.myExamForm) ? loaded.myExamForm : [];
+  config.mySeating = Array.isArray(loaded.mySeating) ? loaded.mySeating : [];
   config.myExam = (loaded.myExam && Array.isArray(loaded.myExam.rows)) ? loaded.myExam : { name:'', rows:[] };
   config.exams = Object.assign({ days: [] }, loaded.exams||{});
   if(!Array.isArray(config.exams.days)) config.exams.days = [];
