@@ -5612,7 +5612,7 @@ async function smReceive(){
   if(!attFbReady()){ showAlert('ئینتەرنێت پێویستە بۆ واژۆی وەرگرتن. دواتر هەوڵ بدەرەوە.'); return; }
   if(!confirm('واژۆی وەرگرتنی '+toKurdishDigits(cnt)+' سۆما دەنێردرێت و ناگۆڕدرێت. بەردەوام بم؟')) return;
   const rec={ kind:'soma', ownerTid:currentTeacherId, teacherId:currentTeacherId, dayId:f.dayId, sector:f.sector, date:f.date, stuCount:f.stuCount||0, somaCount:f.somaCount||0, recvCount:cnt, recvSig:document.getElementById('sm-sig').toDataURL('image/png'), createdAt:fbServerTimestamp() };
-  try{ await withTimeout(fbSetDoc(fbDoc(fbDb,'attendance',smDocId(f)),rec),15000); showAlert('واژۆی وەرگرتنی سۆما نێردرا. دوای ٢ کاتژمێر و کاتێک بەڕێوەبەر چالاکی بکات دەتوانیت بیگەڕێنیتەوە.'); smLoaded=''; renderMySoma(); }
+  try{ await withTimeout(fbSetDoc(fbDoc(fbDb,'attendance',smDocId(f)),rec),15000); showAlert('واژۆی وەرگرتنی سۆما نێردرا. کاتێک بەڕێوەبەر گەڕاندنەوە چالاک بکات دەتوانیت بیگەڕێنیتەوە.'); smLoaded=''; renderMySoma(); }
   catch(e){ console.log('soma recv failed',e); showAlert(e&&e.code==='permission-denied'?'ناتوانرێت بنێردرێت. لەوانەیە بەڕێوەبەر هێشتا چالاکی نەکردبێت، یان پێشتر واژۆت کردبێت.':'نەنێردرا. ئینتەرنێت بپشکنە و دووبارە هەوڵ بدەرەوە.'); }
 }
 async function smReturn(){
@@ -5631,7 +5631,7 @@ async function smReturn(){
   if(!confirm('هاتوو: '+toKurdishDigits(P)+' ، نەهاتوو: '+toKurdishDigits(A)+' ، سۆمای گەڕاوە: '+toKurdishDigits(r)+'\nواژۆی گەڕاندنەوە دەنێردرێت و ناگۆڕدرێت. بەردەوام بم؟')) return;
   const rec=Object.assign({}, smRec, { absCount:A, presCount:P, retCount:Number(r), retDetail:detail, retSig:document.getElementById('sm-sig').toDataURL('image/png'), returnedAt:fbServerTimestamp() });
   try{ await withTimeout(fbSetDoc(fbDoc(fbDb,'attendance',smDocId(f)),rec),15000); showAlert('واژۆی گەڕاندنەوەی سۆما نێردرا. سوپاس.'); smLoaded=''; renderMySoma(); }
-  catch(e){ console.log('soma return failed',e); showAlert(e&&e.code==='permission-denied'?'ناتوانرێت بنێردرێت. دوو کاتژمێر دوای وەرگرتن و دوای چالاککردنی بەڕێوەبەر دەتوانیت بگەڕێنیتەوە.':'نەنێردرا. ئینتەرنێت بپشکنە و دووبارە هەوڵ بدەرەوە.'); }
+  catch(e){ console.log('soma return failed',e); showAlert(e&&e.code==='permission-denied'?'ناتوانرێت بنێردرێت. دوای چالاککردنی بەڕێوەبەر دەتوانیت بگەڕێنیتەوە.':'نەنێردرا. ئینتەرنێت بپشکنە و دووبارە هەوڵ بدەرەوە.'); }
 }
 function renderMySoma(keep){
   const el=document.getElementById('mysoma-body'); if(!el) return;
@@ -5656,21 +5656,21 @@ function renderMySoma(keep){
       <div class="btnrow"><button class="btn btn-primary" onclick="smReceive()">✍️ واژۆی وەرگرتنی سۆما</button></div>`
       :`<div class="notice warn">⏳ وەرگرتنی سۆما هێشتا لەلایەن بەڕێوەبەرەوە چالاک نەکراوە.</div><div class="btnrow"><button class="btn btn-ghost" onclick="smLoaded='';renderMySoma()">🔄 نوێکردنەوە</button></div>`}`;
   } else if(stage==='B'){
-    const timeOk=left<=0, ok=timeOk && ctl.retOpen===true;
+    const ok = ctl.retOpen===true;
     main=`<div class="notice">✅ سۆمات وەرگرتووە: ${toKurdishDigits(rec.recvCount)} سۆما (کاتژمێر ${dh(smFmtTime(rec.createdAt))}).</div>
       <h4 style="margin:10px 0 6px;">٢) گەڕاندنەوەی سۆما</h4>
       ${ok?`<p class="section-hint">بۆ هەر لقێک ژمارەی هاتوو و نەهاتوو بنووسە (هاتوو + نەهاتوو = ژمارەی خوێندکار). لە فۆڕمی «تۆماری نەهاتوو»ەوە خۆکارانە پڕ دەبنەوە ئەگەر ئەوەت پڕ کردبێتەوە.</p>
       <div style="overflow-x:auto;"><table style="border-collapse:collapse;width:100%;margin:6px 0 10px;"><thead><tr><th style="${th}">پۆل و لق</th><th style="${th}">خوێندکار</th><th style="${th}">هاتوو</th><th style="${th}">نەهاتوو</th></tr></thead><tbody>${det.map((d,i)=>`<tr><td style="${td}">${escapeHtml((d.grade+' '+d.section).trim()||'—')}</td><td style="${td}">${toKurdishDigits(d.stu)}</td><td style="${td}"><input type="number" id="sm-p${i}" min="0" style="width:80px;" value="${d.pa}"></td><td style="${td}"><input type="number" id="sm-a${i}" min="0" style="width:80px;" value="${d.ab}"></td></tr>`).join('')}</tbody></table></div>
       <div class="field"><label class="field-label">ژمارەی سۆمای گەڕاوە (وەرگیراو: ${toKurdishDigits(rec.recvCount)})</label><input type="number" id="sm-ret" min="0" value="${rec.recvCount}"></div>${sigBox}
       <div class="btnrow"><button class="btn btn-primary" onclick="smReturn()">✍️ واژۆی گەڕاندنەوەی سۆما</button></div>`
-      :`<div class="notice warn">⏳ ${!timeOk?'واژۆی گەڕاندنەوە دوای ٢ کاتژمێر لە وەرگرتن دەکرێت. نزیکەی '+toKurdishDigits(left)+' خولەک ماوە.':'گەڕاندنەوەی سۆما هێشتا لەلایەن بەڕێوەبەرەوە چالاک نەکراوە.'}</div><div class="btnrow"><button class="btn btn-ghost" onclick="smLoaded='';renderMySoma()">🔄 نوێکردنەوە</button></div>`}`;
+      :`<div class="notice warn">⏳ گەڕاندنەوەی سۆما هێشتا لەلایەن بەڕێوەبەرەوە چالاک نەکراوە.</div><div class="btnrow"><button class="btn btn-ghost" onclick="smLoaded='';renderMySoma()">🔄 نوێکردنەوە</button></div>`}`;
   } else {
     main=`<div class="notice">✅ تەواو بوو. وەرگرتن: ${toKurdishDigits(rec.recvCount)} سۆما (${dh(smFmtTime(rec.createdAt))}) — گەڕاندنەوە: ${toKurdishDigits(rec.retCount)} سۆما، ${toKurdishDigits(rec.presCount==null?'—':rec.presCount)} هاتوو، ${toKurdishDigits(rec.absCount)} نەهاتوو (${dh(smFmtTime(rec.returnedAt))}).</div>`;
   }
   el.innerHTML=`<div class="card" style="padding:12px;">
     ${forms.length>1?`<div class="field"><label class="field-label">ڕۆژ و کەرت</label><select onchange="smPick(this.value)">${forms.map(x=>{const v=x.dayId+'__'+x.sector;return `<option value="${v}" ${v===smSlot?'selected':''}>${escapeHtml(examDayName(x.date))} ${fmtSlash(x.date)} — ${escapeHtml(x.sectorName)}</option>`;}).join('')}</select></div>`:''}
     <h3 style="margin:6px 0;">${escapeHtml(examDayName(f.date))} ${dh(fmtSlash(f.date))} — ${escapeHtml(f.sectorName)}</h3>${main}</div>`;
-  if(stage==='A'&&ctl.recvOpen===true || stage==='B'&&left<=0&&ctl.retOpen===true) smInitSig();
+  if(stage==='A'&&ctl.recvOpen===true || stage==='B'&&ctl.retOpen===true) smInitSig();
 }
 
 /* ---- admin: soma hand-out / return sheet ---- */
@@ -5707,7 +5707,7 @@ async function smaCtlToggle(dayId, field){
       await withTimeout(fbSetDoc(fbDoc(fbDb,'attendance',x.id), data, { merge:true }), 15000);
       somaCtl[x.id]=Object.assign({}, somaCtl[x.id]||{}, data);
     }
-    showAlert(field==='recvOpen'?(on?'وەرگرتنی سۆما چالاک کرا بۆ چاودێرانی ئەم ڕۆژە.':'وەرگرتنی سۆما ناچالاک کرا.'):(on?'گەڕاندنەوەی سۆما چالاک کرا (مامۆستا دوای ٢ کاتژمێر لە واژۆی وەرگرتن دەتوانێت).':'گەڕاندنەوەی سۆما ناچالاک کرا.'));
+    showAlert(field==='recvOpen'?(on?'وەرگرتنی سۆما چالاک کرا بۆ چاودێرانی ئەم ڕۆژە.':'وەرگرتنی سۆما ناچالاک کرا.'):(on?'گەڕاندنەوەی سۆما چالاک کرا .':'گەڕاندنەوەی سۆما ناچالاک کرا.'));
     renderSomaHand();
   }catch(e){ console.log('soma ctl failed',e); showAlert('گۆڕین سەرنەکەوت.'); }
 }
@@ -5798,7 +5798,7 @@ function renderSomaHand(){
     return r.recs.map((x,i)=>{ const c=x.rec; return `<tr>${i===0?`<td style="${td}" rowspan="${r.recs.length}">${escapeHtml(somaSecText(r.sec))}</td><td style="${td}" rowspan="${r.recs.length}">${toKurdishDigits(r.stu)} خوێندکار<br>${toKurdishDigits(r.soma)} سۆما</td>`:''}<td style="${td}">${escapeHtml(examMPrefix(x.name))}</td><td style="${td}">${c?`✅ ${toKurdishDigits(c.recvCount)} سۆما — ${dh(smFmtTime(c.createdAt))}`:'—'}</td><td style="${td}">${c&&c.returnedAt?`✅ ${toKurdishDigits(c.retCount)} سۆما، ${toKurdishDigits(c.presCount==null?'—':c.presCount)} هاتوو، ${toKurdishDigits(c.absCount)} نەهاتوو — ${dh(smFmtTime(c.returnedAt))}`:'—'}</td></tr>`; }).join('');
   }).join('')}</tbody></table></div>`).join('');
   el.innerHTML=`<div class="card" style="padding:14px;margin-bottom:12px;">
-    <p class="section-hint">مامۆستای چاودێر لە مۆبایلەکەی خۆی «پێدان و وەرگرتنەوەی سۆما» دەکاتەوە: واژۆی وەرگرتن دەکات، و دوای ٢ کاتژمێر واژۆی گەڕاندنەوە. هەر ڕۆژێک دوو دوگمەی هەیە: یەکیان وەرگرتن و ئەوی تر گەڕاندنەوە بۆ مامۆستا چالاک دەکات. لێرە دەیبینیت و ڕاپۆرتی بەتاڵ یان پڕکراوە چاپ دەکەیت.</p>
+    <p class="section-hint">مامۆستای چاودێر لە مۆبایلەکەی خۆی «پێدان و وەرگرتنەوەی سۆما» دەکاتەوە: واژۆی وەرگرتن دەکات، و کاتێک تۆ چالاکی بکەیت واژۆی گەڕاندنەوە. هەر ڕۆژێک دوو دوگمەی هەیە: یەکیان وەرگرتن و ئەوی تر گەڕاندنەوە بۆ مامۆستا چالاک دەکات. لێرە دەیبینیت و ڕاپۆرتی بەتاڵ یان پڕکراوە چاپ دەکەیت.</p>
     <div class="row" style="gap:10px;flex-wrap:wrap;align-items:end;margin-top:0;">
       <div class="field" style="min-width:230px;"><label class="field-label">ڕۆژ</label><select onchange="smaSetDay(this.value)"><option value="">هەموو ڕۆژەکان</option>${days.map(d=>`<option value="${d.id}" ${smaDay===d.id?'selected':''}>${examDayName(d.date)} — ${fmtSlash(d.date)}</option>`).join('')}</select></div>
       <button class="btn btn-ghost" onclick="smaPull(true)">⬇️ وەرگرتنی تۆماری چاودێران</button>
