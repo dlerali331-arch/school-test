@@ -7091,12 +7091,116 @@ function secPrint(){
   setTimeout(()=>window.print(), 200);
 }
 
+/* ---------------- بەرگی فایل + نەهاتنی نافایل ---------------- */
+const fcState = { kind:'cover', sector:'' };
+const FC_CSS = `
+.fc-page{box-sizing:border-box;margin:0 auto;direction:rtl;font-family:'Vazirmatn',sans-serif;font-size:14px;color:#000;background:#fff;page-break-after:always;break-after:page;}
+.fc-page:last-child{page-break-after:auto;break-after:auto;}
+.fc-page *{box-sizing:border-box;line-height:1.3;}
+.fc-lab{font-weight:800;font-size:22px;text-align:center;margin:2mm 0;}
+.fc-big{background:#f4b6c2;border:.4mm solid #000;text-align:center;font-weight:900;font-size:34px;padding:5mm;margin:0 0 4mm;}
+.fc-row{display:flex;gap:1.2mm;margin-bottom:1.6mm;}
+.fc-k{background:#b5c9a4;border:.3mm solid #000;padding:1mm 2mm;font-weight:800;text-align:center;width:42mm;display:flex;align-items:center;justify-content:center;}
+.fc-v{border:.3mm solid #000;flex:1;text-align:center;font-weight:700;padding:1mm 2mm;min-height:8mm;display:flex;align-items:center;justify-content:center;}
+.fc-t{width:100%;border-collapse:collapse;margin:3mm 0;}
+.fc-t th{background:#ffe599;border:.3mm solid #000;font-weight:800;padding:1.2mm 1mm;text-align:center;}
+.fc-t td{border:.3mm solid #000;text-align:center;font-weight:700;padding:1.1mm 1mm;}
+.fc-t td.g{background:#d9d9d9;font-weight:800;}
+.fc-t tr{page-break-inside:avoid;break-inside:avoid;}
+.fc-tot{display:flex;gap:1.2mm;margin-top:3mm;}
+.fc-tot .a{background:#f4b6c2;border:.4mm solid #000;flex:1;text-align:center;font-weight:800;padding:2mm;}
+.fc-tot .b{border:.4mm solid #000;width:40mm;text-align:center;font-weight:900;font-size:20px;padding:2mm;}
+.fa-top{display:flex;justify-content:center;margin-bottom:3mm;}
+.fa-top div{background:#f4b6c2;border:.4mm solid #000;font-weight:900;font-size:22px;padding:2mm 14mm;}
+.fa-t{width:100%;border-collapse:collapse;table-layout:fixed;}
+.fa-t th{background:#ffe599;border:.3mm solid #000;font-weight:800;padding:1.5mm 1mm;text-align:center;}
+.fa-t td{border:.3mm solid #000;text-align:center;font-weight:700;padding:1mm;vertical-align:middle;}
+.fa-t td.s{font-size:12px;}
+.fa-t .ln{height:6.2mm;border-bottom:.2mm solid #555;}
+.fa-t .ln:last-child{border-bottom:0;}
+.fa-t tr{page-break-inside:avoid;break-inside:avoid;}
+`;
+function fcSectors(){ const l = seatSectorList(); return fcState.sector==='' ? l : l.filter(i=>String(i)===String(fcState.sector)); }
+function fcPlaces(){ const ex = config.exams; if(!ex.secPlaces) ex.secPlaces = {}; return ex.secPlaces; }
+function fcSetPlace(i,v){ fcPlaces()[i] = v; scheduleSave(); }
+function fcSet(k,v){ fcState[k]=v; renderExamReports(); }
+function fcGradeLabel(c){ const g = classGrade(c), s = classSection(c); return 'پۆلی '+g+(s?' ('+s+')':''); }
+function fcCoverHtml(sec){
+  const sc = config.school||{}, ex = config.exams||{};
+  const sts = seatStudentsOf(sec);
+  const classes = (config.classes||[]).filter(c=>sts.some(s=>s.classId===c.id));
+  classes.sort((a,b)=>String(classGrade(a)+classSection(a)).localeCompare(String(classGrade(b)+classSection(b)),'ku'));
+  const places = fcPlaces();
+  const grLabels = Array.from(new Set(classes.map(fcGradeLabel)));
+  let n = 0, body = '';
+  classes.forEach(c=>{
+    const list = sts.filter(s=>s.classId===c.id).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ku'));
+    body += `<tr><td class="g">${toKurdishDigits(list.length)}</td><td class="g" colspan="4">${escapeHtml(classGrade(c))}${classSection(c)?' — لق '+escapeHtml(classSection(c)):''}</td></tr>`;
+    list.forEach(s=>{ n++; body += `<tr><td>${toKurdishDigits(n)}</td><td>${escapeHtml(String(s.code||''))}</td><td style="text-align:right;">${escapeHtml(s.name||'')}</td><td>${escapeHtml(classGrade(c))}</td><td>${escapeHtml(classSection(c))}</td></tr>`; });
+  });
+  return `<div class="fc-page" style="width:196mm;">
+    <div class="fc-lab">کەرتی</div>
+    <div class="fc-big">${escapeHtml(somaSecText(sec))}</div>
+    <div class="fc-row"><div class="fc-k">خوێندنگە</div><div class="fc-v">${escapeHtml(sc.name||'')}</div></div>
+    <div class="fc-row"><div class="fc-k">ساڵی خوێندن</div><div class="fc-v">${dh(escapeHtml(examAcademicYear()))}</div></div>
+    <div class="fc-row"><div class="fc-k">تاقیکردنەوە</div><div class="fc-v">${escapeHtml(ex.name!=null?ex.name:'')}</div></div>
+    <div class="fc-row"><div class="fc-k">شوێنی کەرت</div><div class="fc-v">${escapeHtml(places[sec]||grLabels.join(' ، '))}</div></div>
+    <table class="fc-t"><thead><tr><th style="width:12mm;">زنجیرە</th><th style="width:30mm;">کۆدی خوێندکار</th><th>ناوی خوێندکار</th><th style="width:34mm;">پۆل</th><th style="width:16mm;">لق</th></tr></thead><tbody>${body||'<tr><td colspan="5">هیچ خوێندکارێک نییە</td></tr>'}</tbody></table>
+    <div class="fc-tot"><div class="a">کۆی ژمارەی خوێندکار لەم کەرتەدا</div><div class="b">${toKurdishDigits(n)}</div></div>
+  </div>`;
+}
+function fcAbsHtml(sec){
+  const teachers = config.teachers||[], ex = config.exams||{}, sched = ex.sched||{};
+  const grades = examChosenGrades();
+  const days = examDays().filter(d=>d.date).slice().sort((a,b)=>a.date<b.date?-1:1);
+  const rows = days.map(d=>{
+    const subs = grades.map(g=>{
+      const ids = ((sched[d.id]||{})[g])||[];
+      const names = ids.map(id=>{ const s=(config.subjects||[]).find(x=>x.id===id); return s?s.name:''; }).filter(Boolean);
+      return `<div>${escapeHtml(g)}${names.length?': '+escapeHtml(names.join(' + ')):''}</div>`;
+    }).join('');
+    const sup = examSupervisorAssigned(d.id, sec).map(id=>{ const t=teachers.find(x=>x.id===id); return t?`<div>${escapeHtml(examMPrefix(t.name))}</div>`:''; }).join('');
+    const lines = '<div class="ln"></div><div class="ln"></div><div class="ln"></div>';
+    return `<tr><td>${examDayName(d.date)}</td><td>${dh(fmtSlash(d.date))}</td><td class="s" style="text-align:right;">${subs}</td><td>${sup}</td><td>${lines}</td><td>${lines}</td><td></td></tr>`;
+  }).join('');
+  return `<div class="fc-page" style="width:284mm;">
+    <div class="fa-top"><div>کەرتی ${escapeHtml(somaSecText(sec))}</div></div>
+    <table class="fa-t"><thead><tr><th style="width:17mm;">ڕۆژ</th><th style="width:22mm;">بەروار</th><th style="width:62mm;">بابەت</th><th style="width:38mm;">ناوی چاودێر</th><th style="width:34mm;">پۆل و لق</th><th>ناوی خوێندکاری نەهاتوو</th><th style="width:24mm;">واژۆ</th></tr></thead><tbody>${rows||'<tr><td colspan="7">ڕۆژی تاقیکردنەوە دیاری نەکراوە</td></tr>'}</tbody></table>
+  </div>`;
+}
+function fcPagesHtml(){ const f = fcState.kind==='cover' ? fcCoverHtml : fcAbsHtml; return fcSectors().map(f).join(''); }
+function fcPrint(){
+  if(!fcSectors().length){ showAlert('هیچ کەرتێک نییە.'); return; }
+  document.getElementById('leave-sheet').innerHTML = `<style>${FC_CSS}</style>` + fcPagesHtml();
+  const st = document.createElement('style'); st.id = 'fc-page-style';
+  st.textContent = '@media print{ @page{size:A4 '+(fcState.kind==='cover'?'portrait':'landscape')+';margin:7mm;} footer.info{display:none!important;} #leave-sheet{display:block!important;} }';
+  document.head.appendChild(st);
+  const sec = document.getElementById('tab-leaveprint'); sec.classList.add('print-target');
+  const cleanup = ()=>{ sec.classList.remove('print-target'); const x = document.getElementById('fc-page-style'); if(x) x.remove(); window.removeEventListener('afterprint', cleanup); };
+  window.addEventListener('afterprint', cleanup);
+  setTimeout(()=>window.print(), 200);
+}
+function renderFileCover(el){
+  const secs = seatSectorList(), places = fcPlaces();
+  const tabB = (k,t)=>`<button type="button" class="btn ${fcState.kind===k?'btn-primary':'btn-ghost'} btn-sm" onclick="fcSet('kind','${k}')">${t}</button>`;
+  el.innerHTML = `<div class="card no-print" style="padding:14px;margin-bottom:12px;">
+    <div class="row" style="gap:8px;margin-bottom:10px;"><button type="button" class="btn btn-ghost btn-sm" onclick="somaOpen('menu')">↩ ڕاپۆرتەکان</button><h3 style="font-size:18px;margin:0;">بەرگی فایل و نەهاتنی نافایل</h3></div>
+    <div class="row" style="gap:8px;margin-bottom:10px;">${tabB('cover','بەرگی فایل')}${tabB('abs','نەهاتنی نافایل')}</div>
+    <div class="row" style="gap:10px;flex-wrap:wrap;align-items:end;">
+      <div class="field" style="min-width:190px;"><label class="field-label">کەرت</label><select onchange="fcSet('sector',this.value)"><option value="">هەموو کەرتەکان</option>${secs.map(i=>`<option value="${i}" ${String(fcState.sector)===String(i)?'selected':''}>${EXAM_SECTOR_NAMES[i]}</option>`).join('')}</select></div>
+      <button type="button" class="btn btn-primary" onclick="fcPrint()">🖨️ چاپکردن</button>
+    </div>
+    ${fcState.kind==='cover' ? `<p class="section-hint" style="margin-top:10px;">«شوێنی کەرت» — ئەگەر بەتاڵ بێت، پۆلەکانی کەرتەکە خۆکارانە دەنووسرێت. دەتوانیت بیگۆڕیت:</p><div class="row" style="gap:8px;flex-wrap:wrap;">${secs.map(i=>`<div class="field" style="min-width:230px;"><label class="field-label">${EXAM_SECTOR_NAMES[i]}</label><input type="text" value="${escapeHtml(places[i]||'')}" onchange="fcSetPlace(${i},this.value);renderExamReports()"></div>`).join('')}</div>` : `<p class="section-hint" style="margin-top:10px;">پۆلەکان و بابەتەکان لە «خشتەی تاقیکردنەوەکان»ەوە دێن، و چاودێرەکانیش لە دابەشکردنی چاودێران. وەرەقەی لاندسکەیپ (A4).</p>`}
+  </div>
+  <div class="card no-print" style="padding:10px;overflow-x:auto;"><style>${FC_CSS}</style><div style="zoom:${fcState.kind==='cover'?0.6:0.5};">${fcPagesHtml()||'<p class="empty">هیچ کەرتێک نییە.</p>'}</div></div>`;
+}
 function renderExamReports(){
   const el = document.getElementById('examreports-body'); if(!el) return;
   if(somaState.view==='sectors'){ renderSectorReport(el); return; }
   if(somaState.view==='notebook'){ renderNotebook(el); return; }
+  if(somaState.view==='filecover'){ renderFileCover(el); return; }
   if(somaState.view==='menu'){
-    el.innerHTML = `<div class="home-grid" style="padding:10px 0;"><button type="button" class="home-card" onclick="somaOpen('soma')"><span class="hc-ico">📝</span><span>سۆما</span><span class="hc-sub">وەرەقەی وەڵامدانەوە بۆ هەر قوتابییەک</span></button><button type="button" class="home-card" onclick="somaOpen('notebook')"><span class="hc-ico">📒</span><span>پێدان و وەرگرتنەوەی دەفتەری تاقیکردنەوە</span><span class="hc-sub">وەرەقە بۆ هەر پۆل و وانەیەک</span></button><button type="button" class="home-card" onclick="somaOpen('sectors')"><span class="hc-ico">🧮</span><span>ژمارەی خوێندکاران بەپێی کەرتەکان</span><span class="hc-sub">خشتە بەپێی کەرت و پۆل</span></button></div>`;
+    el.innerHTML = `<div class="home-grid" style="padding:10px 0;"><button type="button" class="home-card" onclick="somaOpen('soma')"><span class="hc-ico">📝</span><span>سۆما</span><span class="hc-sub">وەرەقەی وەڵامدانەوە بۆ هەر قوتابییەک</span></button><button type="button" class="home-card" onclick="somaOpen('notebook')"><span class="hc-ico">📒</span><span>پێدان و وەرگرتنەوەی دەفتەری تاقیکردنەوە</span><span class="hc-sub">وەرەقە بۆ هەر پۆل و وانەیەک</span></button><button type="button" class="home-card" onclick="somaOpen('sectors')"><span class="hc-ico">🧮</span><span>ژمارەی خوێندکاران بەپێی کەرتەکان</span><span class="hc-sub">خشتە بەپێی کەرت و پۆل</span></button><button type="button" class="home-card" onclick="somaOpen('filecover')"><span class="hc-ico">🗂️</span><span>بەرگی فایل و نەهاتنی نافایل</span><span class="hc-sub">بەرگ و خشتەی نەهاتوو بۆ هەر کەرتێک</span></button></div>`;
     return;
   }
   examDays();
