@@ -4953,7 +4953,7 @@ function showScreen(name){
   else if(name==='mynb'){ document.getElementById('tab-mynotebook').classList.add('active'); mnbLoaded=''; renderMyNotebook(); }
   else if(name==='mysoma'){ document.getElementById('tab-mysoma').classList.add('active'); smLoaded=''; renderMySoma(); }
   else if(name==='somahand'){ document.getElementById('tab-somahand').classList.add('active'); renderSomaHand(); smaPull(false); }
-  else if(name==='myexamform'){ document.getElementById('tab-myexamform').classList.add('active'); renderMyExamForm(); }
+  else if(name==='myexamform'){ document.getElementById('tab-myexamform').classList.add('active'); tefLoaded=''; renderMyExamForm(); }
   else if(name==='myseating'){ document.getElementById('tab-myseating').classList.add('active'); msState.sector=''; renderMySeating(); }
   else if(name==='myexam'){ document.getElementById('tab-myexam').classList.add('active'); renderMyExam(); }
   else if(name==='mycommittees'){ document.getElementById('tab-mycommittees').classList.add('active'); renderMyCommittees(); }
@@ -5926,10 +5926,10 @@ async function examLockToggle(dayId){
   const lock=!examLockIsOn(dayId), day=examDays().find(d=>d.id===dayId)||{};
   try{
     for(const x of slots){
-      await withTimeout(fbSetDoc(fbDoc(fbDb,'attendance',x.id), { kind:'examabs', ownerTid:x.tid, teacherId:x.tid, dayId, sector:x.sector, date:day.date||'', locked:lock }, { merge:true }), 15000);
+      await withTimeout(fbSetDoc(fbDoc(fbDb,'attendance',x.id), Object.assign({ kind:'examabs', ownerTid:x.tid, teacherId:x.tid, dayId, sector:x.sector, date:day.date||'', locked:lock }, (lock||!fbServerTimestamp) ? {} : { createdAt:fbServerTimestamp() }), { merge:true }), 15000);
       examLockInfo[x.id]=lock;
     }
-    showAlert(lock?'تۆماری چاودێرەکان بۆ ئەم ڕۆژە قفڵ کرا. مامۆستا ناتوانێت بیگۆڕێت.':'قفڵەکە کرایەوە. (مامۆستا هێشتا تەنها لە ماوەی دوو کاتژمێر دوای یەکەم ناردن دەتوانێت بیگۆڕێت.)');
+    showAlert(lock?'تۆماری چاودێرەکان بۆ ئەم ڕۆژە قفڵ کرا. مامۆستا ناتوانێت بیگۆڕێت.':'قفڵەکە کرایەوە. مامۆستا ئێستا دوو کاتژمێر دەتوانێت بیگۆڕێت. (با فۆڕمەکە دووبارە بکاتەوە.)');
     renderExamAbsence();
   }catch(e){ console.log('lock failed',e); showAlert('قفڵکردن سەرنەکەوت.'); }
 }
