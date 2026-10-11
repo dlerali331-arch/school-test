@@ -739,9 +739,9 @@
         <div class="row form">
           <input type="text" id="staff-specialty" class="grow" placeholder="پسپۆڕی (بۆ نموونە: بیرکاری)">
           <select id="staff-status">
-            <option value="ملاک">ملاک</option>
+            <option value="میلاک">میلاک</option>
             <option value="وانەبێژ">وانەبێژ</option>
-            <option value="گریبەست">گریبەست</option>
+            <option value="گرێبەست">گرێبەست</option>
             <option value="تەواوکردنی بەشەوانە">تەواوکردنی بەشەوانە</option>
           </select>
         </div>
@@ -752,6 +752,7 @@
         </div>
         <div class="row form">
           <input type="tel" id="staff-phone" class="grow" placeholder="ژمارە مۆبایل" dir="ltr">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;white-space:nowrap;">لەدایکبوون <input type="date" id="staff-birth"></label>
           <button class="btn btn-primary" onclick="addStaff()">زیادکردن</button>
         </div>
         <ul class="list" id="list-staff"></ul>
@@ -914,6 +915,8 @@
     <section id="tab-leaveform"><h2 class="section-title">داواکردنی مۆڵەت</h2><div id="leaveform-body"></div></section>
     <section id="tab-leavetrack"><h2 class="section-title">بەدواچوونی مۆڵەت</h2><div id="leavetrack-body"></div></section>
     <section id="tab-myleaves"><h2 class="section-title">مۆڵەتەکانم</h2><div id="myleaves-body"></div></section>
+    <section id="tab-staffreport"><h2 class="section-title">لیستی مامۆستایان و ژمارەی وانەکان</h2><div id="staffreport-body"></div></section>
+    <section id="tab-dayoffreport"><h2 class="section-title">ڕۆژی بێدەوامی مامۆستایان</h2><div id="dayoffreport-body"></div></section>
     <section id="tab-bashwana"><h2 class="section-title">خشتەی بەشەوانەی مامۆستایان</h2><div id="bashwana-body"></div></section>
     <section id="tab-mytimetable"><h2 class="section-title">خشتەی وانەکانم</h2><div id="mytimetable-body"></div></section>
     <section id="tab-myexamform"><h2 class="section-title">تۆماری نەهاتوو لە تاقیکردنەوە</h2><div id="myexamform-body"></div></section>
@@ -985,7 +988,7 @@
           <div id="committee-auto-opts">
             <div class="row form">
               <div class="field"><label class="field-label">ژمارەی ئەندام</label><select id="committee-count"></select></div>
-              <div class="field"><label class="field-label">باری فەرمانبەری</label><select id="committee-status-filter"><option value="">هەموو</option><option value="ملاک">ملاک</option><option value="وانەبێژ">وانەبێژ</option><option value="گریبەست">گریبەست</option><option value="تەواوکردنی بەشەوانە">تەواوکردنی بەشەوانە</option></select></div>
+              <div class="field"><label class="field-label">باری فەرمانبەری</label><select id="committee-status-filter"><option value="">هەموو</option><option value="میلاک">میلاک</option><option value="وانەبێژ">وانەبێژ</option><option value="گرێبەست">گرێبەست</option><option value="تەواوکردنی بەشەوانە">تەواوکردنی بەشەوانە</option></select></div>
               <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer;"><input type="checkbox" id="committee-want-director"> بەڕێوەبەر تێدا بێت</label>
               <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer;"><input type="checkbox" id="committee-want-assistant"> یاریدەدەر تێدا بێت</label>
             </div>
@@ -1425,6 +1428,7 @@ function applyLoadedConfig(loaded){
   config.students = Array.isArray(loaded.students) ? loaded.students : [];
   config.committees = Array.isArray(loaded.committees) ? loaded.committees : [];
   config.staff = Array.isArray(loaded.staff) ? loaded.staff : [];
+  config.staff.forEach(x=>{ if(x && x.status==='ملاک') x.status='میلاک'; if(x && x.status==='گریبەست') x.status='گرێبەست'; });
   config.committeeNames = Array.isArray(loaded.committeeNames) ? loaded.committeeNames : [];
   config.myCommittees = Array.isArray(loaded.myCommittees) ? loaded.myCommittees : [];
   config.myExamForm = Array.isArray(loaded.myExamForm) ? loaded.myExamForm : [];
@@ -2712,6 +2716,7 @@ function openEditItem(kind, id){
       <div class="field"><label class="field-label">بارى فەرمانبەرێتی</label><select id="edit-workstate">${STAFF_WORKSTATES.map(j=>`<option value="${j}" ${(st.workState||'لە کاردایە')===j?'selected':''}>${j}</option>`).join('')}</select></div>
       <div class="field"><label class="field-label">بروانامە</label><select id="edit-degree"><option value="">—</option>${STAFF_DEGREES.map(j=>`<option value="${j}" ${j===st.degree?'selected':''}>${j}</option>`).join('')}</select></div>
       <div class="field"><label class="field-label">نصاب (بەشەوانە)</label><input type="number" id="edit-quota" min="0" max="60" value="${escapeHtml(st.quota===undefined?'':st.quota)}"></div>
+      <div class="field"><label class="field-label">لەدایکبوون</label><input type="date" id="edit-birth" value="${escapeHtml(st.birth||'')}"></div>
       <div class="field"><label class="field-label">ژمارە مۆبایل</label><input type="tel" id="edit-phone" dir="ltr" value="${escapeHtml(st.phone||'')}"></div>`;
   } else if(kind==='committee'){
     const item = config.committees.find(x=>x.id===id);
@@ -2781,6 +2786,7 @@ function saveEditModal(){
     const workState = document.getElementById('edit-workstate').value;
     const degree = document.getElementById('edit-degree').value;
     const quota = document.getElementById('edit-quota').value;
+    const birth = (document.getElementById('edit-birth')||{}).value || '';
     const wasTeacher = st.job==='مامۆستا', isTeacher = job==='مامۆستا';
     if(wasTeacher && !isTeacher){
       if(config.assignments.some(a=>a.teacherId===id)){
@@ -2795,7 +2801,7 @@ function saveEditModal(){
       const t = config.teachers.find(x=>x.id===id);
       if(t){ t.name = name; t.phone = phone; }
     }
-    Object.assign(st, { name, job, specialty, status, phone, workState, degree, quota });
+    Object.assign(st, { name, job, specialty, status, phone, workState, degree, quota, birth });
   } else if(kind==='committee'){
     const name = document.getElementById('edit-name').value.trim();
     if(!name) return;
@@ -4263,7 +4269,7 @@ function renderReports(aMap, days, periods){
 
 /* ---------------- Staff ---------------- */
 const STAFF_JOBS = ['بەڕێوەبەر','یاریدەدەر','مامۆستا','فەرمانبەر','خزمەتگوزار'];
-const STAFF_STATUSES = ['ملاک','وانەبێژ','گریبەست','تەواوکردنی بەشەوانە'];
+const STAFF_STATUSES = ['میلاک','وانەبێژ','گرێبەست','تەواوکردنی بەشەوانە'];
 const STAFF_WORKSTATES = ['لە کاردایە','لە مۆڵەتدایە','گوازراوەتەوە'];
 const STAFF_DEGREES = ['دکتۆرا','ماستەر','بەکالۆریۆس','دیپلۆم','ئامادەیی'];
 
@@ -4292,14 +4298,15 @@ function addStaff(){
   const workState = (document.getElementById('staff-workstate')||{}).value || '';
   const degree = (document.getElementById('staff-degree')||{}).value || '';
   const quota = (document.getElementById('staff-quota')||{}).value || '';
+  const birth = (document.getElementById('staff-birth')||{}).value || '';
   if(!name){ showAlert('تکایە ناوی کارمەند بنووسە.'); return; }
   const id = uid();
-  config.staff.push({ id, name, job, specialty, status, phone, workState, degree, quota });
+  config.staff.push({ id, name, job, specialty, status, phone, workState, degree, quota, birth });
   if(job==='مامۆستا') config.teachers.push({ id, name, phone });
   document.getElementById('staff-name').value = '';
   document.getElementById('staff-specialty').value = '';
   document.getElementById('staff-phone').value = '';
-  safe(()=>{ document.getElementById('staff-quota').value = ''; });
+  safe(()=>{ document.getElementById('staff-quota').value = ''; document.getElementById('staff-birth').value = ''; });
   refreshAllAfterDataChange();
 }
 function removeStaffFromCommittees(id){
@@ -4327,7 +4334,7 @@ function renderStaffList(){
   el.innerHTML = config.staff.map(s=>{
     const bits = [s.job, s.specialty, s.status].filter(Boolean).map(escapeHtml).join(' · ');
     return `<li>
-      <span class="name">${escapeHtml(s.name)} <span class="subtext">${bits}</span>${s.phone?` <span class="subtext" dir="ltr">${escapeHtml(s.phone)}</span>`:''}</span>
+      <span class="name">${escapeHtml(s.name)} <span class="subtext">${bits}</span>${s.phone?` <span class="subtext" dir="ltr">${escapeHtml(s.phone)}</span>`:''}${s.birth?` <span class="subtext" dir="ltr">${escapeHtml(s.birth)}</span>`:''}</span>
       <span class="btnrow">
         <button class="btn btn-ghost btn-sm" onclick="openEditItem('staff','${s.id}')">دەستکاری</button>
         <button class="btn btn-danger btn-sm" onclick="removeStaff('${s.id}')">سڕینەوە</button>
@@ -4838,6 +4845,8 @@ const HOME_CARDS = [
   { id:'leavereg', ico:'📒', title:'تۆماری مۆڵەت و نەهاتن', sub:'تۆماری تەواوی ساڵ', parent:'g_leave', adminOnly:true },
   { id:'myleaves', ico:'📨', title:'مۆڵەتەکانم', sub:'ئەنجامی داواکارییەکان', parent:'g_leave' },
   { id:'dashboard', ico:'📊', title:'داشبۆردی خشتەی وانەکان', sub:'دیمەنی گشتی ئەمڕۆ', parent:'g_schedule' },
+  { id:'staffreport', ico:'🧾', title:'لیستی مامۆستایان و ژمارەی وانەکان', sub:'ناو، پسپۆڕی، لەدایکبوون و وانەکان بەپێی پۆل', parent:'g_schedule', adminOnly:true },
+  { id:'dayoffreport', ico:'📆', title:'ڕۆژی بێدەوامی مامۆستایان', sub:'ئەو ڕۆژەی هەر مامۆستایەک دەوامی نییە', parent:'g_schedule', adminOnly:true },
   { id:'bashwana', ico:'📑', title:'خشتەی بەشەوانەی مامۆستایان', sub:'ڕاپۆرتی چاپکردن و ئێکسڵ', parent:'g_schedule', adminOnly:true },
   { id:'mytimetable', ico:'🗓️', title:'خشتەی وانەکانم', sub:'خشتەی هەفتانەی خۆت', teacherTop:true },
   { id:'myexamform', ico:'📋', title:'تۆماری نەهاتوو لە تاقیکردنەوە', sub:'غیابی قوتابیانی ئەو کەرتەی چاودێری دەکەیت', tparent:'g_texam' },
@@ -4935,6 +4944,8 @@ function showScreen(name){
   else if(name==='leavereg'){ document.getElementById('tab-leavereg').classList.add('active'); renderLeaveReg(); }
   else if(name==='myleaves'){ document.getElementById('tab-myleaves').classList.add('active'); renderMyLeaves(); }
   else if(name==='mytimetable'){ document.getElementById('tab-mytimetable').classList.add('active'); renderMyTimetable(); }
+  else if(name==='staffreport'){ document.getElementById('tab-staffreport').classList.add('active'); renderStaffReport(); }
+  else if(name==='dayoffreport'){ document.getElementById('tab-dayoffreport').classList.add('active'); renderDayOffReport(); }
   else if(name==='bashwana'){ document.getElementById('tab-bashwana').classList.add('active'); renderBashwana(); }
   else if(name==='mynb'){ document.getElementById('tab-mynotebook').classList.add('active'); mnbLoaded=''; renderMyNotebook(); }
   else if(name==='mysoma'){ document.getElementById('tab-mysoma').classList.add('active'); smLoaded=''; renderMySoma(); }
@@ -6569,6 +6580,95 @@ function bwSet(field, val){
   scheduleSave();
   renderBashwanaSheet();
 }
+/* ---------------- ڕاپۆرتی مامۆستایان: لیست + ژمارەی وانە / ڕۆژی بێدەوام ---------------- */
+const RPT_CSS = `
+.rp-page{box-sizing:border-box;width:194mm;margin:0 auto;direction:rtl;font-family:'Vazirmatn',sans-serif;font-size:14px;color:#000;background:#fff;}
+.rp-page *{box-sizing:border-box;line-height:1.3;}
+.rp-title{text-align:center;font-weight:900;font-size:19px;margin:0 0 2mm;}
+.rp-sub{text-align:center;font-weight:700;margin:0 0 4mm;}
+.rp-t{width:100%;border-collapse:collapse;margin-bottom:6mm;}
+.rp-t th{background:#ffe599;border:.3mm solid #000;font-weight:800;padding:1.6mm;text-align:center;}
+.rp-t td{border:.3mm solid #000;text-align:center;font-weight:700;padding:1.4mm;}
+.rp-t tr{page-break-inside:avoid;break-inside:avoid;}
+.rp-t tr.tot td{background:#ffe599;font-weight:900;}
+.rp-h{background:#dfa87a;border:.3mm solid #000;text-align:center;font-weight:800;padding:1.4mm;margin-bottom:0;}
+`;
+const RPT_GRADE_ORDER = ['دەیەمی زانستی','دەیەمی وێژەیی','یازدەیەمی زانستی','یازدەیەمی وێژەیی','دوانزەیەمی زانستی','دوانزەیەمی وێژەیی'];
+function rptTeachers(){
+  ensureStaffSync();
+  return (config.staff||[]).filter(s=>s.job==='مامۆستا');
+}
+function rptGradeStats(){
+  const by={};
+  (config.classes||[]).forEach(c=>{ const g=classGrade(c); by[g]=by[g]||{grade:g,classes:0,lessons:0}; by[g].classes++; });
+  const cg={}; (config.classes||[]).forEach(c=>{ cg[c.id]=classGrade(c); });
+  (config.assignments||[]).forEach(a=>{ const g=cg[a.classId]; if(g) by[g].lessons += Number(a.periodsPerWeek)||0; });
+  const rank=g=>{ const i=RPT_GRADE_ORDER.indexOf(g); return i<0?99:i; };
+  return Object.values(by).sort((a,b)=>rank(a.grade)-rank(b.grade)||String(a.grade).localeCompare(String(b.grade),'ku'));
+}
+function rptHeader(title){
+  const sc=config.school||{};
+  return `<div class="rp-title">${escapeHtml(sc.name||'')}</div><div class="rp-sub">${escapeHtml(title)}${(sc.year||examAcademicYear())?' — ساڵی خوێندن '+dh(escapeHtml(sc.year||examAcademicYear())):''}</div>`;
+}
+function rptStem(g){ return String(g).trim().split(/\s+/)[0].replace('یانزە','یازدە'); }
+function rptGradeCols(){
+  const order=['دەیەمی','یازدەیەمی','دوانزەیەمی'];
+  const label={}; order.forEach(o=>label[o]=o);
+  const extra=[];
+  (config.classes||[]).forEach(c=>{
+    const raw=String(classGrade(c)).trim().split(/\s+/)[0], k=rptStem(classGrade(c));
+    if(order.includes(k)) label[k]=raw; // keep the spelling used in the school's own data
+    else if(k && !extra.includes(k)){ extra.push(k); label[k]=raw; }
+  });
+  return order.concat(extra).map(k=>({k,label:label[k]}));
+}
+function rptStaffHtml(){
+  const list=rptTeachers(), cols=rptGradeCols();
+  const cg={}; (config.classes||[]).forEach(c=>{ cg[c.id]=rptStem(classGrade(c)); });
+  const tot={}; cols.forEach(c=>tot[c.k]=0); let grand=0;
+  const rows=list.map((s,i)=>{
+    const per={}; cols.forEach(c=>per[c.k]=0);
+    (config.assignments||[]).forEach(a=>{ if(a.teacherId!==s.id) return; const k=cg[a.classId]; if(k in per) per[k]+=Number(a.periodsPerWeek)||0; });
+    const sum=cols.reduce((n,c)=>n+per[c.k],0);
+    cols.forEach(c=>tot[c.k]+=per[c.k]); grand+=sum;
+    return `<tr><td>${toKurdishDigits(i+1)}</td><td style="text-align:right;">${escapeHtml(s.name||'')}</td><td>${escapeHtml(s.specialty||'')}</td><td>${s.birth?dh(escapeHtml(String(s.birth).slice(0,4))):''}</td>${cols.map(c=>`<td>${per[c.k]?toKurdishDigits(per[c.k]):''}</td>`).join('')}<td style="font-weight:900;">${sum?toKurdishDigits(sum):''}</td></tr>`;
+  }).join('');
+  const gw=Math.max(12, Math.min(18, Math.floor(54/cols.length)));
+  return `<div class="rp-page">${rptHeader('لیستی مامۆستایان و ژمارەی وانەکان')}
+    <table class="rp-t" style="table-layout:fixed;"><colgroup><col style="width:15mm"><col style="width:46mm"><col style="width:26mm"><col style="width:25mm">${cols.map(()=>`<col style="width:${gw}mm">`).join('')}<col style="width:13mm"></colgroup>
+    <thead><tr><th style="font-size:13px;">زنجیرە</th><th>ناوی مامۆستا</th><th>پسپۆڕی</th><th style="font-size:13px;">لەدایکبوون</th>${cols.map(c=>`<th style="font-size:12px;">${escapeHtml(c.label)} زانستی و وێژەیی</th>`).join('')}<th>کۆ</th></tr></thead>
+    <tbody>${rows||`<tr><td colspan="${5+cols.length}">هیچ مامۆستایەک نییە</td></tr>`}<tr class="tot"><td colspan="4">کۆ</td>${cols.map(c=>`<td>${toKurdishDigits(tot[c.k])}</td>`).join('')}<td>${toKurdishDigits(grand)}</td></tr></tbody></table></div>`;
+}
+function rptDayOff(tid){
+  const days=(config.settings&&config.settings.days)||[];
+  const aids=new Set((config.assignments||[]).filter(a=>a.teacherId===tid).map(a=>a.id));
+  const worked=new Set(); let any=false;
+  Object.keys(schedules||{}).forEach(cid=>{ const d=schedules[cid]||{}; Object.keys(d).forEach(day=>{ Object.keys(d[day]||{}).forEach(p=>{ if(aids.has(d[day][p])){ worked.add(day); any=true; } }); }); });
+  if(any) return { days:days.filter(d=>!worked.has(d)), src:'timetable' };
+  const off=days.filter(d=>(config.constraints||[]).some(c=>c.teacherId===tid && c.day===d && c.period===null));
+  return { days:off, src:'constraints', noTable:true };
+}
+function rptDayOffHtml(){
+  const list=rptTeachers();
+  const rows=list.map((s,i)=>{ const r=rptDayOff(s.id); const txt = r.days.length ? r.days.join(' ، ') : (r.noTable?'—':'هەموو ڕۆژەکان دەوامی هەیە'); return `<tr><td style="width:14mm;">${toKurdishDigits(i+1)}</td><td style="text-align:right;">${escapeHtml(s.name||'')}</td><td>${escapeHtml(txt)}</td></tr>`; }).join('');
+  return `<div class="rp-page">${rptHeader('ڕۆژی بێدەوامی مامۆستایان')}
+    <table class="rp-t"><thead><tr><th>زنجیرە</th><th>ناوی مامۆستا</th><th>ئەو ڕۆژەی دەوامی نییە</th></tr></thead><tbody>${rows||'<tr><td colspan="3">هیچ مامۆستایەک نییە</td></tr>'}</tbody></table></div>`;
+}
+function renderStaffReport(){ const el=document.getElementById('staffreport-body'); if(!el) return;
+  el.innerHTML=`<div class="card no-print" style="padding:12px;margin-bottom:12px;"><p class="section-hint">ناو و پسپۆڕی و ساڵی لەدایکبوون لە «کارمەندان»ەوە دێن. ژمارەکانی هەر پۆلێک کۆی وانە هەفتانەکانی ئەو مامۆستایەیە لە «دابەشکردن»، و خانەی «کۆ» لە کۆتایی خشتەکەیە.</p><button class="btn btn-primary" onclick="rptPrint(rptStaffHtml())">🖨️ چاپکردن</button></div><div class="card" style="padding:10px;overflow-x:auto;"><style>${RPT_CSS}</style>${rptStaffHtml()}</div>`; }
+function renderDayOffReport(){ const el=document.getElementById('dayoffreport-body'); if(!el) return;
+  el.innerHTML=`<div class="card no-print" style="padding:12px;margin-bottom:12px;"><p class="section-hint">ڕۆژی بێدەوام ئەو ڕۆژەیە کە مامۆستا هیچ وانەیەکی لە خشتەی وانەکان نییە. ئەگەر خشتە هێشتا دروست نەکرابێت، ئەو ڕۆژانە دێن کە لە «مەرجی مامۆستا» وەک ڕۆژی بێدەوام دیاری کراون.</p><button class="btn btn-primary" onclick="rptPrint(rptDayOffHtml())">🖨️ چاپکردن</button></div><div class="card" style="padding:10px;overflow-x:auto;"><style>${RPT_CSS}</style>${rptDayOffHtml()}</div>`; }
+function rptPrint(html){
+  document.getElementById('leave-sheet').innerHTML = `<style>${RPT_CSS}</style>`+html;
+  const st=document.createElement('style'); st.id='rp-page-style';
+  st.textContent='@media print{ @page{size:A4 portrait;margin:8mm;} footer.info{display:none!important;} #leave-sheet{display:block!important;} }';
+  document.head.appendChild(st);
+  const sec=document.getElementById('tab-leaveprint'); sec.classList.add('print-target');
+  const cleanup=()=>{ sec.classList.remove('print-target'); const x=document.getElementById('rp-page-style'); if(x) x.remove(); window.removeEventListener('afterprint',cleanup); };
+  window.addEventListener('afterprint',cleanup);
+  setTimeout(()=>window.print(),200);
+}
+
 function renderBashwana(){
   const el = document.getElementById('bashwana-body'); if(!el) return;
   const sc = config.school || {};
@@ -6640,6 +6740,14 @@ function renderBashwanaSheet(){
       body += tr + '</tr>';
     });
   });
+  { // کۆ: row at the bottom
+    const sumCls = {}; let sumTot = 0, sumQuota = 0;
+    rows.forEach(r=>{ Object.keys(r.per).forEach(k=>{ sumCls[k]=(sumCls[k]||0)+(Number(r.per[k])||0); }); sumTot += Number(r.total)||0; });
+    teacherGroups.forEach(g=>{ const q=g.rows[0].quota; if(q!=='') sumQuota += parseInt(q,10)||0; });
+    body += `<tr>${tdAttr('کۆ','colspan="8"','background:#FFD966;font-weight:900;')}`
+      + groups.map(gr=>gr.classes.map(c=>td(sumCls[c.id]?dg(sumCls[c.id]):'', 'background:#FFE699;font-weight:700;')).join('')).join('')
+      + td(sumTot?dg(sumTot):'', 'background:#FFD966;font-weight:900;') + td(sumQuota?dg(sumQuota):'', 'background:#FFD966;font-weight:900;') + '</tr>';
+  }
   const year = sc.year ? escapeHtml(sc.year) : '';
   const box = 'border:2px solid #444;padding:6px 10px;font-weight:700;font-size:12px;line-height:1.9;';
   el.innerHTML = `<div id="bw-print" style="background:#fff;padding:10px 6px;color:#000;min-width:900px;">
@@ -6697,6 +6805,10 @@ function bwExcel(){
     line.push(r.total ? r.total : '', r.quota!=='' ? (parseInt(r.quota,10)||0) : '');
     out.push(line);
   });
+  { const tl = ['کۆ','','','','','','','']; let st = 0, sq = 0; const seen = new Set();
+    groups.forEach(g=>g.classes.forEach(c=>{ const v = rows.reduce((n,r)=>n+(Number(r.per[c.id])||0),0); tl.push(v||''); }));
+    rows.forEach(r=>{ st += Number(r.total)||0; if(!seen.has(r.s.id)){ seen.add(r.s.id); sq += parseInt(r.quota,10)||0; } });
+    tl.push(st||'', sq||''); out.push(tl); }
   const widths = [5,26,16,16,12,14,14,16].concat(groups.flatMap(g=>g.classes.map(()=>8)), [12,9]);
   // بۆ هەر مامۆستایەک کە زیاتر لە یەک وانەی هەیە، خانەکانی ناو و زانیارییە سەرەکییەکان لە ئێکسڵدا عمودی کۆدەکرێنەوە؛ تەنها خانەی وانە و ژمارەکانی پۆل و کۆی بەشەوانە جیا دەبنەوە.
   const merges = [];
@@ -7081,7 +7193,7 @@ function nbSlipHtml(e, filled){
   const yr = String(examAcademicYear()).replace(/\s*[–-]\s*/,' / ');
   const t = nbTeachers(e);
   const recs = filled ? nbTeacherIds(e).map(id=>nbRecs[nbDocId(e,id)]).filter(Boolean) : [];
-  const imgs = (rr,f)=>rr.filter(r=>r[f]).map(r=>`<img src="${r[f]}" style="max-height:9mm;max-width:100%;">`).join('');
+  const imgs = (rr,f)=>rr.filter(r=>r[f]).map(r=>`<img src="${r[f]}" style="max-height:6mm;max-width:40mm;">`).join('');
   const rc = recs.map(r=>r.recvCount), cnt = rc.length?Array.from(new Set(rc)).join(' / '):'';
   const rets = recs.filter(r=>r.returnedAt);
   const retDates = Array.from(new Set(rets.map(r=>r.retDate))).map(d=>fmtSlash(d)).join(' / ');
@@ -7090,13 +7202,13 @@ function nbSlipHtml(e, filled){
   return `<div class="nb-slip">
     <div class="nb-row"><span class="nb-lab" style="width:30mm;">خوێندنگە</span><span class="nb-val">${escapeHtml(schoolName)}</span></div>
     <div class="nb-row"><span class="nb-lab" style="width:30mm;">تاقیکردنەوە</span><span class="nb-val" style="flex:3;">${escapeHtml(examName)}</span><span class="nb-lab" style="width:30mm;">ساڵی خوێندن</span><span class="nb-val" style="flex:1.2;">( ${ltr(yr)} )</span></div>
-    <div class="nb-row"><span class="nb-lab" style="width:30mm;">مامۆستای وانە</span><span class="nb-val">${escapeHtml(t[0]||'')}</span><span class="nb-val">${escapeHtml(t[1]||'')}</span></div>
+    <div class="nb-row"><span class="nb-lab" style="width:30mm;">مامۆستای وانە</span><span class="nb-val">${escapeHtml(t[0]||'')}</span><span class="nb-val" style="flex-direction:column;gap:.5mm;">${escapeHtml(t[1]||'')}<span style="display:flex;gap:3mm;align-items:center;justify-content:center;">${imgs(recs,'recvSig')}${imgs(rets,'retSig')}</span></span></div>
     <div class="nb-bar">پێدان</div>
     <table class="nb-t"><colgroup><col style="width:30mm"><col style="width:27mm"><col style="width:26mm"><col style="width:33mm"><col style="width:26mm"><col></colgroup>
       <thead><tr><th>پۆل</th><th>بابەت</th><th>ژمارەی دەفتەر</th><th>بەرواری وەرگرتن</th><th>ڕۆژ</th><th>واژوو</th></tr></thead>
-      <tbody><tr><td>${escapeHtml(e.grade)}</td><td>${escapeHtml(e.subj.name)}</td><td>${cnt===''?'':escapeHtml(toKurdishDigits(cnt))}</td><td>${ltr(fmtSlash(e.day.date))}</td><td>${escapeHtml(examDayName(e.day.date))}</td><td>${imgs(recs,'recvSig')}</td></tr></tbody></table>
+      <tbody><tr><td>${escapeHtml(e.grade)}</td><td>${escapeHtml(e.subj.name)}</td><td>${cnt===''?'':escapeHtml(toKurdishDigits(cnt))}</td><td>${ltr(fmtSlash(e.day.date))}</td><td>${escapeHtml(examDayName(e.day.date))}</td><td></td></tr></tbody></table>
     <div class="nb-bar">وەرگرتنەوە</div>
-    <table class="nb-t" style="width:66%;"><thead><tr><th>بەرواری گەڕانەوە</th><th>ڕۆژ</th><th>واژوو</th></tr></thead><tbody><tr><td style="height:12mm;">${retDates?ltr(retDates):''}</td><td>${escapeHtml(retDays)}</td><td>${imgs(rets,'retSig')}</td></tr></tbody></table>
+    <table class="nb-t" style="width:66%;"><thead><tr><th>بەرواری گەڕانەوە</th><th>ڕۆژ</th><th>واژوو</th></tr></thead><tbody><tr><td style="height:12mm;">${retDates?ltr(retDates):''}</td><td>${escapeHtml(retDays)}</td><td></td></tr></tbody></table>
   </div>`;
 }
 function nbPagesHtml(list, filled){
