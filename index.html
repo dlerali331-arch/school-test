@@ -5860,7 +5860,7 @@ async function tefLoad(f){
   const rec = await getAttRecord(tefDocId(f));
   tefLocked = false; tefExpired = false;
   if(rec){ tefEntries = JSON.parse(JSON.stringify(rec.entries||{})); tefBooks = JSON.parse(JSON.stringify(rec.books||{})); tefCreatedAt = rec.createdAt || null; tefLocked = rec.locked===true;
-    try{ if(tefCreatedAt && tefCreatedAt.toMillis && Date.now() > tefCreatedAt.toMillis() + 2*3600*1000) tefExpired = true; }catch(e){} }
+    }
   renderMyExamForm(true);
 }
 let tefBooks = {};
@@ -5878,12 +5878,12 @@ function tefClean(key){ const r=tefEntries[key]; if(r && !r.absent && !r.present
 async function tefSave(){
   if(tefLocked || tefExpired){ showAlert('ئەم تۆمارە قفڵ کراوە و ناگۆڕدرێت.'); return; }
   const f=(config.myExamForm||[]).find(x=>x.dayId+'__'+x.sector===tefSlot); if(!f) return;
-  const record = { kind:'examabs', ownerTid:currentTeacherId, teacherId:currentTeacherId, dayId:f.dayId, sector:f.sector, date:f.date, entries:JSON.parse(JSON.stringify(tefEntries)), books:JSON.parse(JSON.stringify(tefBooks)) };
+  const record = { kind:'examabs', ownerTid:currentTeacherId, teacherId:currentTeacherId, dayId:f.dayId, sector:f.sector, date:f.date, locked:true, entries:JSON.parse(JSON.stringify(tefEntries)), books:JSON.parse(JSON.stringify(tefBooks)) };
   if(tefCreatedAt) record.createdAt = tefCreatedAt;
   const r = await setAttRecord(tefDocId(f), record);
-  if(r==='cloud'){ showAlert('تۆمارەکە نێردرا بۆ بەڕێوەبەر. دەتوانیت تا دوو کاتژمێر دوای یەکەم ناردن بیگۆڕیت.'); tefLoaded=''; renderMyExamForm(); }
-  else if(r==='queued') showAlert('ئینتەرنێت نییە. تۆمارەکە لەسەر مۆبایلەکەت پاشەکەوت کرا و کاتێک ئینتەرنێت هات دەنێردرێت.');
-  else showAlert('ناتوانرێت بنێردرێت (لەوانەیە کاتی گۆڕین تەواو بووبێت). بەڕێوەبەر ئاگادار بکەرەوە.');
+  if(r==='cloud'){ showAlert('تۆمارەکە نێردرا بۆ بەڕێوەبەر و قفڵ کرا. تەنها بەڕێوەبەر دەتوانێت قفڵەکەی بکاتەوە.'); tefLoaded=''; renderMyExamForm(); }
+  else if(r==='queued') showAlert('ئینتەرنێت نییە. تۆمارەکە لەسەر مۆبایلەکەت پاشەکەوت کرا و کاتێک ئینتەرنێت هات دەنێردرێت و قفڵ دەبێت.');
+  else showAlert('ناتوانرێت بنێردرێت (لەوانەیە بەڕێوەبەر قفڵی کردبێت). بەڕێوەبەر ئاگادار بکەرەوە.');
 }
 function renderMyExamForm(keep){
   const el=document.getElementById('myexamform-body'); if(!el) return;
@@ -5906,7 +5906,7 @@ function renderMyExamForm(keep){
     ${forms.length>1?`<div class="field"><label class="field-label">ڕۆژ و کەرت</label><select onchange="tefPick(this.value)">${forms.map(x=>{const v=x.dayId+'__'+x.sector;return `<option value="${v}" ${v===tefSlot?'selected':''}>${escapeHtml(examDayName(x.date))} ${fmtSlash(x.date)} — ${escapeHtml(x.sectorName)}</option>`;}).join('')}</select></div>`:''}
     <h3 style="margin:6px 0;">${escapeHtml(examDayName(f.date))} ${dh(fmtSlash(f.date))} — ${escapeHtml(f.sectorName)}</h3>
     <div style="font-weight:800;">✔ هاتوو: ${toKurdishDigits(pr)} &nbsp; ✗ نەهاتوو: ${toKurdishDigits(ab)}</div>
-    <p class="section-hint">✔ بۆ هاتوو و ✗ بۆ نەهاتوو. بۆ گزی کردن، درەنگ هاتن یان مۆڵەت لە لیستەکە هەڵیبژێرە (بۆ گزی کردن و درەنگ هاتن کاتیش بنووسە). لە کۆتاییدا «ناردن» دابگرە. دوای یەکەم ناردن دوو کاتژمێر دەتوانیت بیگۆڕیت، یان تا بەڕێوەبەر قفڵی بکات.</p>${(tefLocked||tefExpired)?'<div class="notice warn">🔒 ئەم تۆمارە قفڵ کراوە، ناتوانیت بیگۆڕیت.</div>':''}</div>
+    <p class="section-hint">✔ بۆ هاتوو و ✗ بۆ نەهاتوو. بۆ گزی کردن، درەنگ هاتن یان مۆڵەت لە لیستەکە هەڵیبژێرە (بۆ گزی کردن و درەنگ هاتن کاتیش بنووسە). لە کۆتاییدا «ناردن» دابگرە. دوای ناردن تۆمارەکە خۆکارانە قفڵ دەبێت و تەنها بەڕێوەبەر دەتوانێت قفڵەکەی بکاتەوە.</p>${tefLocked?'<div class="notice warn">🔒 تۆمارەکە نێردراوە و قفڵ کراوە. تەنها بەڕێوەبەر دەتوانێت قفڵەکەی بکاتەوە.</div>':''}</div>
   <div class="card" style="padding:12px;"><div style="overflow-x:auto;">${f.rows.length?`<table style="border-collapse:collapse;width:100%;"><thead><tr>${['ز','ناوی قوتابی','پۆل و لق','بابەت','✔ / ✗','گزی کردن / درەنگ / مۆڵەت'].concat(f.bookReturn?['کتێب']:[]).map(h=>`<th style="${th}">${h}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>`:'<p class="empty">هیچ قوتابییەک بۆ ئەم کەرتە نییە.</p>'}</div>
   ${(f.rows.length&&!tefLocked&&!tefExpired)?'<div class="btnrow" style="margin-top:12px;"><button class="btn btn-primary" onclick="tefSave()">📤 ناردن بۆ بەڕێوەبەر</button></div>':''}</div>`;
 }
@@ -5918,7 +5918,7 @@ function examLockSlots(dayId){
   Object.keys(m).forEach(sec=>{ const v=m[sec]; (Array.isArray(v)?v:(v?[v]:[])).forEach(tid=>out.push({ tid, sector:Number(sec), id:'examabs__'+dayId+'__'+sec+'__'+tid })); });
   return out;
 }
-function examLockIsOn(dayId){ const sl=examLockSlots(dayId); return sl.length>0 && sl.every(x=>examLockInfo[x.id]===true); }
+function examLockIsOn(dayId){ const sl=examLockSlots(dayId); return sl.length>0 && sl.some(x=>examLockInfo[x.id]===true); }
 async function examLockToggle(dayId){
   if(currentRole!=='admin') return;
   if(!(fbDb && fbDoc && fbSetDoc) || !navigator.onLine){ notifyOffline('گۆڕین نەکرا'); return; }
@@ -5926,10 +5926,10 @@ async function examLockToggle(dayId){
   const lock=!examLockIsOn(dayId), day=examDays().find(d=>d.id===dayId)||{};
   try{
     for(const x of slots){
-      await withTimeout(fbSetDoc(fbDoc(fbDb,'attendance',x.id), Object.assign({ kind:'examabs', ownerTid:x.tid, teacherId:x.tid, dayId, sector:x.sector, date:day.date||'', locked:lock }, (lock||!fbServerTimestamp) ? {} : { createdAt:fbServerTimestamp() }), { merge:true }), 15000);
+      await withTimeout(fbSetDoc(fbDoc(fbDb,'attendance',x.id), { kind:'examabs', ownerTid:x.tid, teacherId:x.tid, dayId, sector:x.sector, date:day.date||'', locked:lock }, { merge:true }), 15000);
       examLockInfo[x.id]=lock;
     }
-    showAlert(lock?'تۆماری چاودێرەکان بۆ ئەم ڕۆژە قفڵ کرا. مامۆستا ناتوانێت بیگۆڕێت.':'قفڵەکە کرایەوە. مامۆستا ئێستا دوو کاتژمێر دەتوانێت بیگۆڕێت. (با فۆڕمەکە دووبارە بکاتەوە.)');
+    showAlert(lock?'تۆماری چاودێرەکان بۆ ئەم ڕۆژە قفڵ کرا. مامۆستا ناتوانێت بیگۆڕێت.':'قفڵەکە کرایەوە. مامۆستا دەتوانێت بیگۆڕێت (با فۆڕمەکە دووبارە بکاتەوە)، و دوای ناردنی نوێ خۆکارانە قفڵ دەبێتەوە.');
     renderExamAbsence();
   }catch(e){ console.log('lock failed',e); showAlert('قفڵکردن سەرنەکەوت.'); }
 }
