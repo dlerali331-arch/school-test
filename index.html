@@ -928,7 +928,6 @@
     <section id="tab-mycommittees"><h2 class="section-title">لیژنەکانم</h2><div id="mycommittees-body"></div></section>
     <section id="tab-leavereg"><h2 class="section-title">تۆماری مۆڵەت و نەهاتن</h2><div id="leavereg-body"></div></section>
     <section id="tab-books"><h2 class="section-title">پێدانی کتێب</h2><div id="books-body"></div></section>
-    <section id="tab-bookret"><h2 class="section-title">وەرگرتنەوەی کتێب</h2><div id="bookret-body"></div></section>
     <section id="tab-booklist"><h2 class="section-title">کتێبە وەرگیراوەکان</h2><div id="booklist-body"></div></section>
     <section id="tab-examdays"><h2 class="section-title">ڕۆژ و ڕێکەوتی تاقیکردنەوە</h2><div id="examdays-body"></div></section>
     <section id="tab-examtable"><h2 class="section-title">خشتەی تاقیکردنەوەکان</h2><div id="examtable-body"></div></section>
@@ -1330,7 +1329,7 @@ function buildTeacherView(t){
             ids.forEach(sid=>{ const sb=(config.subjects||[]).find(y=>y.id===sid); if(sb) rows.push({ key:x.id+'__'+d.id+'__'+sid, name:x.name, grade:classGrade(c), section:classSection(c)||'', subj:sb.name }); });
           });
         });
-        myExamForm.push({ bookReturn: !!ex.bookReturn, dayId:d.id, date:d.date, sector:sec, sectorName:EXAM_SECTOR_NAMES[sec], examName: ex.name!=null?ex.name:'', stuCount:new Set(rows.map(r=>r.key.split('__')[0])).size, somaCount:rows.length, somaDetail:(()=>{ const det={}; rows.forEach(r=>{ const k=r.grade+'|'+r.section; const o=det[k]=det[k]||{grade:r.grade,section:r.section,sids:new Set(),soma:0}; o.sids.add(r.key.split('__')[0]); o.soma++; }); return Object.keys(det).map(k=>({grade:det[k].grade,section:det[k].section,stu:det[k].sids.size,soma:det[k].soma})); })(), rows });
+        myExamForm.push({ dayId:d.id, date:d.date, sector:sec, sectorName:EXAM_SECTOR_NAMES[sec], examName: ex.name!=null?ex.name:'', stuCount:new Set(rows.map(r=>r.key.split('__')[0])).size, somaCount:rows.length, somaDetail:(()=>{ const det={}; rows.forEach(r=>{ const k=r.grade+'|'+r.section; const o=det[k]=det[k]||{grade:r.grade,section:r.section,sids:new Set(),soma:0}; o.sids.add(r.key.split('__')[0]); o.soma++; }); return Object.keys(det).map(k=>({grade:det[k].grade,section:det[k].section,stu:det[k].sids.size,soma:det[k].soma})); })(), rows });
         examSlots.push(d.id+'__'+sec);
         { const p=String(d.date).split('-').map(Number); somaDates[d.id+'__'+sec]=[p[0],p[1],p[2]]; }
       });
@@ -4828,7 +4827,6 @@ const HOME_CARDS = [
   { id:'g_att', ico:'📝', title:'غیابات', sub:'تۆمارکردن، ئینزار و فەسڵکراوەکان', group:true, top:true },
   { id:'books', ico:'📖', title:'پێدانی کتێب', sub:'پێدانی کتێب بە قوتابیان', top:true },
   { id:'booklist', ico:'🗂️', title:'کتێبە وەرگیراوەکان', sub:'ئەوەی هەر قوتابییەک وەریگرتووە', top:true },
-  { id:'bookret', ico:'↩️', title:'وەرگرتنەوەی کتێب', sub:'ڕاپۆرتی ئەو کتێبانەی لە تاقیکردنەوە وەرگیراونەتەوە', top:true },
   { id:'g_exam', ico:'📝', title:'تاقیکردنەوە', sub:'ڕۆژ، کەرت و خشتەی تاقیکردنەوە', group:true, top:true },
   { id:'examdays', ico:'📅', title:'ڕۆژ و ڕێکەوتی تاقیکردنەوە', sub:'خشتەی ڕۆژەکانی تاقیکردنەوە', parent:'g_exam' },
   { id:'examtable', ico:'🗓️', title:'خشتەی تاقیکردنەوەکان', sub:'پۆل و وانە بۆ هەر ڕۆژێک', parent:'g_exam' },
@@ -4941,7 +4939,6 @@ function showScreen(name){
   else if(name==='examseating'){ document.getElementById('tab-examseating').classList.add('active'); renderExamSeating(); seatPull(false); }
   else if(name==='examreports'){ document.body.classList.add('on-reports'); somaState.view='menu'; nbPull(false); document.getElementById('tab-examreports').classList.add('active'); renderExamReports(); }
   else if(name==='examdays'){ document.getElementById('tab-examdays').classList.add('active'); renderExamDays(); }
-  else if(name==='bookret'){ document.getElementById('tab-bookret').classList.add('active'); renderBookRet(); examAbsPull(false); }
   else if(name==='booklist'){ document.getElementById('tab-booklist').classList.add('active'); renderBookList(); }
   else if(name==='books'){ document.getElementById('tab-books').classList.add('active'); renderBooks(); }
   else if(name==='leavereg'){ document.getElementById('tab-leavereg').classList.add('active'); renderLeaveReg(); }
@@ -4953,7 +4950,7 @@ function showScreen(name){
   else if(name==='mynb'){ document.getElementById('tab-mynotebook').classList.add('active'); mnbLoaded=''; renderMyNotebook(); }
   else if(name==='mysoma'){ document.getElementById('tab-mysoma').classList.add('active'); smLoaded=''; renderMySoma(); }
   else if(name==='somahand'){ document.getElementById('tab-somahand').classList.add('active'); renderSomaHand(); smaPull(false); }
-  else if(name==='myexamform'){ document.getElementById('tab-myexamform').classList.add('active'); tefLoaded=''; renderMyExamForm(); }
+  else if(name==='myexamform'){ document.getElementById('tab-myexamform').classList.add('active'); renderMyExamForm(); }
   else if(name==='myseating'){ document.getElementById('tab-myseating').classList.add('active'); msState.sector=''; renderMySeating(); }
   else if(name==='myexam'){ document.getElementById('tab-myexam').classList.add('active'); renderMyExam(); }
   else if(name==='mycommittees'){ document.getElementById('tab-mycommittees').classList.add('active'); renderMyCommittees(); }
@@ -5856,15 +5853,13 @@ function renderSomaHand(){
 let tefSlot = '', tefEntries = {}, tefCreatedAt = null, tefLoaded = '', tefLocked = false, tefExpired = false;
 function tefDocId(f){ return 'examabs__'+f.dayId+'__'+f.sector+'__'+currentTeacherId; }
 async function tefLoad(f){
-  tefLoaded = f.dayId+'__'+f.sector; tefEntries = {}; tefBooks = {}; tefCreatedAt = null;
+  tefLoaded = f.dayId+'__'+f.sector; tefEntries = {}; tefCreatedAt = null;
   const rec = await getAttRecord(tefDocId(f));
   tefLocked = false; tefExpired = false;
-  if(rec){ tefEntries = JSON.parse(JSON.stringify(rec.entries||{})); tefBooks = JSON.parse(JSON.stringify(rec.books||{})); tefCreatedAt = rec.createdAt || null; tefLocked = rec.locked===true;
-    }
+  if(rec){ tefEntries = JSON.parse(JSON.stringify(rec.entries||{})); tefCreatedAt = rec.createdAt || null; tefLocked = rec.locked===true;
+    try{ if(tefCreatedAt && tefCreatedAt.toMillis && Date.now() > tefCreatedAt.toMillis() + 2*3600*1000) tefExpired = true; }catch(e){} }
   renderMyExamForm(true);
 }
-let tefBooks = {};
-function tefBook(key){ if(tefLocked||tefExpired) return; if(tefBooks[key]) delete tefBooks[key]; else tefBooks[key]=true; renderMyExamForm(true); }
 function tefPick(v){ tefSlot=v; tefLoaded=''; renderMyExamForm(); }
 function tefMark(key,v){
   const r=tefEntries[key]=tefEntries[key]||{}, cur=r.absent?'a':(r.present?'p':'');
@@ -5878,12 +5873,12 @@ function tefClean(key){ const r=tefEntries[key]; if(r && !r.absent && !r.present
 async function tefSave(){
   if(tefLocked || tefExpired){ showAlert('ئەم تۆمارە قفڵ کراوە و ناگۆڕدرێت.'); return; }
   const f=(config.myExamForm||[]).find(x=>x.dayId+'__'+x.sector===tefSlot); if(!f) return;
-  const record = { kind:'examabs', ownerTid:currentTeacherId, teacherId:currentTeacherId, dayId:f.dayId, sector:f.sector, date:f.date, locked:true, entries:JSON.parse(JSON.stringify(tefEntries)), books:JSON.parse(JSON.stringify(tefBooks)) };
+  const record = { kind:'examabs', ownerTid:currentTeacherId, teacherId:currentTeacherId, dayId:f.dayId, sector:f.sector, date:f.date, entries:JSON.parse(JSON.stringify(tefEntries)) };
   if(tefCreatedAt) record.createdAt = tefCreatedAt;
   const r = await setAttRecord(tefDocId(f), record);
-  if(r==='cloud'){ showAlert('تۆمارەکە نێردرا بۆ بەڕێوەبەر و قفڵ کرا. تەنها بەڕێوەبەر دەتوانێت قفڵەکەی بکاتەوە.'); tefLoaded=''; renderMyExamForm(); }
-  else if(r==='queued') showAlert('ئینتەرنێت نییە. تۆمارەکە لەسەر مۆبایلەکەت پاشەکەوت کرا و کاتێک ئینتەرنێت هات دەنێردرێت و قفڵ دەبێت.');
-  else showAlert('ناتوانرێت بنێردرێت (لەوانەیە بەڕێوەبەر قفڵی کردبێت). بەڕێوەبەر ئاگادار بکەرەوە.');
+  if(r==='cloud'){ showAlert('تۆمارەکە نێردرا بۆ بەڕێوەبەر. دەتوانیت تا دوو کاتژمێر دوای یەکەم ناردن بیگۆڕیت.'); tefLoaded=''; renderMyExamForm(); }
+  else if(r==='queued') showAlert('ئینتەرنێت نییە. تۆمارەکە لەسەر مۆبایلەکەت پاشەکەوت کرا و کاتێک ئینتەرنێت هات دەنێردرێت.');
+  else showAlert('ناتوانرێت بنێردرێت (لەوانەیە کاتی گۆڕین تەواو بووبێت). بەڕێوەبەر ئاگادار بکەرەوە.');
 }
 function renderMyExamForm(keep){
   const el=document.getElementById('myexamform-body'); if(!el) return;
@@ -5900,14 +5895,14 @@ function renderMyExamForm(keep){
     const x=tefEntries[r.key]||{}, showT=(x.kind==='cheat'||x.kind==='late');
     return `<tr><td style="${td}">${toKurdishDigits(i+1)}</td><td style="${td}text-align:right;">${escapeHtml(r.name)}</td><td style="${td}white-space:nowrap;">${escapeHtml(r.grade)} ${escapeHtml(r.section)}</td><td style="${td}">${escapeHtml(r.subj)}</td>
     <td style="${td}white-space:nowrap;"><button type="button" onclick="tefMark('${r.key}','p')" style="width:40px;height:36px;font-size:20px;font-weight:900;border:2px solid #2e9e4f;border-radius:6px;background:${x.present?'#2e9e4f':'#fff'};color:${x.present?'#fff':'#2e9e4f'};">✔</button> <button type="button" onclick="tefMark('${r.key}','a')" style="width:40px;height:36px;font-size:20px;font-weight:900;border:2px solid #c0392b;border-radius:6px;background:${x.absent?'#c0392b':'#fff'};color:${x.absent?'#fff':'#c0392b'};">✗</button></td>
-    <td style="${td}"><select onchange="tefKind('${r.key}',this.value)"><option value="">—</option>${Object.keys(KINDS).map(k=>`<option value="${k}" ${x.kind===k?'selected':''}>${KINDS[k]}</option>`).join('')}</select>${showT?`<br><input type="time" value="${escapeHtml(x.time||'')}" style="margin-top:4px;width:110px;" onchange="tefTime('${r.key}',this.value)">`:''}</td>${f.bookReturn?`<td style="${td}"><button type="button" onclick="tefBook('${r.key}')" style="padding:6px 8px;font-size:13px;font-weight:800;border:2px solid #1f6fb2;border-radius:6px;cursor:pointer;background:${tefBooks[r.key]?'#1f6fb2':'#fff'};color:${tefBooks[r.key]?'#fff':'#1f6fb2'};">${tefBooks[r.key]?'📚 وەرگیرایەوە':'📚 وەرگرتنەوەی کتێب'}</button></td>`:''}</tr>`;
+    <td style="${td}"><select onchange="tefKind('${r.key}',this.value)"><option value="">—</option>${Object.keys(KINDS).map(k=>`<option value="${k}" ${x.kind===k?'selected':''}>${KINDS[k]}</option>`).join('')}</select>${showT?`<br><input type="time" value="${escapeHtml(x.time||'')}" style="margin-top:4px;width:110px;" onchange="tefTime('${r.key}',this.value)">`:''}</td></tr>`;
   }).join('');
   el.innerHTML=`<div class="card" style="padding:12px;margin-bottom:12px;">
     ${forms.length>1?`<div class="field"><label class="field-label">ڕۆژ و کەرت</label><select onchange="tefPick(this.value)">${forms.map(x=>{const v=x.dayId+'__'+x.sector;return `<option value="${v}" ${v===tefSlot?'selected':''}>${escapeHtml(examDayName(x.date))} ${fmtSlash(x.date)} — ${escapeHtml(x.sectorName)}</option>`;}).join('')}</select></div>`:''}
     <h3 style="margin:6px 0;">${escapeHtml(examDayName(f.date))} ${dh(fmtSlash(f.date))} — ${escapeHtml(f.sectorName)}</h3>
     <div style="font-weight:800;">✔ هاتوو: ${toKurdishDigits(pr)} &nbsp; ✗ نەهاتوو: ${toKurdishDigits(ab)}</div>
-    <p class="section-hint">✔ بۆ هاتوو و ✗ بۆ نەهاتوو. بۆ گزی کردن، درەنگ هاتن یان مۆڵەت لە لیستەکە هەڵیبژێرە (بۆ گزی کردن و درەنگ هاتن کاتیش بنووسە). لە کۆتاییدا «ناردن» دابگرە. دوای ناردن تۆمارەکە خۆکارانە قفڵ دەبێت و تەنها بەڕێوەبەر دەتوانێت قفڵەکەی بکاتەوە.</p>${tefLocked?'<div class="notice warn">🔒 تۆمارەکە نێردراوە و قفڵ کراوە. تەنها بەڕێوەبەر دەتوانێت قفڵەکەی بکاتەوە.</div>':''}</div>
-  <div class="card" style="padding:12px;"><div style="overflow-x:auto;">${f.rows.length?`<table style="border-collapse:collapse;width:100%;"><thead><tr>${['ز','ناوی قوتابی','پۆل و لق','بابەت','✔ / ✗','گزی کردن / درەنگ / مۆڵەت'].concat(f.bookReturn?['کتێب']:[]).map(h=>`<th style="${th}">${h}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>`:'<p class="empty">هیچ قوتابییەک بۆ ئەم کەرتە نییە.</p>'}</div>
+    <p class="section-hint">✔ بۆ هاتوو و ✗ بۆ نەهاتوو. بۆ گزی کردن، درەنگ هاتن یان مۆڵەت لە لیستەکە هەڵیبژێرە (بۆ گزی کردن و درەنگ هاتن کاتیش بنووسە). لە کۆتاییدا «ناردن» دابگرە. دوای یەکەم ناردن دوو کاتژمێر دەتوانیت بیگۆڕیت، یان تا بەڕێوەبەر قفڵی بکات.</p>${(tefLocked||tefExpired)?'<div class="notice warn">🔒 ئەم تۆمارە قفڵ کراوە، ناتوانیت بیگۆڕیت.</div>':''}</div>
+  <div class="card" style="padding:12px;"><div style="overflow-x:auto;">${f.rows.length?`<table style="border-collapse:collapse;width:100%;"><thead><tr>${['ز','ناوی قوتابی','پۆل و لق','بابەت','✔ / ✗','گزی کردن / درەنگ / مۆڵەت'].map(h=>`<th style="${th}">${h}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>`:'<p class="empty">هیچ قوتابییەک بۆ ئەم کەرتە نییە.</p>'}</div>
   ${(f.rows.length&&!tefLocked&&!tefExpired)?'<div class="btnrow" style="margin-top:12px;"><button class="btn btn-primary" onclick="tefSave()">📤 ناردن بۆ بەڕێوەبەر</button></div>':''}</div>`;
 }
 
@@ -5918,7 +5913,7 @@ function examLockSlots(dayId){
   Object.keys(m).forEach(sec=>{ const v=m[sec]; (Array.isArray(v)?v:(v?[v]:[])).forEach(tid=>out.push({ tid, sector:Number(sec), id:'examabs__'+dayId+'__'+sec+'__'+tid })); });
   return out;
 }
-function examLockIsOn(dayId){ const sl=examLockSlots(dayId); return sl.length>0 && sl.some(x=>examLockInfo[x.id]===true); }
+function examLockIsOn(dayId){ const sl=examLockSlots(dayId); return sl.length>0 && sl.every(x=>examLockInfo[x.id]===true); }
 async function examLockToggle(dayId){
   if(currentRole!=='admin') return;
   if(!(fbDb && fbDoc && fbSetDoc) || !navigator.onLine){ notifyOffline('گۆڕین نەکرا'); return; }
@@ -5929,7 +5924,7 @@ async function examLockToggle(dayId){
       await withTimeout(fbSetDoc(fbDoc(fbDb,'attendance',x.id), { kind:'examabs', ownerTid:x.tid, teacherId:x.tid, dayId, sector:x.sector, date:day.date||'', locked:lock }, { merge:true }), 15000);
       examLockInfo[x.id]=lock;
     }
-    showAlert(lock?'تۆماری چاودێرەکان بۆ ئەم ڕۆژە قفڵ کرا. مامۆستا ناتوانێت بیگۆڕێت.':'قفڵەکە کرایەوە. مامۆستا دەتوانێت بیگۆڕێت (با فۆڕمەکە دووبارە بکاتەوە)، و دوای ناردنی نوێ خۆکارانە قفڵ دەبێتەوە.');
+    showAlert(lock?'تۆماری چاودێرەکان بۆ ئەم ڕۆژە قفڵ کرا. مامۆستا ناتوانێت بیگۆڕێت.':'قفڵەکە کرایەوە. (مامۆستا هێشتا تەنها لە ماوەی دوو کاتژمێر دوای یەکەم ناردن دەتوانێت بیگۆڕێت.)');
     renderExamAbsence();
   }catch(e){ console.log('lock failed',e); showAlert('قفڵکردن سەرنەکەوت.'); }
 }
@@ -5940,13 +5935,10 @@ async function examAbsPull(manual){
   try{
     const snap=await withTimeout(fbGetDocs(fbQuery(fbCollection(fbDb,'attendance'), fbWhere('kind','==','examabs'))), 20000);
     const m=examAbsMap(); let n=0, ch=0;
-    const br=bookRetMap(), brBefore=JSON.stringify(br); Object.keys(br).forEach(k=>{ if(br[k]==='t') delete br[k]; });
-    snap.forEach(d=>{ { const bk=(d.data()||{}).books||{}; Object.keys(bk).forEach(k=>{ if(bk[k] && !(k in br)) br[k]='t'; }); } examLockInfo[d.id]=((d.data()||{}).locked===true); const e=(d.data()||{}).entries||{}; Object.keys(e).forEach(k=>{ if(!m[k] || m[k].src==='t'){ const nv=Object.assign({}, e[k], {src:'t'}); if(JSON.stringify(m[k])!==JSON.stringify(nv)){ m[k]=nv; ch++; } } n++; }); });
-    if(JSON.stringify(br)!==brBefore) ch++;
+    snap.forEach(d=>{ examLockInfo[d.id]=((d.data()||{}).locked===true); const e=(d.data()||{}).entries||{}; Object.keys(e).forEach(k=>{ if(!m[k] || m[k].src==='t'){ const nv=Object.assign({}, e[k], {src:'t'}); if(JSON.stringify(m[k])!==JSON.stringify(nv)){ m[k]=nv; ch++; } } n++; }); });
     if(ch){ scheduleSave(); }
     if(manual) showAlert(n?('تۆماری چاودێران وەرگیرا: '+toKurdishDigits(n)+' ڕیز.'):'هێشتا چاودێرەکان هیچیان نەناردووە.');
     if(currentScreen==='examabsence') renderExamAbsence();
-    if(currentScreen==='bookret') renderBookRet();
   }catch(e){ console.log('pull failed',e); if(manual) notifyOffline('خوێندنەوە نەکرا'); }
 }
 function examAbsWhyEmpty(){
@@ -6326,13 +6318,12 @@ function bookTableHtml(forPrint){
   const cls = bookState.classId;
   const sts = config.students.filter(x=>x.classId===cls);
   const mine = new Set(bookClassSubjects(cls).map(x=>x.id));
-  const colSubs = config.subjects.filter(sb=>mine.has(sb.id));
   const g = bookState.doc.given;
   const border = forPrint ? '1px solid #000' : '1px solid var(--rule)';
   const th = `padding:4px;border:${border};background:#f4cccc;`;
   const td = `padding:6px 4px;border:${border};text-align:center;`;
-  const head = `<tr><th style="${th}">زنجیرە</th><th style="${th}min-width:150px;">ناوی قوتابی</th>${colSubs.map(sb=>`<th style="${th}"><div style="writing-mode:vertical-rl;transform:rotate(180deg);margin:auto;white-space:nowrap;font-size:${forPrint?12:13}px;">${escapeHtml(sb.name)}</div></th>`).join('')}</tr>`;
-  const rows = sts.map((st,i)=>`<tr><td style="${td}">${i+1}</td><td style="${td}text-align:right;font-weight:700;">${escapeHtml(st.name)}</td>${colSubs.map(sb=>{
+  const head = `<tr><th style="${th}">زنجیرە</th><th style="${th}min-width:150px;">ناوی قوتابی</th>${config.subjects.map(sb=>`<th style="${th}"><div style="writing-mode:vertical-rl;transform:rotate(180deg);margin:auto;white-space:nowrap;font-size:${forPrint?12:13}px;">${escapeHtml(sb.name)}</div></th>`).join('')}</tr>`;
+  const rows = sts.map((st,i)=>`<tr><td style="${td}">${i+1}</td><td style="${td}text-align:right;font-weight:700;">${escapeHtml(st.name)}</td>${config.subjects.map(sb=>{
     if(!mine.has(sb.id)) return `<td style="${td}">–</td>`;
     const has = g[st.id] && g[st.id][sb.id];
     const mark = has ? '✓' : '✖';
@@ -6382,66 +6373,6 @@ async function renderBookList(){
       <div style="margin-top:4px;">${got.length ? got.map(sb=>`<span class="lv-chip lv-approved" style="margin:2px 0 2px 4px;">${escapeHtml(sb.name)}</span>`).join('') : '<span class="subtext">هیچ کتێبێکی وەرنەگرتووە</span>'}</div></div></li>`;
   }).join('') + '</ul>';
   el.innerHTML = html;
-}
-/* ---------------- وەرگرتنەوەی کتێب (ڕاپۆرتی سەربەخۆ) ----------------
-   teacher marks per student+subject row in the exam form; stored on the same examabs doc as `books:{rowKey:true}`.
-   admin map: config.exams.bookRet = { rowKey: 't' (from teacher) | true | false (admin override) } */
-const brState = { day:'', grade:'', cls:'', subj:'', status:'', page:0 };
-function bookRetMap(){ if(!config.exams) config.exams={days:[]}; if(!config.exams.bookRet||typeof config.exams.bookRet!=='object') config.exams.bookRet={}; return config.exams.bookRet; }
-function bookRetOn(key){ const v=bookRetMap()[key]; return v===true||v==='t'; }
-function brSet(k,v){ brState[k]=v; brState.page=0; if(k==='grade'){ brState.cls=''; brState.subj=''; } renderBookRet(); }
-function brPage(p){ brState.page=p; renderBookRet(); }
-function brToggleFeature(){ const ex=config.exams; ex.bookReturn=!ex.bookReturn; scheduleSave(); renderBookRet(); }
-function brToggleRow(key){ bookRetMap()[key]=!bookRetOn(key); scheduleSave(); renderBookRet(); }
-function brRows(){
-  const rows=examAbsAll(brState.day);
-  return rows.filter(r=>(!brState.grade||classGrade(r.c)===brState.grade)&&(!brState.cls||r.c.id===brState.cls)&&(!brState.subj||r.subj===brState.subj)&&(!brState.status||(brState.status==='yes')===bookRetOn(r.key)));
-}
-function brTable(rows, forPrint){
-  const B=forPrint?'1px solid #000':'1px solid var(--rule)';
-  const th=`border:${B};padding:6px 4px;text-align:center;font-size:14px;font-weight:800;background:#cfe2f3;`, td=`border:${B};padding:5px 4px;text-align:center;font-size:14px;font-weight:600;`;
-  const head=['ز','ناوی خوێندکار','پۆل','لق','بابەت','بەروار','وەرگرتنەوەی کتێب'];
-  return `<table style="border-collapse:collapse;width:100%;"><thead style="display:table-header-group;"><tr>${head.map(h=>`<th style="${th}">${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>{
-    const on=bookRetOn(r.key);
-    const cell=forPrint?`<td style="${td}font-weight:800;color:${on?'#14683a':'#c0392b'};">${on?'✔ وەرگیرایەوە':'✗ نەگەڕاوەتەوە'}</td>`:`<td style="${td}cursor:pointer;font-weight:800;color:${on?'#14683a':'#c0392b'};" onclick="brToggleRow('${r.key}')">${on?'✔ وەرگیرایەوە':'✗ نەگەڕاوەتەوە'}</td>`;
-    return `<tr style="page-break-inside:avoid;"><td style="${td}">${toKurdishDigits(r.n)}</td><td style="${td}text-align:right;">${escapeHtml(r.st.name)}</td><td style="${td}white-space:nowrap;">${escapeHtml(classGrade(r.c))}</td><td style="${td}">${escapeHtml(classSection(r.c))}</td><td style="${td}">${escapeHtml(r.subj)}</td><td style="${td}white-space:nowrap;">${dh(fmtSlash(r.d.date))}</td>${cell}</tr>`;
-  }).join('')}</tbody></table>`;
-}
-function renderBookRet(){
-  const el=document.getElementById('bookret-body'); if(!el) return;
-  const ex=config.exams||{}, days=examDays().filter(d=>d.date).slice().sort((a,b)=>a.date<b.date?-1:1);
-  const grades=examGradeNames(), classOpts=(config.classes||[]).filter(c=>!brState.grade||classGrade(c)===brState.grade);
-  const base=examAbsAll(brState.day).filter(r=>!brState.grade||classGrade(r.c)===brState.grade);
-  const subjs=Array.from(new Set(base.map(r=>r.subj))).sort((a,b)=>a.localeCompare(b,'ckb'));
-  const rows=brRows(); rows.forEach((r,i)=>r.n=i+1);
-  const yes=rows.filter(r=>bookRetOn(r.key)).length, PER=100, pages=Math.max(1,Math.ceil(rows.length/PER)); if(brState.page>=pages) brState.page=pages-1;
-  const part=rows.slice(brState.page*PER,(brState.page+1)*PER);
-  const sel=(label,id,opts,cur,w)=>`<div class="field" style="min-width:${w}px;"><label class="field-label">${label}</label><select onchange="brSet('${id}',this.value)"><option value="">هەموو</option>${opts.map(o=>`<option value="${escapeHtml(o.v)}" ${cur===o.v?'selected':''}>${escapeHtml(o.t)}</option>`).join('')}</select></div>`;
-  const box=(l,v)=>`<div style="display:inline-block;margin:3px 4px;padding:6px 12px;border:1px solid #1f6fb2;border-radius:8px;background:#e3f0fb;font-weight:800;">${l}: ${toKurdishDigits(v)}</div>`;
-  const pager=pages>1?`<div class="btnrow" style="margin:8px 0;">${Array.from({length:pages},(_,p)=>`<button class="btn ${p===brState.page?'btn-primary':'btn-ghost'} btn-sm" onclick="brPage(${p})">${toKurdishDigits(p+1)}</button>`).join('')}</div>`:'';
-  el.innerHTML=`<div class="card" style="padding:12px;margin-bottom:12px;">
-    <div class="row" style="gap:10px;align-items:center;flex-wrap:wrap;"><button type="button" class="btn ${ex.bookReturn?'btn-accent':'btn-primary'}" onclick="brToggleFeature()">${ex.bookReturn?'✔ چالاکە — داگرتن بۆ ناچالاککردن':'چالاککردنی دوگمەی وەرگرتنەوەی کتێب بۆ چاودێران'}</button>
-      <button type="button" class="btn btn-ghost btn-sm" onclick="examAbsPull(true)">⬇️ وەرگرتنی تۆماری چاودێران</button></div>
-    <p class="section-hint" style="margin-top:8px;">کاتێک چالاک بێت، لە فۆڕمی «تۆماری نەهاتوو لە تاقیکردنەوە»ی مامۆستا، لە تەنیشت ✔ و ✗ دوگمەی «وەرگرتنەوەی کتێب» دەردەکەوێت. ئەم ڕاپۆرتە جیایە لە ڕاپۆرتەکانی تاقیکردنەوە و غیابات. دەتوانیت لەم خشتەیە کرتە لە حاڵەتەکە بکەیت بۆ گۆڕینی.</p>
-    <div>${box('ژ. ڕیز',rows.length)}${box('✔ وەرگیراوەتەوە',yes)}${box('✗ نەگەڕاوەتەوە',rows.length-yes)}</div>
-    <div class="row" style="gap:10px;flex-wrap:wrap;align-items:end;margin-top:8px;">
-      ${sel('بەروار','day',days.map(d=>({v:d.id,t:fmtSlash(d.date)})),brState.day,130)}
-      ${sel('پۆل','grade',grades.map(g=>({v:g,t:g})),brState.grade,150)}
-      ${sel('لق','cls',classOpts.map(x=>({v:x.id,t:x.name})),brState.cls,150)}
-      ${sel('بابەت','subj',subjs.map(n=>({v:n,t:n})),brState.subj,130)}
-      ${sel('حاڵەت','status',[{v:'yes',t:'وەرگیراوەتەوە'},{v:'no',t:'نەگەڕاوەتەوە'}],brState.status,150)}
-      <button type="button" class="btn btn-primary" onclick="brPrint()">🖨️ چاپکردن</button></div></div>
-  <div class="card" style="padding:12px;">${pager}<div style="overflow-x:auto;">${part.length?brTable(part,false):'<p class="empty">هیچ ڕیزێک نییە. ڕەنگە ڕۆژ و خشتەی تاقیکردنەوە دیاری نەکرابێت.</p>'}</div>${pager}</div>`;
-}
-function brPrint(){
-  const rows=brRows(); if(!rows.length){ showAlert('هیچ ڕیزێک نییە.'); return; }
-  rows.forEach((r,i)=>r.n=i+1);
-  const school=(config.school||{}).name||'', yes=rows.filter(r=>bookRetOn(r.key)).length;
-  document.getElementById('leave-sheet').innerHTML=`<div dir="rtl" style="font-family:'Vazirmatn',sans-serif;color:#000;padding:6px 10px;">
-    <div style="text-align:center;"><img alt="" src="${LEAVE_LOGO}" style="width:70px;height:70px;"><h2 style="margin:4px 0;font-size:22px;">ڕاپۆرتی وەرگرتنەوەی کتێب</h2><div style="font-weight:700;">${escapeHtml(school)}</div></div>
-    <div style="display:flex;justify-content:space-between;margin:10px 0;font-weight:700;"><span>ژمارەی ڕیز: ${toKurdishDigits(rows.length)}</span><span>وەرگیراوەتەوە: ${toKurdishDigits(yes)}</span><span>نەگەڕاوەتەوە: ${toKurdishDigits(rows.length-yes)}</span></div>
-    ${brTable(rows,true)}</div>`;
-  leaveDoPrint('portrait');
 }
 function bookListPrint(){
   const c = config.classes.find(x=>x.id===bookState.classId); if(!c) return;
