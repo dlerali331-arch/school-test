@@ -5502,7 +5502,7 @@ function examAbsFiltered(){
   return base.filter(r=>(examAbsView==='day'||!f.day||r.d.id===f.day)&&(!f.grade||classGrade(r.c)===f.grade)&&(!f.cls||r.c.id===f.cls)&&(!f.subj||r.subj===f.subj)&&(!f.sector||r.sector===f.sector)&&(!f.name||String(r.st.name).includes(f.name)));
 }
 function examAbsMap(){ if(!config.exams.absence||typeof config.exams.absence!=='object') config.exams.absence={}; return config.exams.absence; }
-function examAbsRec(key){ const m=examAbsMap(); if(!m[key]) m[key]={}; delete m[key].src; return m[key]; }
+function examAbsRec(key){ const m=examAbsMap(); if(!m[key]) m[key]={}; delete m[key].src; m[key].at=Date.now(); return m[key]; }
 function examAbsClean(key){ const m=examAbsMap(), r=m[key]; if(r && !r.absent && !r.present && !r.kind && !r.time && !r.note) delete m[key]; }
 function examAbsCounts(){
   const rows=examAbsFiltered(), m=examAbsMap(); let ab=0,pr=0,ch=0,lt=0,lv=0;
@@ -5924,7 +5924,7 @@ function tefClean(key){ const r=tefEntries[key]; if(r && !r.absent && !r.present
 async function tefSave(){
   if(tefLocked || tefExpired){ showAlert('ئەم تۆمارە قفڵ کراوە و ناگۆڕدرێت.'); return; }
   const f=(config.myExamForm||[]).find(x=>x.dayId+'__'+x.sector===tefSlot); if(!f) return;
-  const record = { kind:'examabs', ownerTid:currentTeacherId, teacherId:currentTeacherId, dayId:f.dayId, sector:f.sector, date:f.date, locked:true, entries:JSON.parse(JSON.stringify(tefEntries)) };
+  const record = { kind:'examabs', ownerTid:currentTeacherId, teacherId:currentTeacherId, dayId:f.dayId, sector:f.sector, date:f.date, locked:true, sentAt:Date.now(), entries:JSON.parse(JSON.stringify(tefEntries)) };
   if(tefCreatedAt) record.createdAt = tefCreatedAt;
   const r = await setAttRecord(tefDocId(f), record);
   if(r==='cloud'){ showAlert('تۆمارەکە نێردرا و خۆکارانە قفڵ کرا. بۆ گۆڕین دەبێت بەڕێوەبەر قفڵەکە بکاتەوە.'); tefLoaded=''; renderMyExamForm(); }
@@ -6346,7 +6346,14 @@ async function examAbsPull(manual){
   try{
     const snap=await withTimeout(fbGetDocs(fbQuery(fbCollection(fbDb,'attendance'), fbWhere('kind','==','examabs'))), 20000);
     const m=examAbsMap(); let n=0, ch=0;
-    snap.forEach(d=>{ examLockInfo[d.id]=((d.data()||{}).locked===true); const e=(d.data()||{}).entries||{}; Object.keys(e).forEach(k=>{ if(!m[k] || m[k].src==='t'){ const nv=Object.assign({}, e[k], {src:'t'}); if(JSON.stringify(m[k])!==JSON.stringify(nv)){ m[k]=nv; ch++; } } n++; }); });
+    const present={};
+    snap.forEach(d=>{ const dd=d.data()||{}; examLockInfo[d.id]=(dd.locked===true); const e=dd.entries||{}, sentAt=Number(dd.sentAt)||0;
+      Object.keys(e).forEach(k=>{ present[k]=true;
+        /* take the teacher's value when: nothing here yet, it came from a teacher before, or the teacher sent it AFTER the admin last edited this row */
+        if(!m[k] || m[k].src==='t' || (sentAt && sentAt>(m[k].at||0))){ const nv=Object.assign({}, e[k], {src:'t'}); if(JSON.stringify(m[k])!==JSON.stringify(nv)){ m[k]=nv; ch++; } }
+        n++; }); });
+    /* a mark the teacher removed after sending it */
+    if(!snap.empty) Object.keys(m).forEach(k=>{ if(m[k] && m[k].src==='t' && !present[k]){ delete m[k]; ch++; } });
     if(ch){ scheduleSave(); }
     if(manual) showAlert(n?('تۆماری چاودێران وەرگیرا: '+toKurdishDigits(n)+' ڕیز.'):'هێشتا چاودێرەکان هیچیان نەناردووە.');
     if(currentScreen==='examabsence') renderExamAbsence();
