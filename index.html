@@ -926,6 +926,7 @@
     <section id="tab-guides"><h2 class="section-title">ڕابەری پۆلەکان</h2><div id="guides-body"></div></section>
     <section id="tab-myguide"><h2 class="section-title">ڕابەری پۆلەکەم</h2><div id="myguide-body"></div></section>
     <section id="tab-attdash"><h2 class="section-title">داشبۆردی غیابات</h2><div id="attdash-body"></div></section>
+    <section id="tab-ctlpanel"><h2 class="section-title">کۆنترۆڵکردن</h2><div id="ctlpanel-body"></div></section>
     <section id="tab-somahand"><h2 class="section-title">پێدان و وەرگرتنەوەی سۆما</h2><div id="somahand-body"></div></section>
     <section id="tab-myseating"><h2 class="section-title">نەخشەی دانیشتنی کەرتەکەم</h2><div id="myseating-body"></div></section>
     <section id="tab-myexam"><h2 class="section-title">چاودێری تاقیکردنەوەکانم</h2><div id="myexam-body"></div></section>
@@ -4844,18 +4845,20 @@ let warnLevel = 0;
 const HOME_CARDS = [
   { id:'g_schedule', ico:'🗓️', title:'خشتەی وانەکان', sub:'داشبۆرد و بەشەکانی خشتە', group:true, top:true },
   { id:'g_att', ico:'📝', title:'غیابات', sub:'تۆمارکردن، ئینزار و فەسڵکراوەکان', group:true, top:true },
-  { id:'books', ico:'📖', title:'پێدانی کتێب', sub:'پێدانی کتێب بە قوتابیان', top:true },
-  { id:'booklist', ico:'🗂️', title:'کتێبە وەرگیراوەکان', sub:'ئەوەی هەر قوتابییەک وەریگرتووە', top:true },
+  { id:'g_books', ico:'📖', title:'کتێب', sub:'پێدان، کتێبە وەرگیراوەکان و وەرگرتنەوە', group:true, top:true },
+  { id:'books', ico:'📖', title:'پێدانی کتێب', sub:'پێدانی کتێب بە قوتابیان', parent:'g_books' },
+  { id:'booklist', ico:'🗂️', title:'کتێبە وەرگیراوەکان', sub:'ئەوەی هەر قوتابییەک وەریگرتووە', parent:'g_books' },
   { id:'g_exam', ico:'📝', title:'تاقیکردنەوە', sub:'ڕۆژ، کەرت و خشتەی تاقیکردنەوە', group:true, top:true },
   { id:'examdays', ico:'📅', title:'ڕۆژ و ڕێکەوتی تاقیکردنەوە', sub:'خشتەی ڕۆژەکانی تاقیکردنەوە', parent:'g_exam' },
   { id:'examtable', ico:'🗓️', title:'خشتەی تاقیکردنەوەکان', sub:'پۆل و وانە بۆ هەر ڕۆژێک', parent:'g_exam' },
   { id:'examsectors', ico:'👥', title:'کەرتەکان و دابەشکردنی خوێنکاران', sub:'دیاریکردنی کەرت و دابەشکردنی یەکسان', parent:'g_exam' },
   { id:'examabsence', ico:'📋', title:'تۆماری نەهاتوو لە تاقیکردنەوە', sub:'هەڵبژاردنی ڕۆژ ← فۆڕمی نەهاتوو، گزی کردن، درەنگ هاتن', parent:'g_exam' },
   { id:'somahand', ico:'✍️', title:'پێدان و وەرگرتنەوەی سۆما', sub:'واژۆی چاودێران و ڕاپۆرتی بەتاڵ / پڕکراوە', parent:'g_exam', adminOnly:true },
-  { id:'bookret', ico:'📚', title:'وەرگرتنەوەی کتێب (تاقیکردنەوە)', sub:'چالاککردن بۆ چاودێران و ڕاپۆرتی جیا', parent:'g_exam', adminOnly:true },
+  { id:'bookret', ico:'📚', title:'وەرگرتنەوەی کتێب', sub:'چالاککردن، قفڵکردن و ڕاپۆرتی جیا', parent:'g_books', adminOnly:true },
   { id:'examsupervisors', ico:'👨‍🏫', title:'دابەشکردنی چاودێرەکان', sub:'هەڵبژاردن و دابەشکردنی مامۆستایان بەسەر کەرتەکانی ڕۆژەکانی تاقیکردنەوە', parent:'g_exam' },
   { id:'examseating', ico:'🗺️', title:'نەخشەی کەرتەکان', sub:'دانیشتنی قوتابیان لە هەر کەرتێک', parent:'g_exam', adminOnly:true },
   { id:'examreports', ico:'📊', title:'ڕاپۆرتەکان', sub:'سۆما و ڕاپۆرتەکانی تاقیکردنەوە', parent:'g_exam', adminOnly:true },
+  { id:'ctlpanel', ico:'🎛️', title:'کۆنترۆڵکردن', sub:'چالاککردن و قفڵکردن و وەرگرتنی تۆمارەکان', top:true },
   { id:'committees', ico:'👥', title:'لیژنەکان', sub:'لیژنە و ئەرکەکان', top:true },
   { id:'guides', ico:'🧑‍🏫', title:'ڕابەری پۆلەکان', sub:'ڕابەر، نوێنەری قوتابیان و تۆماری چالاکی', top:true },
   { id:'myguide', ico:'🧑‍🏫', title:'ڕابەری پۆلەکەم', sub:'نوێنەری قوتابیان و تۆماری چالاکی', teacherTop:true },
@@ -4934,7 +4937,7 @@ function showScreen(name){
     renderHome();
     return;
   }
-  if(name==='g_schedule' || name==='g_att' || name==='g_leave' || name==='g_exam' || name==='g_tatt' || name==='g_texam'){
+  if(name==='g_schedule' || name==='g_att' || name==='g_leave' || name==='g_exam' || name==='g_books' || name==='g_tatt' || name==='g_texam'){
     home.style.display = ''; bar.style.display = 'flex'; nav.style.display = 'none'; main.style.display = 'none';
     document.getElementById('home-bar-title').textContent = HOME_CARDS.find(c=>c.id===name).title;
     renderHome(name);
@@ -4977,6 +4980,7 @@ function showScreen(name){
   else if(name==='guides'){ document.getElementById('tab-guides').classList.add('active'); renderGuides(); gdPull(false); }
   else if(name==='myguide'){ document.getElementById('tab-myguide').classList.add('active'); gdtLoaded=''; renderMyGuide(); }
   else if(name==='attdash'){ document.getElementById('tab-attdash').classList.add('active'); adState.loaded=''; renderAttDash(); }
+  else if(name==='ctlpanel'){ document.getElementById('tab-ctlpanel').classList.add('active'); ctlState.tab='ctl'; renderCtlPanel(); ctlPullAll(false); }
   else if(name==='somahand'){ document.getElementById('tab-somahand').classList.add('active'); renderSomaHand(); smaPull(false); }
   else if(name==='myexamform'){ document.getElementById('tab-myexamform').classList.add('active'); renderMyExamForm(); }
   else if(name==='myseating'){ document.getElementById('tab-myseating').classList.add('active'); msState.sector=''; renderMySeating(); }
@@ -5775,7 +5779,7 @@ async function smaCtlToggle(dayId, field){
       somaCtl[x.id]=Object.assign({}, somaCtl[x.id]||{}, data);
     }
     showAlert(field==='recvOpen'?(on?'وەرگرتنی سۆما چالاک کرا بۆ چاودێرانی ئەم ڕۆژە.':'وەرگرتنی سۆما ناچالاک کرا.'):(on?'گەڕاندنەوەی سۆما چالاک کرا .':'گەڕاندنەوەی سۆما ناچالاک کرا.'));
-    renderSomaHand();
+    ctlAfter(renderSomaHand);
   }catch(e){ console.log('soma ctl failed',e); showAlert('گۆڕین سەرنەکەوت.'); }
 }
 function smaSetName(k,v){ config.exams[k]=v; scheduleSave(); }
@@ -5904,7 +5908,7 @@ async function tefLoad(f){
     const br = await getAttRecord(bkDocId(f)); if(br){ bkRec = br; bkEntries = JSON.parse(JSON.stringify(br.entries||{})); }
   }catch(e){}
   if(rec){ tefEntries = JSON.parse(JSON.stringify(rec.entries||{})); tefCreatedAt = rec.createdAt || null; tefLocked = rec.locked===true;
-    try{ if(tefCreatedAt && tefCreatedAt.toMillis && Date.now() > tefCreatedAt.toMillis() + 2*3600*1000) tefExpired = true; }catch(e){} }
+  }
   renderMyExamForm(true);
 }
 function tefPick(v){ tefSlot=v; tefLoaded=''; renderMyExamForm(); }
@@ -5920,12 +5924,12 @@ function tefClean(key){ const r=tefEntries[key]; if(r && !r.absent && !r.present
 async function tefSave(){
   if(tefLocked || tefExpired){ showAlert('ئەم تۆمارە قفڵ کراوە و ناگۆڕدرێت.'); return; }
   const f=(config.myExamForm||[]).find(x=>x.dayId+'__'+x.sector===tefSlot); if(!f) return;
-  const record = { kind:'examabs', ownerTid:currentTeacherId, teacherId:currentTeacherId, dayId:f.dayId, sector:f.sector, date:f.date, entries:JSON.parse(JSON.stringify(tefEntries)) };
+  const record = { kind:'examabs', ownerTid:currentTeacherId, teacherId:currentTeacherId, dayId:f.dayId, sector:f.sector, date:f.date, locked:true, entries:JSON.parse(JSON.stringify(tefEntries)) };
   if(tefCreatedAt) record.createdAt = tefCreatedAt;
   const r = await setAttRecord(tefDocId(f), record);
-  if(r==='cloud'){ showAlert('تۆمارەکە نێردرا بۆ بەڕێوەبەر. دەتوانیت تا دوو کاتژمێر دوای یەکەم ناردن بیگۆڕیت.'); tefLoaded=''; renderMyExamForm(); }
+  if(r==='cloud'){ showAlert('تۆمارەکە نێردرا و خۆکارانە قفڵ کرا. بۆ گۆڕین دەبێت بەڕێوەبەر قفڵەکە بکاتەوە.'); tefLoaded=''; renderMyExamForm(); }
   else if(r==='queued') showAlert('ئینتەرنێت نییە. تۆمارەکە لەسەر مۆبایلەکەت پاشەکەوت کرا و کاتێک ئینتەرنێت هات دەنێردرێت.');
-  else showAlert('ناتوانرێت بنێردرێت (لەوانەیە کاتی گۆڕین تەواو بووبێت). بەڕێوەبەر ئاگادار بکەرەوە.');
+  else showAlert('ناتوانرێت بنێردرێت (لەوانەیە قفڵ کرابێت). بەڕێوەبەر ئاگادار بکەرەوە.');
 }
 function renderMyExamForm(keep){
   const el=document.getElementById('myexamform-body'); if(!el) return;
@@ -5949,9 +5953,10 @@ function renderMyExamForm(keep){
     <h3 style="margin:6px 0;">${escapeHtml(examDayName(f.date))} ${dh(fmtSlash(f.date))} — ${escapeHtml(f.sectorName)}</h3>
     <div style="font-weight:800;">✔ هاتوو: ${toKurdishDigits(pr)} &nbsp; ✗ نەهاتوو: ${toKurdishDigits(ab)}${bkOpen?` &nbsp; 📚 کتێبی وەرگیراوە: ${toKurdishDigits(Object.keys(bkEntries).filter(k=>f.rows.some(r=>r.key===k)).length)}`:''}</div>
     ${bkOpen?'<div class="notice" style="margin-top:8px;">📚 وەرگرتنەوەی کتێب چالاکە: دوگمەی 📚 دابگرە بۆ ئەو قوتابییەی کتێبەکەی گەڕاندەوە، پاشان «ناردنی وەرگرتنەوەی کتێب» دابگرە.</div>':''}
-    <p class="section-hint">✔ بۆ هاتوو و ✗ بۆ نەهاتوو. بۆ گزی کردن، درەنگ هاتن یان مۆڵەت لە لیستەکە هەڵیبژێرە (بۆ گزی کردن و درەنگ هاتن کاتیش بنووسە). لە کۆتاییدا «ناردن» دابگرە. دوای یەکەم ناردن دوو کاتژمێر دەتوانیت بیگۆڕیت، یان تا بەڕێوەبەر قفڵی بکات.</p>${(tefLocked||tefExpired)?'<div class="notice warn">🔒 ئەم تۆمارە قفڵ کراوە، ناتوانیت بیگۆڕیت.</div>':''}</div>
+    <p class="section-hint">✔ بۆ هاتوو و ✗ بۆ نەهاتوو. بۆ گزی کردن، درەنگ هاتن یان مۆڵەت لە لیستەکە هەڵیبژێرە (بۆ گزی کردن و درەنگ هاتن کاتیش بنووسە). لە کۆتاییدا «ناردن» دابگرە. دوای ناردن خۆکارانە قفڵ دەبێت و تەنها بەڕێوەبەر دەتوانێت بیکاتەوە.</p>
+    <div class="notice ${tefLocked?'warn':''}" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;"><span>${tefLocked?'🔒 ئەم تۆمارە لەلایەن بەڕێوەبەر قفڵ کراوە (یان نێردراوە و قفڵ بووە).':'🔓 ئەم تۆمارە قفڵ نەکراوە، دەتوانیت بیگۆڕیت و بنێریت.'}</span><button type="button" class="btn btn-ghost btn-sm" onclick="tefLoaded='';renderMyExamForm()">🔄 نوێبوونەوە</button></div></div>
   <div class="card" style="padding:12px;"><div style="overflow-x:auto;">${f.rows.length?`<table style="border-collapse:collapse;width:100%;"><thead><tr>${['ز','ناوی قوتابی','پۆل و لق','بابەت','✔ / ✗','گزی کردن / درەنگ / مۆڵەت'].map(h=>`<th style="${th}">${h}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>`:'<p class="empty">هیچ قوتابییەک بۆ ئەم کەرتە نییە.</p>'}</div>
-  <div class="btnrow" style="margin-top:12px;">${(f.rows.length&&!tefLocked&&!tefExpired)?'<button class="btn btn-primary" onclick="tefSave()">📤 ناردن بۆ بەڕێوەبەر</button>':''}${(f.rows.length&&bkOpen)?'<button class="btn btn-primary" style="background:#1f5fa8;" onclick="bkSave()">📚 ناردنی وەرگرتنەوەی کتێب</button>':''}</div></div>`;
+  <div class="btnrow" style="margin-top:12px;">${f.rows.length?((!tefLocked)?'<button class="btn btn-primary" onclick="tefSave()">📤 ناردنی نەهاتوو لە تاقیکردنەوەکان</button>':'<button class="btn btn-ghost" disabled style="opacity:.6;">🔒 ناردنی نەهاتوو (قفڵ کراوە)</button>'):''}${(f.rows.length&&bkOpen)?'<button class="btn btn-primary" style="background:#1f5fa8;" onclick="bkSave()">📚 ناردنی وەرگرتنەوەی کتێب</button>':''}</div></div>`;
 }
 
 /* ================= وەرگرتنەوەی کتێب لە تاقیکردنەوە (ڕاپۆرتی سەربەخۆ) ================= */
@@ -5974,7 +5979,7 @@ async function bkCtlToggle(dayId){
       bkCtl[x.id]=Object.assign({}, bkCtl[x.id]||{}, data);
     }
     showAlert(on?'وەرگرتنەوەی کتێب چالاک کرا بۆ چاودێرانی ئەم ڕۆژە.':'وەرگرتنەوەی کتێب ناچالاک کرا.');
-    renderBookRet();
+    ctlAfter(renderBookRet);
   }catch(e){ console.log('book ctl failed',e); showAlert('گۆڕین سەرنەکەوت.'); }
 }
 async function bkPull(manual){
@@ -6089,7 +6094,8 @@ function gdSave(){
   const reps=[f.r1,f.r2].filter(Boolean);
   config.guides=config.guides||{};
   config.guides[f.classId]={ teacherId:f.teacherId, reps, repsAdmin:reps.length>0 };
-  scheduleSave(); showAlert('پاشەکەوت کرا. دواتر «ناردنی نەخشەکان بۆ چاودێران» دابگرە.'); renderGuides();
+  gdForm={ classId:'', teacherId:'', r1:'', r2:'' };
+  scheduleSave(); showAlert('پاشەکەوت کرا. دەتوانیت ڕابەرێکی تر زیاد بکەیت. دواتر «ناردنی نەخشەکان بۆ چاودێران» دابگرە.'); renderGuides();
 }
 function gdRemove(cid){ if(!confirm('ڕابەری ئەم پۆلە لابەرم؟')) return; delete config.guides[cid]; if(gdForm.classId===cid) gdForm={classId:'',teacherId:'',r1:'',r2:''}; scheduleSave(); renderGuides(); }
 function gdInfo(cid){
@@ -6138,7 +6144,7 @@ function renderGuides(){
       <div class="field" style="min-width:180px;"><label class="field-label">ناوی ڕابەر (مامۆستا)</label><select onchange="gdSetForm('teacherId',this.value)"><option value="">— هەڵبژێرە —</option>${(config.teachers||[]).map(t=>opt(t.id,t.name,f.teacherId)).join('')}</select></div>
       <div class="field" style="min-width:180px;"><label class="field-label">نوێنەری یەکەم</label><select onchange="gdSetForm('r1',this.value)"><option value="">—</option>${stus.map(x=>opt(x.id,x.name,f.r1)).join('')}</select></div>
       <div class="field" style="min-width:180px;"><label class="field-label">نوێنەری دووەم</label><select onchange="gdSetForm('r2',this.value)"><option value="">—</option>${stus.map(x=>opt(x.id,x.name,f.r2)).join('')}</select></div>
-      <button class="btn btn-primary" onclick="gdSave()">💾 پاشەکەوت</button></div></div>
+      <button class="btn btn-primary" onclick="gdSave()">💾 پاشەکەوت</button><button class="btn btn-ghost" onclick="gdForm={classId:'',teacherId:'',r1:'',r2:''};renderGuides()">➕ ڕابەری نوێ</button></div></div>
   <div class="card" style="padding:12px;margin-bottom:12px;"><h4 style="margin:0 0 8px;">ڕابەرە دیاریکراوەکان</h4>${gids.length?`<ul class="list">${gids.map(cid=>{ const i=gdInfo(cid), r=gdEffReps(cid); return `<li><div style="width:100%;"><div class="warn-row"><b>${escapeHtml(i.className)} — ${escapeHtml(i.teacherName)}</b><span><button class="btn btn-ghost btn-sm" onclick="gdSetForm('classId','${cid}')">✏️</button> <button class="btn btn-ghost btn-sm" onclick="gdRemove('${cid}')">🗑️</button></span></div><div class="subtext">نوێنەران: ${r.length?i.repNames.map(escapeHtml).join('، '):'هێشتا دیاری نەکراون'}${(gs[cid].repsAdmin?'':' (مامۆستا دیاری دەکات)')}</div></div></li>`; }).join('')}</ul>`:'<p class="empty">هێشتا هیچ ڕابەرێک دیاری نەکراوە.</p>'}</div>
   ${gids.length?`<div class="card" style="padding:12px;"><h4 style="margin:0 0 8px;">تۆماری چالاکییەکان</h4>
     <div class="row" style="gap:10px;flex-wrap:wrap;align-items:end;"><div class="field" style="min-width:200px;"><label class="field-label">پۆل</label><select onchange="gdViewSet(this.value)">${gids.map(cid=>opt(cid,gdInfo(cid).className,gdViewCls)).join('')}</select></div>
@@ -6267,6 +6273,50 @@ function renderAttDash(keep){
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;">${cards}</div>${detail}`;
 }
 
+/* ================= کۆنترۆڵکردن: چالاککردن / قفڵکردن / وەرگرتنی تۆمارەکان ================= */
+const ctlState = { tab:'ctl', day:'' };
+function ctlAfter(f){ if(currentScreen==='ctlpanel') renderCtlPanel(); else f(); }
+function ctlTab(t){ ctlState.tab=t; renderCtlPanel(); }
+function ctlDay(v){ ctlState.day=v; renderCtlPanel(); }
+async function ctlPullAll(manual){
+  if(currentRole!=='admin') return;
+  const r=await Promise.all([examAbsPull(false), smaPull(false), nbPull(false), bkPull(false)].map(p=>Promise.resolve(p).catch(()=>false)));
+  if(manual) showAlert('تۆماری تاقیکردنەوە، سۆما، دەفتەر و کتێب نوێ کرانەوە.');
+  if(currentScreen==='ctlpanel') renderCtlPanel();
+  return r;
+}
+function renderCtlPanel(){
+  const el=document.getElementById('ctlpanel-body'); if(!el) return;
+  const days=examDays().filter(d=>d.date).slice().sort((a,b)=>a.date<b.date?-1:1);
+  const show=ctlState.day===''?days:days.filter(d=>d.id===ctlState.day);
+  const tabs=`<div class="btnrow" style="margin-bottom:12px;"><button class="btn ${ctlState.tab==='ctl'?'btn-primary':'btn-ghost'}" onclick="ctlTab('ctl')">🎛️ چالاککردن و قفڵکردن</button><button class="btn ${ctlState.tab==='pull'?'btn-primary':'btn-ghost'}" onclick="ctlTab('pull')">⬇️ وەرگرتنی تۆمارەکان</button></div>`;
+  if(ctlState.tab==='pull'){
+    const n1=Object.keys(examLockInfo).length, n2=Object.keys(somaRecs).length, n3=Object.keys(nbRecs).length, n4=Object.keys(bkRecs).length;
+    el.innerHTML=tabs+`<div class="card" style="padding:14px;"><p class="section-hint">لێرە تۆمارەکانی مامۆستایان دەهێنیت: تۆماری نەهاتوو، سۆما، دەفتەری تاقیکردنەوە و وەرگرتنەوەی کتێب.</p>
+      <div class="btnrow" style="margin-bottom:12px;"><button class="btn btn-primary" onclick="ctlPullAll(true)">⬇️ وەرگرتنی هەموو</button></div>
+      <ul class="list">
+      <li><span class="name">📋 تۆماری نەهاتوو لە تاقیکردنەوە</span><span class="btnrow"><span class="subtext">${toKurdishDigits(n1)} تۆمار</span><button class="btn btn-ghost btn-sm" onclick="examAbsPull(true)">⬇️</button></span></li>
+      <li><span class="name">✍️ سۆما</span><span class="btnrow"><span class="subtext">${toKurdishDigits(n2)} تۆمار</span><button class="btn btn-ghost btn-sm" onclick="smaPull(true)">⬇️</button></span></li>
+      <li><span class="name">📒 دەفتەری تاقیکردنەوە</span><span class="btnrow"><span class="subtext">${toKurdishDigits(n3)} تۆمار</span><button class="btn btn-ghost btn-sm" onclick="nbPull(true)">⬇️</button></span></li>
+      <li><span class="name">📚 وەرگرتنەوەی کتێب</span><span class="btnrow"><span class="subtext">${toKurdishDigits(n4)} تۆمار</span><button class="btn btn-ghost btn-sm" onclick="bkPull(true)">⬇️</button></span></li>
+      </ul></div>`;
+    return;
+  }
+  const tg=(on,a,b)=>on?a:b;
+  const cards=show.map(d=>{
+    const lk=examLockIsOn(d.id), s1=smaCtlOn(d.id,'recvOpen'), s2=smaCtlOn(d.id,'retOpen'), n1=nbCtlOn(d.id,'recvOpen'), n2=nbCtlOn(d.id,'retOpen'), bk=bkCtlOn(d.id);
+    const row=(t,btns)=>`<div class="row" style="gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0;"><b style="min-width:200px;">${t}</b>${btns}</div>`;
+    const b=(on,onTxt,offTxt,fn)=>`<button class="btn ${on?'btn-primary':'btn-ghost'} btn-sm" onclick="${fn}">${on?onTxt:offTxt}</button>`;
+    return `<div class="card" style="padding:12px;margin-bottom:12px;"><h3 style="margin:0 0 6px;">${escapeHtml(examDayName(d.date))} — ${dh(fmtSlash(d.date))}</h3>
+      ${row('📋 تۆماری نەهاتوو',b(lk,'🔒 قفڵکراوە (بیکەرەوە)','🔓 کراوەیە (قفڵی بکە)',`examLockToggle('${d.id}')`))}
+      ${row('✍️ سۆما',b(s1,'✅ وەرگرتن چالاکە (دایبخە)','▶️ چالاککردنی وەرگرتن',`smaCtlToggle('${d.id}','recvOpen')`)+b(s2,'✅ گەڕاندنەوە چالاکە (دایبخە)','▶️ چالاککردنی گەڕاندنەوە',`smaCtlToggle('${d.id}','retOpen')`))}
+      ${row('📒 دەفتەری تاقیکردنەوە',b(n1,'✅ وەرگرتن چالاکە (دایبخە)','▶️ چالاککردنی وەرگرتن',`nbCtlToggle('${d.id}','recvOpen')`)+b(n2,'✅ گەڕاندنەوە چالاکە (دایبخە)','▶️ چالاککردنی گەڕاندنەوە',`nbCtlToggle('${d.id}','retOpen')`))}
+      ${row('📚 وەرگرتنەوەی کتێب',b(bk,'✅ چالاکە (دایبخە)','▶️ چالاککردن',`bkCtlToggle('${d.id}')`))}</div>`;
+  }).join('');
+  el.innerHTML=tabs+`<div class="card" style="padding:14px;margin-bottom:12px;"><p class="section-hint">لێرە کۆنتڕۆڵی هەموو شتێک بەدەست تۆیە. تۆماری نەهاتوو دوای ناردنی مامۆستا خۆکارانە قفڵ دەبێت تا تۆ دووبارە بیکەیتەوە. سۆما و دەفتەر و کتێب تەنها کاتێک چالاکی دەکەیت مامۆستا دەتوانێت واژۆ/تۆمار بکات.</p>
+    <div class="field" style="max-width:260px;"><label class="field-label">ڕۆژ</label><select onchange="ctlDay(this.value)"><option value="">هەموو ڕۆژەکان</option>${days.map(d=>`<option value="${d.id}" ${ctlState.day===d.id?'selected':''}>${examDayName(d.date)} — ${fmtSlash(d.date)}</option>`).join('')}</select></div></div>${cards||'<p class="empty">هیچ ڕۆژێکی تاقیکردنەوە دیاری نەکراوە.</p>'}`;
+}
+
 /* admin: lock / unlock the supervisors' exam-absence records for a day */
 const examLockInfo = {};
 function examLockSlots(dayId){
@@ -6285,8 +6335,8 @@ async function examLockToggle(dayId){
       await withTimeout(fbSetDoc(fbDoc(fbDb,'attendance',x.id), { kind:'examabs', ownerTid:x.tid, teacherId:x.tid, dayId, sector:x.sector, date:day.date||'', locked:lock }, { merge:true }), 15000);
       examLockInfo[x.id]=lock;
     }
-    showAlert(lock?'تۆماری چاودێرەکان بۆ ئەم ڕۆژە قفڵ کرا. مامۆستا ناتوانێت بیگۆڕێت.':'قفڵەکە کرایەوە. (مامۆستا هێشتا تەنها لە ماوەی دوو کاتژمێر دوای یەکەم ناردن دەتوانێت بیگۆڕێت.)');
-    renderExamAbsence();
+    showAlert(lock?'تۆماری چاودێرەکان بۆ ئەم ڕۆژە قفڵ کرا. مامۆستا ناتوانێت بیگۆڕێت.':'قفڵەکە کرایەوە. مامۆستا دەتوانێت بگۆڕێت و کاتێک دووبارە دەینێرێت خۆکارانە قفڵ دەبێتەوە.');
+    ctlAfter(renderExamAbsence);
   }catch(e){ console.log('lock failed',e); showAlert('قفڵکردن سەرنەکەوت.'); }
 }
 /* admin: pull what the teachers submitted */
@@ -7420,7 +7470,7 @@ async function nbCtlToggle(dayId, field){
       nbCtl[nbCtlId(dayId,t)]=Object.assign({}, nbCtl[nbCtlId(dayId,t)]||{}, data);
     }
     showAlert(field==='recvOpen'?(on?'وەرگرتنی دەفتەر چالاک کرا بۆ مامۆستایانی ئەم ڕۆژە.':'وەرگرتنی دەفتەر ناچالاک کرا.'):(on?'گەڕاندنەوەی دەفتەر چالاک کرا.':'گەڕاندنەوەی دەفتەر ناچالاک کرا.'));
-    renderExamReports();
+    ctlAfter(renderExamReports);
   }catch(e){ console.log('nb ctl failed',e); showAlert('گۆڕین سەرنەکەوت.'); }
 }
 /* ---- teacher side ---- */
