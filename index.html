@@ -7143,7 +7143,7 @@ async function gdrSumPush(quiet){
 }
 function gdrSumAuto(){ if(currentRole==='teacher' && gdr.mloaded===gdr.cid+'|'+gdr.sid && gdr.mdocs) gdrSumPush(true); }
 /* ---- بەڕێوەبەر: بینین و سرینەوەی نمرەی مامۆستایان ---- */
-const agr={ docs:null, sums:[], tab:'day', tid:'', cid:'', sid:'', open:{}, err:0 };
+const agr={ docs:null, sums:[], term:1, tab:'day', tid:'', cid:'', sid:'', open:{}, err:0 };
 async function agrLoad(){
   agr.docs=null; renderAdmGrades();
   if(!(fbDb&&fbCollection&&fbQuery&&fbWhere&&fbGetDocs)||!navigator.onLine){ agr.docs=[]; agr.err=1; renderAdmGrades(); return; }
@@ -7187,10 +7187,11 @@ function renderAdmGrades(){
     <div class="field" style="min-width:150px;"><label class="field-label">مامۆستا</label><select onchange="agrSet('tid',this.value)">${opt(tids,agr.tid,tn)}</select></div>
     <div class="field" style="min-width:150px;"><label class="field-label">پۆل</label><select onchange="agrSet('cid',this.value)">${opt(cids,agr.cid,cn)}</select></div>
     <div class="field" style="min-width:150px;"><label class="field-label">وانە</label><select onchange="agrSet('sid',this.value)">${opt(sids,agr.sid,sn)}</select></div>
+    ${agr.tab==='sum'?`<div class="field" style="min-width:140px;"><label class="field-label">وەرز</label><select onchange="agr.term=Number(this.value);renderAdmGrades()"><option value="1" ${agr.term===1?'selected':''}>وەرزی یەکەم</option><option value="2" ${agr.term===2?'selected':''}>وەرزی دووەم</option></select></div>`:''}
     <button class="btn btn-ghost" onclick="agrLoad()">🔄 نوێکردنەوە</button><button class="btn btn-ghost" style="color:#b3261e;" onclick="agrDelAll()" ${L.length?'':'disabled'}>🗑️ سرینەوەی هەموو ئەم لیستە (${kd(L.length)})</button></div></div>`
     +(agr.err?'<p class="empty">نەخوێندرایەوە. ئینتەرنێت بپشکنە و «نوێکردنەوە» بکە.</p>':(L.length?L.map(d=>agr.tab==='day'
       ?`<div class="card" style="padding:10px;margin-bottom:8px;"><div class="row" style="gap:8px;align-items:center;flex-wrap:wrap;"><b style="flex:1;min-width:200px;">${dh(fmtSlash(d.date))} — ${escapeHtml(tn(d.ownerTid))} — ${escapeHtml(cn(d.classId))} — ${escapeHtml(sn(d.subjectId))}${evn(d)?' — '+escapeHtml(evn(d)):''}</b><button class="btn btn-ghost btn-sm" onclick="agrToggle('${d._id}')">${agr.open[d._id]?'شاردنەوە':'👁 بینین'}</button><button class="btn btn-ghost btn-sm" style="color:#b3261e;" onclick="agrDelOne('${d._id}')">🗑️ سرینەوە</button></div>${agr.open[d._id]?detail(d):''}</div>`
-      :`<div class="card" style="padding:10px;margin-bottom:8px;"><div class="row" style="gap:8px;align-items:center;flex-wrap:wrap;"><b style="flex:1;min-width:200px;">${escapeHtml(tn(d.ownerTid))} — ${escapeHtml(cn(d.classId))} — ${escapeHtml(sn(d.subjectId))}</b><button class="btn btn-ghost btn-sm" onclick="agrToggle('${d._id}')">${agr.open[d._id]?'شاردنەوە':'👁 بینین'}</button><button class="btn btn-ghost btn-sm" style="color:#b3261e;" onclick="agrDelOne('${d._id}')">🗑️ سرینەوە</button></div>${agr.open[d._id]?sumTable(d,1)+sumTable(d,2):''}</div>`).join(''):'<p class="empty">هیچ نمرەیەک نییە.</p>'))
+      :`<div class="card" style="padding:10px;margin-bottom:8px;"><div class="row" style="gap:8px;align-items:center;flex-wrap:wrap;"><b style="flex:1;min-width:200px;">${escapeHtml(tn(d.ownerTid))} — ${escapeHtml(cn(d.classId))} — ${escapeHtml(sn(d.subjectId))}</b><button class="btn btn-ghost btn-sm" onclick="agrToggle('${d._id}')">${agr.open[d._id]?'شاردنەوە':'👁 بینین'}</button><button class="btn btn-ghost btn-sm" style="color:#b3261e;" onclick="agrDelOne('${d._id}')">🗑️ سرینەوە</button></div>${agr.open[d._id]?sumTable(d,agr.term):''}</div>`).join(''):'<p class="empty">هیچ نمرەیەک نییە.</p>'))
     +'<p class="section-hint">نمرەی وەرزەکان کاتێک دەگەنە ئێرە کە مامۆستا شاشەی «وەرزی یەکەم/دووەم» بکاتەوە (خۆکارانە دەنێردرێن).</p>';
 }
 /* ---- پڕکردنەوەی خۆکاری لەیبڵی «غیاب» لە تۆماری غیابات ---- */
@@ -7501,7 +7502,7 @@ function adrPrint(){
 }
 
 /* ================= مامۆستایانی غیابیان وەرنەگرتووە ================= */
-const amsState = { from:'', to:'', loaded:'', err:false, recs:[] };
+const amsState = { from:'', to:'', loaded:'', err:false, recs:[], mode:'missing', tid:'' };
 const AMS_CSS = `
 .ams-page{box-sizing:border-box;direction:rtl;font-family:'Vazirmatn',sans-serif;color:#000;background:#fff;padding:2mm 0;}
 .ams-h1{text-align:center;font-weight:900;font-size:20px;margin:0 0 2mm;}
@@ -7561,8 +7562,9 @@ function renderAttMissing(keep){
   if(!amsState.from){ amsState.from=amsState.to=todayDateStr(); }
   const key=amsState.from+'|'+amsState.to;
   if(amsState.loaded!==key){ el.innerHTML='<p class="empty">چاوەڕێ بکە...</p>'; amsLoad(); return; }
+  if(amsState.mode==='teacher'){ renderAmsTeacher(el); return; }
   const list=amsState.err?[]:amsCompute();
-  el.innerHTML=`<div class="card no-print" style="padding:14px;margin-bottom:12px;">
+  el.innerHTML=amsTabs()+`<div class="card no-print" style="padding:14px;margin-bottom:12px;">
     <p class="section-hint">بەپێی خشتەی وانەکان، ئەو وانانە دەدۆزرێنەوە کە مامۆستا هەیبووە بەڵام هیچ غیابێکی بۆ نەنێردراوە. ئەگەر ئەمڕۆ هەڵبژێریت، لەوانەیە هێشتا هەندێک وانە نەکرابێت و مامۆستا نەگەیشتبێتە ناردن. ڕۆژانی پشوو و ڕۆژانی داهاتوو دەست نیشان ناکرێن؛ مۆڵەتی مامۆستایانیش لەبەر چاو ناگیرێت.</p>
     <div class="row" style="gap:10px;flex-wrap:wrap;align-items:end;">
       <div class="field"><label class="field-label">لە بەروار</label><input type="date" value="${amsState.from}" onchange="amsSet('from',this.value)"></div>
@@ -7575,6 +7577,45 @@ function renderAttMissing(keep){
     </div></div>
   <style>${AMS_CSS}</style>
   ${list.length?`<p class="section-hint no-print"><b>${list.length}</b> مامۆستا غیابیان نەناردووە.</p><div class="no-print" style="overflow-x:auto;">${amsTableHtml(list)}</div>`:(amsState.err?'<p class="empty">خوێندنەوە سەرنەکەوت.</p>':'<p class="empty">✅ هەموو مامۆستایان غیابیان ناردووە لەم ماوەیەدا.</p>')}`;
+}
+
+function amsTabs(){ const b=(k,l)=>`<button class="btn ${amsState.mode===k?'btn-primary':'btn-ghost'}" onclick="amsState.mode='${k}';renderAttMissing(true)">${l}</button>`; return `<div class="btnrow no-print" style="margin-bottom:12px;">${b('missing','⚠️ نەنێردراوەکان (هەموو مامۆستایان)')}${b('teacher','👤 بەپێی مامۆستا')}</div>`; }
+function amsComputeTeacher(tid){
+  const have=new Set(amsState.recs.map(r=>r.classId+'|'+r.date+'|'+Number(r.periodIndex)));
+  const today=todayDateStr(), schoolDays=(config.settings&&config.settings.days)||[], out=[];
+  const [y1,m1,d1]=amsState.from.split('-').map(Number), [y2,m2,d2]=amsState.to.split('-').map(Number);
+  const cur=new Date(y1,m1-1,d1,12), end=new Date(y2,m2-1,d2,12); let guard=0;
+  while(cur<=end && guard++<400){
+    const iso=arpIso(cur), dn=JS_DAY_TO_KURDISH[cur.getDay()];
+    if(iso<=today && schoolDays.some(z=>dayKey(z)===dayKey(dn))){
+      teacherLessonsOnDay(tid, dn).forEach(l=>{ out.push({ date:iso, day:dn, p:l.periodIndex+1, cls:l.cls.name, subj:l.subject.name, sent:have.has(l.cls.id+'|'+iso+'|'+l.periodIndex) }); });
+    }
+    cur.setDate(cur.getDate()+1);
+  }
+  return out;
+}
+function amsTeacherTable(rows){
+  return `<table class="ams-t"><thead><tr><th style="width:6%;">ز</th><th>بەروار</th><th>وانە</th><th>پۆل</th><th>بابەت</th><th>دۆخ</th></tr></thead><tbody>${rows.map((x,i)=>`<tr><td>${i+1}</td><td>${dh(fmtSlash(x.date))} (${escapeHtml(x.day)})</td><td>${dh(toKurdishDigits(x.p))}</td><td>${escapeHtml(x.cls)}</td><td>${escapeHtml(x.subj)}</td><td style="color:${x.sent?'#14683a':'#a02318'};font-weight:800;">${x.sent?'✔ ناردوویەتی':'✗ نەیناردووە'}</td></tr>`).join('')}</tbody></table>`;
+}
+function amsTeacherPrint(){
+  if(!amsState.tid) return; const rows=amsComputeTeacher(amsState.tid); if(!rows.length){ showAlert('هیچ شتێک نییە بۆ چاپکردن.'); return; }
+  const t=(config.teachers||[]).find(x=>x.id===amsState.tid), sent=rows.filter(x=>x.sent).length;
+  document.getElementById('leave-sheet').innerHTML=`<style>${AMS_CSS}</style><div class="ams-page"><h1 class="ams-h1">دۆخی ناردنی غیاباتی مامۆستا</h1><div class="ams-meta">مامۆستا: ${escapeHtml(t?t.name:'')} — لە ${dh(fmtSlash(amsState.from))} تا ${dh(fmtSlash(amsState.to))} — ناردووە: ${toKurdishDigits(sent)} / نەیناردووە: ${toKurdishDigits(rows.length-sent)}</div>${amsTeacherTable(rows)}</div>`;
+  leaveDoPrint('portrait');
+}
+function renderAmsTeacher(el){
+  const T=(config.teachers||[]).slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),'ckb'));
+  const rows=(amsState.tid&&!amsState.err)?amsComputeTeacher(amsState.tid):[], sent=rows.filter(x=>x.sent).length, kd=toKurdishDigits;
+  el.innerHTML=amsTabs()+`<div class="card no-print" style="padding:14px;margin-bottom:12px;"><p class="section-hint">مامۆستا هەڵبژێرە؛ هەموو وانەکانی ئەو مامۆستایە (بەپێی خشتەی وانەکان) لەم ماوەیەدا دێن و دەڵێت کامیان غیابیان نێردراوە و کامیان نا.</p>
+    <div class="row" style="gap:10px;flex-wrap:wrap;align-items:end;">
+      <div class="field" style="min-width:200px;"><label class="field-label">مامۆستا</label><select onchange="amsState.tid=this.value;renderAttMissing(true)"><option value="">— هەڵبژێرە —</option>${T.map(t=>`<option value="${t.id}" ${t.id===amsState.tid?'selected':''}>${escapeHtml(t.name)}</option>`).join('')}</select></div>
+      <div class="field"><label class="field-label">لە بەروار</label><input type="date" value="${amsState.from}" onchange="amsSet('from',this.value)"></div>
+      <div class="field"><label class="field-label">تا بەروار</label><input type="date" value="${amsState.to}" onchange="amsSet('to',this.value)"></div>
+      <button class="btn btn-ghost" onclick="amsQuick('today')">ئەمڕۆ</button><button class="btn btn-ghost" onclick="amsQuick('yesterday')">دوێنێ</button><button class="btn btn-ghost" onclick="amsQuick('week')">ئەم هەفتەیە</button>
+      <button class="btn btn-ghost" onclick="amsState.loaded='';renderAttMissing()">🔄 نوێکردنەوە</button>
+      <button class="btn btn-primary" onclick="amsTeacherPrint()" ${rows.length?'':'disabled'}>🖨️ چاپکردن</button></div></div>
+  <style>${AMS_CSS}</style>
+  ${!amsState.tid?'<p class="empty">مامۆستایەک هەڵبژێرە.</p>':(amsState.err?'<p class="empty">خوێندنەوە سەرنەکەوت.</p>':(rows.length?`<p class="section-hint no-print">کۆی وانەکان: <b>${kd(rows.length)}</b> — ناردووە: <b style="color:#14683a;">${kd(sent)}</b> — نەیناردووە: <b style="color:#a02318;">${kd(rows.length-sent)}</b></p><div class="no-print" style="overflow-x:auto;">${amsTeacherTable(rows)}</div>`:'<p class="empty">لەم ماوەیەدا هیچ وانەیەکی ئەم مامۆستایە نییە.</p>'))}`;
 }
 function amsPrint(){
   const list=amsCompute(); if(!list.length){ showAlert('هیچ شتێک نییە بۆ چاپکردن.'); return; }
