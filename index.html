@@ -940,6 +940,7 @@
     <section id="tab-cmtlogs"><h2 class="section-title">تۆماری چالاکی لیژنەکان</h2><div id="cmtlogs-body"></div></section>
     <section id="tab-myacts"><h2 class="section-title">چالاکی بەرزکردنەوەی ئاستی زانستی خوێندکاران</h2><div id="myacts-body"></div></section>
     <section id="tab-actlogs"><h2 class="section-title">چالاکی بەرزکردنەوەی ئاستی زانستی خوێندکاران</h2><div id="actlogs-body"></div></section>
+    <section id="tab-admgrades"><h2 class="section-title">نمرەی مامۆستایان</h2><div id="admgrades-body"></div></section>
     <section id="tab-mygrades"><h2 class="section-title">نمرەی ڕۆژانە</h2><div id="mygrades-body"></div></section>
     <section id="tab-mycommittees"><h2 class="section-title">لیژنەکانم</h2><div id="mycommittees-body"></div></section>
     <section id="tab-leavereg"><h2 class="section-title">تۆماری مۆڵەت و نەهاتن</h2><div id="leavereg-body"></div></section>
@@ -5098,6 +5099,7 @@ const HOME_CARDS = [
   { id:'myseating', ico:'🗺️', title:'نەخشەی دانیشتنی کەرتەکەم', sub:'نەخشەی ئەو کەرتەی چاودێری دەکەیت', tparent:'g_texam' },
   { id:'myexam', ico:'📋', title:'چاودێری تاقیکردنەوەکانم', sub:'ڕۆژ و کەرتەکانی چاودێری خۆت', tparent:'g_texam' },
   { id:'myacts', ico:'📈', title:'چالاکی بەرزکردنەوەی ئاستی زانستی', sub:'بۆ هەر پۆل و وانەیەک', teacherTop:true },
+  { id:'admgrades', ico:'🧮', title:'نمرەی مامۆستایان', sub:'نمرەی ڕۆژانە و وەرزی یەکەم و دووەم', top:true, adminOnly:true },
   { id:'mygrades', ico:'🧮', title:'نمرەی ڕۆژانە', sub:'لەیبڵ و نمرەی قوتابیان بۆ وانەکەت', teacherTop:true },
   { id:'mycommittees', ico:'👥', title:'لیژنەکانم', sub:'ئەو لیژنانەی تێیدایت', teacherTop:true },
   { id:'schedule', ico:'🗓️', title:'خشتەی وانەکان', sub:'بەشەکانی ١ تا ٨', parent:'g_schedule' },
@@ -5219,6 +5221,7 @@ function showScreen(name){
   else if(name==='cmtlogs'){ document.getElementById('tab-cmtlogs').classList.add('active'); renderCmtLogs(); }
   else if(name==='myacts'){ document.getElementById('tab-myacts').classList.add('active'); acl.loaded=''; renderMyActs(); }
   else if(name==='actlogs'){ document.getElementById('tab-actlogs').classList.add('active'); renderActLogs(); alaPull(false); }
+  else if(name==='admgrades'){ document.getElementById('tab-admgrades').classList.add('active'); agrLoad(); }
   else if(name==='mygrades'){ document.getElementById('tab-mygrades').classList.add('active'); gdr.loaded=''; renderMyGrades(); }
   else if(name==='mycommittees'){ document.getElementById('tab-mycommittees').classList.add('active'); renderMyCommittees(); }
   else if(name==='mylessons'){ document.getElementById('tab-mylessons').classList.add('active'); renderMyLessons(); }
@@ -6907,7 +6910,7 @@ async function gdrFetchAll(){
   if(!(fbDb && fbCollection && fbQuery && fbWhere && fbGetDocs) || !navigator.onLine) return null;
   try{
     const snap=await withTimeout(fbGetDocs(fbQuery(fbCollection(fbDb,'attendance'), fbWhere('kind','==','grade'), fbWhere('ownerTid','==',currentTeacherId), fbWhere('classId','==',gdr.cid), fbWhere('subjectId','==',gdr.sid))), 25000);
-    const arr=[]; snap.forEach(d=>arr.push(d.data())); return arr;
+    const arr=[]; snap.forEach(d=>arr.push(Object.assign({_id:d.id},d.data()))); return arr;
   }catch(e){ console.log('grades fetch failed',e); return null; }
 }
 async function gdrLastLabels(){
@@ -7001,7 +7004,7 @@ function gdrRenderMonth(el,cls,subs){
     <div class="field" style="min-width:150px;"><label class="field-label">وانە</label><select onchange="gdrSetSubj(this.value)">${subs.map(x=>`<option value="${x.id}" ${x.id===gdr.sid?'selected':''}>${escapeHtml(x.name)}</option>`).join('')}</select></div>
     ${gdrEvHtml()}<div class="field" style="width:130px;"><label class="field-label">نمرەی کۆتایی هەڵسەنگاندن</label><input type="number" min="1" value="${gdr.fmax}" onchange="gdrSetFmax(this.value)"></div></div>
     <label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:14px;"><input type="checkbox" ${gdr.zero?'checked':''} onchange="gdrSetZero(this.checked)"> ئەو ڕۆژانەی قوتابی نیشانە نەکراوە وەک ✗ حساب بکرێن</label>
-    <div class="btnrow" style="margin-top:10px;"><button class="btn btn-ghost" onclick="gdrMonthReload()">🔄 نوێکردنەوە</button><button class="btn btn-ghost" onclick="gdrOvReset()">↩ گەڕانەوە بۆ ژمێریاری خۆکار</button><button class="btn btn-primary" onclick="gdrMonthPrint()">🖨️ چاپکردن</button></div></div>`;
+    <div class="btnrow" style="margin-top:10px;"><button class="btn btn-ghost" onclick="gdrMonthReload()">🔄 نوێکردنەوە</button><button class="btn btn-ghost" onclick="gdrOvReset()">↩ گەڕانەوە بۆ ژمێریاری خۆکار</button><button class="btn btn-primary" onclick="gdrMonthPrint()">🖨️ چاپکردن</button><button class="btn btn-ghost" style="color:#b3261e;" onclick="gdrDeleteEv('${gdr.ev}')">🗑️ سرینەوەی ئەم هەڵسەنگاندنە</button></div></div>`;
   if(gdr.mloaded!==key){ el.innerHTML=gdrTabs()+ctl+'<p class="empty">چاوەڕێ بکە...</p>'; gdrMonthLoad(key); return; }
   if(gdr.mdocs===null){ el.innerHTML=gdrTabs()+ctl+'<p class="empty">نمرەکان نەخوێندرانەوە. ئینتەرنێت بپشکنە و «نوێکردنەوە» بکە.</p>'; return; }
   const R=gdrMonthCalc();
@@ -7084,7 +7087,111 @@ function gdrRenderTerm(el,cls,subs){
   if(gdr.mloaded!==key){ el.innerHTML=gdrTabs()+ctl+'<p class="empty">چاوەڕێ بکە...</p>'; gdrMonthLoad(key); return; }
   if(gdr.mdocs===null){ el.innerHTML=gdrTabs()+ctl+'<p class="empty">نمرەکان نەخوێندرانەوە. ئینتەرنێت بپشکنە و «نوێکردنەوە» بکە.</p>'; return; }
   const TT=gdr.view==='term2'?2:1;
-  el.innerHTML=gdrTabs()+ctl+[TT].map(t=>`<div class="card" style="padding:12px;margin-bottom:12px;overflow-x:auto;"><div class="btnrow" style="margin-bottom:8px;"><button class="btn btn-primary btn-sm" onclick="gdrTermPrint(${t})">🖨️ چاپکردنی وەرزی ${t===1?'یەکەم':'دووەم'}</button></div>${gdrTermTable(t,false)}</div>`).join('');
+  el.innerHTML=gdrTabs()+ctl+[TT].map(t=>`<div class="card" style="padding:12px;margin-bottom:12px;overflow-x:auto;"><div class="btnrow" style="margin-bottom:8px;"><button class="btn btn-primary btn-sm" onclick="gdrTermPrint(${t})">🖨️ چاپکردنی وەرزی ${t===1?'یەکەم':'دووەم'}</button><button class="btn btn-ghost btn-sm" onclick="gdrSumPush(false)">📤 ناردن بۆ بەڕێوەبەر</button><button class="btn btn-ghost btn-sm" style="color:#b3261e;" onclick="gdrTermClear(${t})">🗑️ سرینەوەی وەرزی ${t===1?'یەکەم':'دووەم'}</button></div>${gdrTermTable(t,false)}</div>`).join('');
+  gdrSumAuto();
+}
+
+/* ---- سرینەوە: ڕۆژ، هەڵسەنگاندن، وەرز ---- */
+async function gdrDeleteDay(){
+  if(!attFbReady()){ showAlert('ئینتەرنێت پێویستە.'); return; }
+  showConfirm('نمرەکانی ئەم ڕۆژە ('+dh(fmtSlash(gdr.date))+') بسڕدرێنەوە؟', async()=>{
+    try{ await withTimeout(fbDeleteDoc(fbDoc(fbDb,'attendance',gdrDocId())),15000); gdr.marks={}; gdr.createdAt=null; gdr.loaded=''; gdr.mloaded=''; showAlert('ئەم ڕۆژە سڕایەوە.'); renderMyGrades(); }
+    catch(e){ console.log(e); showAlert(e&&e.code==='permission-denied'?'ڕێگە پێنەدراوە. ڕێسای نوێی Firebase دابنێ (Publish).':'نەسڕایەوە. ئینتەرنێت بپشکنە.'); }
+  });
+}
+async function gdrEvWipe(id){
+  const all=await gdrFetchAll(); if(!all) throw new Error('offline');
+  const hit=all.filter(r=>gdrInEv(r,id)); let n=0;
+  for(const r of hit){ await withTimeout(fbDeleteDoc(fbDoc(fbDb,'attendance',r._id)),15000); n++; }
+  try{ const o=gdrEvGet(); delete o[id]; localStorage.setItem(gdrEvKey(),JSON.stringify(o)); }catch(e){}
+  try{ const k=gdr.ev; gdr.ev=id; localStorage.removeItem(gdrOvKey()); localStorage.removeItem(gdrTplKey()); gdr.ev=k; }catch(e){}
+  return n;
+}
+function gdrDeleteEv(id){
+  if(!attFbReady()){ showAlert('ئینتەرنێت پێویستە.'); return; }
+  showConfirm('هەموو ڕۆژەکانی «'+gdrEvName(id)+'» (نمرەی ڕۆژانە و گۆڕینە دەستییەکان و ماوەکەی) دەسڕدرێنەوە. دڵنیایت؟', async()=>{
+    try{ const n=await gdrEvWipe(id); gdr.loaded=''; gdr.mloaded=''; showAlert('سڕایەوە ('+toKurdishDigits(n)+' ڕۆژ).'); renderMyGrades(); }
+    catch(e){ console.log(e); showAlert(e&&e.code==='permission-denied'?'ڕێگە پێنەدراوە. ڕێسای نوێی Firebase دابنێ (Publish).':'نەسڕایەوە. ئینتەرنێت بپشکنە.'); }
+  });
+}
+function gdrTermClear(t){
+  if(!attFbReady()){ showAlert('ئینتەرنێت پێویستە.'); return; }
+  showConfirm('هەموو وەرزی '+(t===1?'یەکەم':'دووەم')+' دەسڕدرێتەوە: نمرەی وەرز و هەردوو هەڵسەنگاندنەکەی (نمرەی ڕۆژانەکانیشی). دڵنیایت؟', async()=>{
+    try{
+      const o=gdrTermGet(); delete o['t'+t]; gdrTermSave(o);
+      await gdrEvWipe(t+'-1'); await gdrEvWipe(t+'-2');
+      gdr.loaded=''; gdr.mloaded=''; gdr._sumHash={}; showAlert('وەرزەکە سڕایەوە.'); renderMyGrades();
+    }catch(e){ console.log(e); showAlert('تەواو نەسڕایەوە. ئینتەرنێت بپشکنە و دووبارە هەوڵ بدەرەوە.'); }
+  });
+}
+/* ---- ناردنی کۆی وەرزەکان بۆ بەڕێوەبەر (kind:gradesum) ---- */
+function gdrSumBuild(){
+  const r1=gdrTermRows(1), r2=gdrTermRows(2), pk=r=>[r.h1,r.tn,r.h2,r.tkw,r.tot];
+  return r1.map((a,i)=>({ i:a.st.id, n:a.st.name, a:pk(a), b:pk(r2[i]) }));
+}
+async function gdrSumPush(quiet){
+  if(currentRole!=='teacher'||!gdr.cid||!gdr.sid) return;
+  if(!attFbReady()){ if(!quiet) showAlert('ئینتەرنێت پێویستە.'); return; }
+  const rows=gdrSumBuild(), h=JSON.stringify(rows)+'|'+gdr.fmax, key=gdr.cid+'|'+gdr.sid;
+  gdr._sumHash=gdr._sumHash||{}; if(quiet && gdr._sumHash[key]===h) return;
+  try{
+    const id='gradesum__'+gdr.cid+'__'+gdr.sid+'__'+currentTeacherId; let created=fbServerTimestamp();
+    try{ const sn=await withTimeout(fbGetDoc(fbDoc(fbDb,'attendance',id)),10000); if(sn.exists() && sn.data().createdAt) created=sn.data().createdAt; }catch(e){}
+    await withTimeout(fbSetDoc(fbDoc(fbDb,'attendance',id),{ kind:'gradesum', ownerTid:currentTeacherId, teacherId:currentTeacherId, classId:gdr.cid, subjectId:gdr.sid, fmax:Number(gdr.fmax)||10, rows, createdAt:created, updatedAt:Date.now() }),20000);
+    gdr._sumHash[key]=h; if(!quiet) showAlert('نێردرا بۆ بەڕێوەبەر.');
+  }catch(e){ console.log('sum push failed',e); if(!quiet) showAlert(e&&e.code==='permission-denied'?'ڕێگە پێنەدراوە. ڕێسای نوێی Firebase دابنێ (Publish).':'نەنێردرا. ئینتەرنێت بپشکنە.'); }
+}
+function gdrSumAuto(){ if(currentRole==='teacher' && gdr.mloaded===gdr.cid+'|'+gdr.sid && gdr.mdocs) gdrSumPush(true); }
+/* ---- بەڕێوەبەر: بینین و سرینەوەی نمرەی مامۆستایان ---- */
+const agr={ docs:null, sums:[], tab:'day', tid:'', cid:'', sid:'', open:{}, err:0 };
+async function agrLoad(){
+  agr.docs=null; renderAdmGrades();
+  if(!(fbDb&&fbCollection&&fbQuery&&fbWhere&&fbGetDocs)||!navigator.onLine){ agr.docs=[]; agr.err=1; renderAdmGrades(); return; }
+  try{
+    const a=[], b=[];
+    const s1=await withTimeout(fbGetDocs(fbQuery(fbCollection(fbDb,'attendance'),fbWhere('kind','==','grade'))),30000); s1.forEach(d=>a.push(Object.assign({_id:d.id},d.data()||{})));
+    const s2=await withTimeout(fbGetDocs(fbQuery(fbCollection(fbDb,'attendance'),fbWhere('kind','==','gradesum'))),30000); s2.forEach(d=>b.push(Object.assign({_id:d.id},d.data()||{})));
+    agr.docs=a; agr.sums=b; agr.err=0;
+  }catch(e){ console.log(e); agr.docs=[]; agr.sums=[]; agr.err=1; }
+  renderAdmGrades();
+}
+function agrSet(k,v){ agr[k]=v; if(k==='tid'){ agr.cid=''; agr.sid=''; } renderAdmGrades(); }
+function agrToggle(id){ agr.open[id]=!agr.open[id]; renderAdmGrades(); }
+function agrDel(ids,msg){
+  if(!ids.length) return;
+  showConfirm(msg, async()=>{
+    let ok=0;
+    try{ for(const id of ids){ await withTimeout(fbDeleteDoc(fbDoc(fbDb,'attendance',id)),15000); ok++; } }catch(e){ console.log(e); showAlert('سڕایەوە: '+toKurdishDigits(ok)+' لە '+toKurdishDigits(ids.length)+'. ئینتەرنێت بپشکنە.'); }
+    const g=ids.slice(0,ok); agr.docs=(agr.docs||[]).filter(d=>!g.includes(d._id)); agr.sums=(agr.sums||[]).filter(d=>!g.includes(d._id)); renderAdmGrades();
+  });
+}
+function agrDelOne(id){ agrDel([id],'ئەمە بسڕدرێتەوە؟'); }
+function agrDelAll(){ const L=agr.tab==='day'?agrFiltered(agr.docs):agrFiltered(agr.sums); agrDel(L.map(d=>d._id),'هەموو '+toKurdishDigits(L.length)+' تۆماری ئەم لیستە بسڕدرێنەوە؟'); }
+function agrFiltered(arr){ return (arr||[]).filter(d=>(!agr.tid||d.ownerTid===agr.tid)&&(!agr.cid||d.classId===agr.cid)&&(!agr.sid||d.subjectId===agr.sid)).sort((a,b)=>String(b.date||'')<String(a.date||'')?-1:1); }
+function renderAdmGrades(){
+  const el=document.getElementById('admgrades-body'); if(!el) return;
+  if(agr.docs===null){ el.innerHTML='<p class="empty">چاوەڕێ بکە...</p>'; return; }
+  const T=config.teachers||[], C=config.classes||[], S=config.subjects||[], kd=toKurdishDigits;
+  const tn=id=>(T.find(x=>x.id===id)||{}).name||'؟', cn=id=>(C.find(x=>x.id===id)||{}).name||'؟', sn=id=>(S.find(x=>x.id===id)||{}).name||'؟';
+  const src=agr.tab==='day'?agr.docs:agr.sums, tids=Array.from(new Set(src.map(d=>d.ownerTid))), base=src.filter(d=>!agr.tid||d.ownerTid===agr.tid);
+  const cids=Array.from(new Set(base.map(d=>d.classId))), sids=Array.from(new Set(base.filter(d=>!agr.cid||d.classId===agr.cid).map(d=>d.subjectId)));
+  const opt=(arr,cur,f)=>'<option value="">هەموو</option>'+arr.map(x=>`<option value="${x}" ${x===cur?'selected':''}>${escapeHtml(f(x))}</option>`).join('');
+  const L=agrFiltered(src), sts=id=>(config.students||[]).filter(x=>x.classId===id);
+  const th='border:1px solid var(--rule);padding:4px;background:#f4f1e4;text-align:center;font-size:13px;', td='border:1px solid var(--rule);padding:4px;text-align:center;font-size:13px;';
+  const detail=d=>{ const ls=d.labels||[]; return `<div style="overflow-x:auto;margin:6px 0;"><table style="border-collapse:collapse;width:100%;"><thead><tr><th style="${th}">ناوی قوتابی</th>${ls.map(l=>`<th style="${th}">${escapeHtml(l.name)}<br>/${kd(l.max)}</th>`).join('')}</tr></thead><tbody>${sts(d.classId).map(st=>`<tr><td style="${td}text-align:right;">${escapeHtml(st.name)}</td>${ls.map(l=>{ const x=((d.marks||{})[st.id]||{})[l.id]; return `<td style="${td}">${x?(x.m==='ok'?'✔':(x.m==='bad'?'✗':kd(x.v))):''}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div>`; };
+  const v=x=>(x===null||x===undefined)?'':kd(x);
+  const sumTable=(d,t)=>{ const H=Number(d.fmax)||10, rows=d.rows||[]; return `<div style="overflow-x:auto;margin:6px 0;"><b>${t===1?'وەرزی یەکەم':'وەرزی دووەم'}</b><table style="border-collapse:collapse;width:100%;"><thead><tr><th style="${th}">ناوی قوتابی</th><th style="${th}">هـ١ /${kd(H)}</th><th style="${th}">ت.ن /${kd(GDR_TN)}</th><th style="${th}">هـ٢ /${kd(H)}</th><th style="${th}">ت.ک.و /${kd(GDR_TKW)}</th><th style="${th}">ئ.ک</th>${t===2?`<th style="${th}">خولی یەکەم</th>`:''}</tr></thead><tbody>${rows.map(r=>{ const a=t===1?r.a:r.b; const kh=(t===2&&r.a[4]!==null&&r.b[4]!==null)?Math.round((r.a[4]+r.b[4])/2*100)/100:null; return `<tr><td style="${td}text-align:right;">${escapeHtml(r.n)}</td>${a.map(x=>`<td style="${td}">${v(x)}</td>`).join('')}${t===2?`<td style="${td}">${v(kh)}</td>`:''}</tr>`; }).join('')}</tbody></table></div>`; };
+  const tabBtn=(k,l)=>`<button class="btn ${agr.tab===k?'btn-primary':'btn-ghost'}" onclick="agrSet('tab','${k}')">${l}</button>`;
+  const evn=d=>{ try{ return d.ev?gdrEvName(d.ev):''; }catch(e){ return ''; } };
+  el.innerHTML=`<div class="btnrow" style="margin-bottom:12px;">${tabBtn('day','📝 نمرەی ڕۆژانە')}${tabBtn('sum','🎓 وەرزی یەکەم و دووەم')}</div><div class="card" style="padding:12px;margin-bottom:12px;"><div class="row" style="gap:10px;flex-wrap:wrap;align-items:end;">
+    <div class="field" style="min-width:150px;"><label class="field-label">مامۆستا</label><select onchange="agrSet('tid',this.value)">${opt(tids,agr.tid,tn)}</select></div>
+    <div class="field" style="min-width:150px;"><label class="field-label">پۆل</label><select onchange="agrSet('cid',this.value)">${opt(cids,agr.cid,cn)}</select></div>
+    <div class="field" style="min-width:150px;"><label class="field-label">وانە</label><select onchange="agrSet('sid',this.value)">${opt(sids,agr.sid,sn)}</select></div>
+    <button class="btn btn-ghost" onclick="agrLoad()">🔄 نوێکردنەوە</button><button class="btn btn-ghost" style="color:#b3261e;" onclick="agrDelAll()" ${L.length?'':'disabled'}>🗑️ سرینەوەی هەموو ئەم لیستە (${kd(L.length)})</button></div></div>`
+    +(agr.err?'<p class="empty">نەخوێندرایەوە. ئینتەرنێت بپشکنە و «نوێکردنەوە» بکە.</p>':(L.length?L.map(d=>agr.tab==='day'
+      ?`<div class="card" style="padding:10px;margin-bottom:8px;"><div class="row" style="gap:8px;align-items:center;flex-wrap:wrap;"><b style="flex:1;min-width:200px;">${dh(fmtSlash(d.date))} — ${escapeHtml(tn(d.ownerTid))} — ${escapeHtml(cn(d.classId))} — ${escapeHtml(sn(d.subjectId))}${evn(d)?' — '+escapeHtml(evn(d)):''}</b><button class="btn btn-ghost btn-sm" onclick="agrToggle('${d._id}')">${agr.open[d._id]?'شاردنەوە':'👁 بینین'}</button><button class="btn btn-ghost btn-sm" style="color:#b3261e;" onclick="agrDelOne('${d._id}')">🗑️ سرینەوە</button></div>${agr.open[d._id]?detail(d):''}</div>`
+      :`<div class="card" style="padding:10px;margin-bottom:8px;"><div class="row" style="gap:8px;align-items:center;flex-wrap:wrap;"><b style="flex:1;min-width:200px;">${escapeHtml(tn(d.ownerTid))} — ${escapeHtml(cn(d.classId))} — ${escapeHtml(sn(d.subjectId))}</b><button class="btn btn-ghost btn-sm" onclick="agrToggle('${d._id}')">${agr.open[d._id]?'شاردنەوە':'👁 بینین'}</button><button class="btn btn-ghost btn-sm" style="color:#b3261e;" onclick="agrDelOne('${d._id}')">🗑️ سرینەوە</button></div>${agr.open[d._id]?sumTable(d,1)+sumTable(d,2):''}</div>`).join(''):'<p class="empty">هیچ نمرەیەک نییە.</p>'))
+    +'<p class="section-hint">نمرەی وەرزەکان کاتێک دەگەنە ئێرە کە مامۆستا شاشەی «وەرزی یەکەم/دووەم» بکاتەوە (خۆکارانە دەنێردرێن).</p>';
 }
 /* ---- پڕکردنەوەی خۆکاری لەیبڵی «غیاب» لە تۆماری غیابات ---- */
 function gdrIsExamLabel(l){ return /تاقیکردنەوە/.test(String((l&&l.name)||'')); }
@@ -7171,7 +7278,7 @@ async function gdrSave(){
   const marks={}; Object.keys(gdr.marks).forEach(sid=>{ const r={}; Object.keys(gdr.marks[sid]).forEach(lid=>{ if(gdr.labels.some(l=>l.id===lid)) r[lid]=gdr.marks[sid][lid]; }); if(Object.keys(r).length) marks[sid]=r; });
   const rec={ kind:'grade', ownerTid:currentTeacherId, teacherId:currentTeacherId, classId:gdr.cid, subjectId:gdr.sid, date:gdr.date, ev:gdr.ev, labels:gdr.labels.map(l=>({id:l.id,name:String(l.name).trim(),max:Number(l.max)})), marks, createdAt:gdr.createdAt?gdr.createdAt:fbServerTimestamp(), updatedAt:Date.now() };
   try{ await withTimeout(fbSetDoc(fbDoc(fbDb,'attendance',gdrDocId()),rec),20000); gdrTplSave(); gdr.loaded=''; let offered=false; try{ offered=await gdrToAtt(true); }catch(e2){ console.log(e2); } if(!offered) showAlert('نمرەکان پاشەکەوت کران.'); renderMyGrades(); }
-  catch(e){ console.log(e); showAlert(e&&e.code==='permission-denied'?'ناتوانرێت پاشەکەوت بکرێت: ڕێساکانی Firebase ڕێگە نادەن. (ئەگەر ماوەی ٣ ڕۆژ تەواو بووە، ڕێسای نوێ بخەرە ناو Firebase.)':'نەنێردرا. ئینتەرنێت بپشکنە.'); }
+  catch(e){ console.log(e); showAlert(e&&e.code==='permission-denied'?'ناتوانرێت پاشەکەوت بکرێت: ڕێساکانی Firebase ڕێگە نادەن. ڕێسای نوێ بخەرە ناو Firebase (Publish).':'نەنێردرا. ئینتەرنێت بپشکنە.'); }
 }
 function gdrPrint(){
   const c=(config.classes||[]).find(x=>x.id===gdr.cid), sb=(config.subjects||[]).find(x=>x.id===gdr.sid); if(!c||!sb) return;
@@ -7203,7 +7310,7 @@ function renderMyGrades(keep){
   const th='border:1px solid var(--rule);padding:6px 4px;background:#f4f1e4;text-align:center;font-size:13px;', td='border:1px solid var(--rule);padding:4px;text-align:center;';
   const labelsEd=`<div class="card" style="padding:12px;margin-bottom:12px;"><h4 style="margin:0 0 4px;">لەیبڵەکانی ${gdrEvName(gdr.ev)}</h4><p class="section-hint" style="margin:0 0 8px;">لەیبڵەکان بۆ هەموو ڕۆژەکانی ئەم هەڵسەنگاندنە دەمێننەوە. «نمرە» نمرەی ئەو لەیبڵەیە بۆ کۆی هەڵسەنگاندنەکە (نەک بۆ یەک ڕۆژ). ئەگەر ناوی لەیبڵ وشەی «تاقیکردنەوە»ی تێدا بێت، بۆ هەر قوتابییەک نمرە دەنووسرێت (نەک ✔/✗). کۆی هەموویان دەبێت ${toKurdishDigits(gdr.labels.reduce((a,l)=>a+Number(l.max),0))} — باشترە ١٠ بێت.</p>
     ${gdr.labels.map(l=>`<div class="row" style="gap:8px;align-items:end;flex-wrap:wrap;margin-bottom:6px;"><div class="field" style="flex:1;min-width:160px;"><label class="field-label">ناوی لەیبڵ</label><input type="text" value="${escapeHtml(l.name)}" placeholder="بۆ نموونە: غیابی ڕۆژانە" onchange="gdrLabel('${l.id}','name',this.value)"></div><div class="field" style="width:100px;"><label class="field-label">نمرە</label><input type="number" min="1" value="${l.max}" onchange="gdrLabel('${l.id}','max',this.value)"></div><button class="btn btn-ghost btn-sm" onclick="gdrDelLabel('${l.id}')">🗑️</button></div>`).join('')||'<p class="section-hint">لەیبڵێک زیاد بکە (وەک «غیابی ڕۆژانە» یان «وانەی خوێندوە») و نمرەی مانگانەکەی دیاری بکە.</p>'}
-    <div class="btnrow"><button class="btn btn-ghost" onclick="gdrAddLabel()">➕ لەیبڵ</button>${gdr.labels.some(gdrIsAbsLabel)?'<button class="btn btn-ghost" onclick="gdrAutoBtn()" title="ئامادە ✔ / غایب ✗ لە تۆماری غیابات">🔄 پڕکردنەوەی غیاب لە تۆماری غیابات</button><button class="btn btn-ghost" onclick="gdrToAtt()" title="ئامادەکردنی تۆماری غیابات لەسەر ✔/✗ی ئەم لەیبڵە">📋 ئامادەکردنی غیابات لەسەر ئەم ✔/✗</button>':''}<button class="btn btn-primary" onclick="gdrSave()">💾 پاشەکەوتکردن</button>${gdr.labels.length?'<button class="btn btn-ghost" onclick="gdrPrint()">🖨️ چاپکردن</button>':''}</div></div>`;
+    <div class="btnrow"><button class="btn btn-ghost" onclick="gdrAddLabel()">➕ لەیبڵ</button>${gdr.labels.some(gdrIsAbsLabel)?'<button class="btn btn-ghost" onclick="gdrAutoBtn()" title="ئامادە ✔ / غایب ✗ لە تۆماری غیابات">🔄 پڕکردنەوەی غیاب لە تۆماری غیابات</button><button class="btn btn-ghost" onclick="gdrToAtt()" title="ئامادەکردنی تۆماری غیابات لەسەر ✔/✗ی ئەم لەیبڵە">📋 ئامادەکردنی غیابات لەسەر ئەم ✔/✗</button>':''}<button class="btn btn-primary" onclick="gdrSave()">💾 پاشەکەوتکردن</button>${gdr.createdAt?'<button class="btn btn-ghost" style="color:#b3261e;" onclick="gdrDeleteDay()">🗑️ سرینەوەی ئەم ڕۆژە</button>':''}${gdr.labels.length?'<button class="btn btn-ghost" onclick="gdrPrint()">🖨️ چاپکردن</button>':''}</div></div>`;
   const mx=gdr.labels.reduce((a,l)=>a+Number(l.max),0);
   const table=gdr.labels.length?`<div class="card" style="padding:12px;overflow-x:auto;"><table style="border-collapse:collapse;width:100%;min-width:${200+gdr.labels.length*150}px;"><thead><tr><th style="${th}width:30px;">ز</th><th style="${th}">ناوی قوتابی</th>${gdr.labels.map(l=>`<th style="${th}">${escapeHtml(l.name||'—')}<br><span class="subtext">${gdrIsExamLabel(l)?('نمرە لە '+toKurdishDigits(l.max)):(toKurdishDigits(l.max)+' نمرە لە مانگ')}</span></th>`).join('')}<th style="${th}">ژمارەی ✔</th></tr></thead><tbody>${sts.map((st,i)=>`<tr><td style="${td}">${toKurdishDigits(i+1)}</td><td style="${td}text-align:right;font-weight:700;">${escapeHtml(st.name)}</td>${gdr.labels.map(l=>{ const x=(gdr.marks[st.id]||{})[l.id]||null;
       if(gdrIsExamLabel(l)) return `<td style="${td}"><input type="number" step="any" min="0" max="${l.max}" value="${x&&typeof x.v==='number'?x.v:''}" placeholder="نمرە" style="width:76px;text-align:center;font-weight:800;" onchange="gdrNum('${st.id}','${l.id}',this.value)"></td>`;
