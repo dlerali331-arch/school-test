@@ -6810,8 +6810,10 @@ function renderAttDash(keep){
   if(!adState.month) adState.month=todayDateStr().slice(0,7);
   if(!keep || adState.loaded!==adState.month){ if(adState.loaded!==adState.month){ el.innerHTML='<p class="empty">چاوەڕێ بکە...</p>'; adLoad(); return; } }
   const [y,mo]=adState.month.split('-').map(Number), nd=new Date(y,mo,0).getDate(), by=adByDay();
-  let tA=0,tL=0; Object.keys(by).forEach(k=>Object.keys(by[k].students).forEach(sid=>{ if(by[k].students[sid].status==='absent') tA++; else tL++; }));
-  const cards=Array.from({length:nd},(_,i)=>{
+  const schoolDays=(config.settings&&Array.isArray(config.settings.days)&&config.settings.days.length)?config.settings.days:null;
+  const isSchoolDay=ds=>!schoolDays||schoolDays.includes(examDayName(ds));
+  let tA=0,tL=0; Object.keys(by).forEach(k=>{ if(!isSchoolDay(k)) return; Object.keys(by[k].students).forEach(sid=>{ if(by[k].students[sid].status==='absent') tA++; else tL++; }); });
+  const cards=Array.from({length:nd},(_,i)=>i).filter(i=>isSchoolDay(adState.month+'-'+String(i+1).padStart(2,'0'))).map(i=>{
     const ds=adState.month+'-'+String(i+1).padStart(2,'0'), d=by[ds];
     let a=0,l=0; if(d) Object.keys(d.students).forEach(sid=>{ if(d.students[sid].status==='absent') a++; else l++; });
     const col=!d?'#bbb':(a>0?'#c0392b':(l>0?'#d69e00':'#2e9e4f'));
