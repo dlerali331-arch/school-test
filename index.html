@@ -5680,7 +5680,7 @@ function shopPrintHand(id){
 }
 
 /* ===== مامۆستا: ناوی خوێندکاران + ڕاپۆرتی ناوی خوێندکاران ===== */
-const tnr={cid:'',n:6,title:'',subj:''};
+const tnr={cid:'',n:6,title:'',subj:'',cols:[]};
 function tnrClasses(){ return (config.classes||[]); }
 function tnrNames(cid){ return (config.students||[]).filter(s=>s.classId===cid).slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),'ckb')); }
 function tnrEnsure(){ const cl=tnrClasses(); if(!cl.some(c=>c.id===tnr.cid)) tnr.cid=(cl[0]||{}).id||''; }
@@ -5691,9 +5691,11 @@ function renderTNameRep(){
   tnrEnsure(); const items=tnrNames(tnr.cid), subs=(config.subjects||[]);
   el.innerHTML=`<div class="card" style="padding:14px;"><div class="row" style="gap:12px;flex-wrap:wrap;align-items:end;">
     <div class="field" style="min-width:230px;"><label class="field-label">پۆل و لق</label><select onchange="tnrSet('cid',this.value)">${cl.map(c=>`<option value="${c.id}" ${c.id===tnr.cid?'selected':''}>${escapeHtml(c.name)}</option>`).join('')}</select></div>
-    <div class="field" style="min-width:170px;"><label class="field-label">بابەت (ئارەزووییە)</label><select onchange="tnr.subj=this.value"><option value="">— بەتاڵ —</option>${subs.map(x=>`<option value="${escapeHtml(x.name)}" ${tnr.subj===x.name?'selected':''}>${escapeHtml(x.name)}</option>`).join('')}</select></div>
+    <div class="field" style="min-width:170px;"><label class="field-label">بابەت (ئارەزومەندانە)</label><select onchange="tnr.subj=this.value"><option value="">— بەتاڵ —</option>${subs.map(x=>`<option value="${escapeHtml(x.name)}" ${tnr.subj===x.name?'selected':''}>${escapeHtml(x.name)}</option>`).join('')}</select></div>
     <div class="field" style="width:130px;"><label class="field-label">ژمارەی خانە بەتاڵەکان</label><input type="number" min="1" max="14" value="${tnr.n}" onchange="tnrSet('n',Math.max(1,Math.min(14,Number(this.value)||6)))"></div>
-    <div class="field" style="min-width:200px;flex:1;"><label class="field-label">سەردێڕ (ئارەزووییە)</label><input type="text" value="${escapeHtml(tnr.title)}" oninput="tnr.title=this.value"></div></div>
+    <div class="field" style="min-width:200px;flex:1;"><label class="field-label">سەردێڕ (ئارەزومەندانە)</label><input type="text" value="${escapeHtml(tnr.title)}" oninput="tnr.title=this.value"></div></div>
+    <div style="margin-top:12px;"><label class="field-label">ناوی هەر خانەیەک (ئارەزومەندانە) — دەنووسرێتە سەر ستوونەکە</label>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;">${Array.from({length:Math.max(1,Math.min(14,Number(tnr.n)||6))},(_,i)=>`<input type="text" placeholder="خانەی ${toKurdishDigits(i+1)}" value="${escapeHtml(tnr.cols[i]||'')}" oninput="tnr.cols[${i}]=this.value">`).join('')}</div></div>
     <div class="btnrow" style="margin-top:12px;"><button class="btn btn-primary" onclick="tnrPrint()">🖨️ پرینت / PDF</button></div>
     <p class="section-hint" style="margin-top:8px;">ژمارەی قوتابیان: ${toKurdishDigits(items.length)}. بۆ PDF لە پەنجەرەی پرینت «Save as PDF» هەڵبژێرە (لە ئایفۆن: Share ← Save to Files).</p></div>`;
 }
@@ -5705,12 +5707,12 @@ function tnrPrint(){
   const th=`border:${B};background:#e2efda;font-weight:800;font-size:12px;padding:4px 2px;`, td=`border:${B};height:8mm;font-size:13px;`;
   for(let p=0;p*PER<items.length;p++){
     const ch=items.slice(p*PER,p*PER+PER);
-    pages.push(`<div dir="rtl" style="box-sizing:border-box;padding:10mm;font-family:'Vazirmatn',sans-serif;color:#000;${p?'page-break-before:always;break-before:page;':''}">
+    pages.push(`<div dir="rtl" style="box-sizing:border-box;padding:10mm;position:relative;height:285mm;font-family:'Vazirmatn',sans-serif;color:#000;${p?'page-break-before:always;break-before:page;':''}">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;"><div style="font-size:11px;font-weight:800;line-height:1.6;">${hl.map(x=>escapeHtml(x)).join('<br>')}</div><img src="${LEAVE_LOGO}" style="width:20mm;height:20mm;object-fit:contain;"><div style="width:45mm;"></div></div>
-      <div style="text-align:center;margin-bottom:4px;"><div style="background:#bdd7ee;border:${B};font-weight:900;font-size:17px;padding:4px;">ڕاپۆرتی ناوی خوێندکاران${tnr.title.trim()?' — '+escapeHtml(tnr.title.trim()):''}</div></div>
-      <div style="text-align:center;margin:4px 0 6px;font-weight:800;font-size:13px;"><span style="display:inline-block;border:${B};padding:2px 12px;">پۆل: ${escapeHtml(c.name)}</span> ${tnr.subj?`<span style="display:inline-block;border:${B};padding:2px 12px;">بابەت: ${escapeHtml(tnr.subj)}</span> `:''}${tname?`<span style="display:inline-block;border:${B};padding:2px 12px;">مامۆستا: ${escapeHtml(tname)}</span> `:''}<span style="display:inline-block;border:${B};padding:2px 12px;">ساڵی خوێندن: <span dir="ltr" style="unicode-bidi:isolate">${toKurdishDigits(escapeHtml((config.school||{}).year||''))}</span></span></div>
-      <table style="border-collapse:collapse;width:100%;table-layout:fixed;"><thead><tr><th style="${th}width:8mm;">ز</th><th style="${th}width:52mm;">ناوی خوێندکار</th>${Array.from({length:N},()=>`<th style="${th}">&nbsp;</th>`).join('')}</tr></thead><tbody>
-      ${ch.map((s,i)=>`<tr><td style="${td}text-align:center;">${toKurdishDigits(p*PER+i+1)}</td><td style="${td}padding:0 5px;white-space:nowrap;overflow:hidden;">${escapeHtml(s.name)}</td>${Array.from({length:N},()=>`<td style="${td}"></td>`).join('')}</tr>`).join('')}</tbody></table></div>`);
+      <div style="text-align:center;margin-bottom:4px;"><div style="background:#bdd7ee;border:${B};font-weight:900;font-size:17px;padding:4px;">${tnr.title.trim()?escapeHtml(tnr.title.trim()):'ڕاپۆرتی ناوی خوێندکاران'}</div></div>
+      <div style="text-align:center;margin:4px 0 6px;font-weight:800;font-size:13px;"><span style="display:inline-block;border:${B};padding:2px 12px;">پۆل: ${escapeHtml(c.name)}</span> ${tnr.subj?`<span style="display:inline-block;border:${B};padding:2px 12px;">بابەت: ${escapeHtml(tnr.subj)}</span> `:''}<span style="display:inline-block;border:${B};padding:2px 12px;">ساڵی خوێندن: <span dir="ltr" style="unicode-bidi:isolate">${toKurdishDigits(escapeHtml((config.school||{}).year||''))}</span></span></div>
+      <table style="border-collapse:collapse;width:100%;table-layout:fixed;"><thead><tr><th style="${th}width:8mm;">ز</th><th style="${th}width:52mm;">ناوی خوێندکار</th>${Array.from({length:N},(_,i)=>`<th style="${th}">${escapeHtml(String(tnr.cols[i]||'').trim())||'&nbsp;'}</th>`).join('')}</tr></thead><tbody>
+      ${ch.map((s,i)=>`<tr><td style="${td}text-align:center;">${toKurdishDigits(p*PER+i+1)}</td><td style="${td}padding:0 5px;white-space:nowrap;overflow:hidden;">${escapeHtml(s.name)}</td>${Array.from({length:N},()=>`<td style="${td}"></td>`).join('')}</tr>`).join('')}</tbody></table>${tname?`<div style="position:absolute;left:10mm;bottom:10mm;font-weight:800;font-size:14px;">مامۆستا: ${escapeHtml(tname)}</div>`:''}</div>`);
   }
   document.getElementById('leave-sheet').innerHTML=pages.join('');
   leaveDoPrint('portrait');
@@ -9591,6 +9593,15 @@ function bwBuild(){
   });
   return { groups, rows };
 }
+function bwShowQuota(){ const v=(config.school||{}).showQuota; return !(v===false||v===0||v==='0'); }
+function bwQuotaSet(on){ config.school.showQuota = !!on; scheduleSave(); renderBashwanaSheet(); }
+/* optional per-teacher notes: the table shows an automatic serial number, the text goes at the end of the report */
+function bwNoteInfo(rows){
+  const notes=(config.school||{}).bwNotes||{}, map={}, list=[], seen=new Set();
+  rows.forEach(r=>{ if(seen.has(r.s.id)) return; seen.add(r.s.id); const t=String(notes[r.s.id]||'').trim(); if(t){ list.push({n:list.length+1,text:t}); map[r.s.id]=list.length; } });
+  return {map,list};
+}
+function bwNoteSet(id,v){ const sc=config.school; if(!sc.bwNotes||typeof sc.bwNotes!=='object') sc.bwNotes={}; sc.bwNotes[id]=String(v||'').trim(); scheduleSave(); renderBashwanaSheet(); }
 function bwSet(field, val){
   config.school[field] = val;
   scheduleSave();
@@ -9701,6 +9712,11 @@ function renderBashwana(){
           <select onchange="bwSet('shift', this.value)">${['بەیانیان','ئێواران'].map(x=>`<option value="${x}" ${(sc.shift||'بەیانیان')===x?'selected':''}>${x}</option>`).join('')}</select></div>
         ${inp('نصابی بنەڕەت (مامۆستا)', 'quotaDefault', '22', 'number', 120)}
       </div>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:10px;cursor:pointer;"><input type="checkbox" ${bwShowQuota()?'checked':''} onchange="bwQuotaSet(this.checked)"> ستوونی «نصاب» لە وەرەقەکەدا دەربکەوێت (ئارەزومەندانە)</label>
+      <details style="margin-top:10px;"><summary style="cursor:pointer;font-weight:700;">تێبینی بۆ مامۆستایان (ئارەزومەندانە)</summary>
+        <p class="section-hint" style="margin:6px 0;">هەر مامۆستایەک تێبینیت بۆ بنووسیت، لە ستوونی «تێبینی» ژمارەیەکی زنجیرەیی خۆکار دەنووسرێت و دەقەکەی لە کۆتایی ڕاپۆرتەکە دێت.</p>
+        ${(()=>{ const seen=new Set(), out=[]; bwBuild().rows.forEach(r=>{ if(seen.has(r.s.id)) return; seen.add(r.s.id); out.push(`<div class="row" style="gap:8px;margin-bottom:6px;align-items:center;"><span style="min-width:170px;font-weight:700;">${escapeHtml(r.s.name)}</span><input type="text" class="grow" style="flex:1;min-width:180px;" value="${escapeHtml(((sc.bwNotes||{})[r.s.id])||'')}" placeholder="تێبینی (ئارەزومەندانە)" onchange="bwNoteSet('${r.s.id}',this.value)"></div>`); }); return out.join(''); })()}
+      </details>
       <div class="btnrow" style="margin-top:10px;">
         <select id="bw-paper" style="width:auto;"><option value="A4">کاغەز: A4</option><option value="A3">کاغەز: A3</option></select>
         <select id="bw-ori" style="width:auto;"><option value="landscape">لاندسکەیپ (پان)</option><option value="portrait">پۆرترەیت (درێژ)</option></select>
@@ -9722,7 +9738,7 @@ function renderBashwanaSheet(){
   const pink = '#E6B8B7';
   const head1 = th('ز','width:26px;')+th('ناو','min-width:120px;')+th('بارى فەرمانبەرێتی')+th('جۆری فەرمانبەرێتی')+th('پیشە')+th('پسپۆری')+th('بروانامە')+th('وانەکان')
     + groups.map(g=>`<th colspan="${g.classes.length}" style="${bd}background:#FFD966;padding:4px 5px;font-size:13px;text-align:center;">${escapeHtml(g.grade)}</th>`).join('')
-    + th('کۆی بەشەوانە')+th('نصابی');
+    + th('کۆی بەشەوانە')+(bwShowQuota()?th('نصابی'):'')+th('تێبینی');
   const head2 = groups.map(g=>g.classes.map(c=>`<th style="${bd}background:${pink};padding:4px 5px;font-size:13px;text-align:center;">${escapeHtml(classSection(c)||c.name)}</th>`).join('')).join('');
   const td = (t, extra)=>`<td style="${bd}padding:4px 6px;font-size:13px;text-align:center;${extra||''}">${t}</td>`;
   // هەر مامۆستا کە چەند وانەی هەیە، هەر وانەیەک لە ڕیزێکی جیاواز دەردەکەوێت؛
@@ -9734,6 +9750,7 @@ function renderBashwanaSheet(){
     g.rows.push(r);
   });
   const tdAttr = (t, attrs, extra)=>`<td ${attrs||''} style="${bd}padding:4px 6px;font-size:13px;text-align:center;${extra||''}">${t}</td>`;
+  const NI = bwNoteInfo(rows);
   let body = '';
   teacherGroups.forEach((g,ti)=>{
     g.rows.forEach((r,ri)=>{
@@ -9752,7 +9769,8 @@ function renderBashwanaSheet(){
       tr += td(escapeHtml(r.subj));
       tr += groups.map(gr=>gr.classes.map(c=>td(r.per[c.id] ? dg(r.per[c.id]) : '')).join('')).join('');
       tr += td(r.total ? dg(r.total) : '', 'background:#FFE699;font-weight:700;');
-      if(ri===0) tr += tdAttr(r.quota!=='' ? dg(r.quota) : '', `rowspan="${rs}"`, 'background:#FFE699;');
+      if(ri===0 && bwShowQuota()) tr += tdAttr(r.quota!=='' ? dg(r.quota) : '', `rowspan="${rs}"`, 'background:#FFE699;');
+      if(ri===0) tr += tdAttr(NI.map[s.id] ? dg(NI.map[s.id]) : '', `rowspan="${rs}"`, 'font-weight:700;');
       body += tr + '</tr>';
     });
   });
@@ -9762,7 +9780,7 @@ function renderBashwanaSheet(){
     teacherGroups.forEach(g=>{ const q=g.rows[0].quota; if(q!=='') sumQuota += parseInt(q,10)||0; });
     body += `<tr>${tdAttr('کۆ','colspan="8"','background:#FFD966;font-weight:900;')}`
       + groups.map(gr=>gr.classes.map(c=>td(sumCls[c.id]?dg(sumCls[c.id]):'', 'background:#FFE699;font-weight:700;')).join('')).join('')
-      + td(sumTot?dg(sumTot):'', 'background:#FFD966;font-weight:900;') + td(sumQuota?dg(sumQuota):'', 'background:#FFD966;font-weight:900;') + '</tr>';
+      + td(sumTot?dg(sumTot):'', 'background:#FFD966;font-weight:900;') + (bwShowQuota()?td(sumQuota?dg(sumQuota):'', 'background:#FFD966;font-weight:900;'):'') + td('', 'background:#FFD966;') + '</tr>';
   }
   const year = sc.year ? escapeHtml(sc.year) : '';
   const box = 'border:2px solid #444;padding:6px 10px;font-weight:700;font-size:12px;line-height:1.9;';
@@ -9781,23 +9799,34 @@ function renderBashwanaSheet(){
     <table style="width:100%;"><thead>
       <tr>${head1}</tr>
       <tr>${head2}</tr>
-    </thead><tbody>${body}</tbody></table></div>`;
+    </thead><tbody>${body}</tbody></table>
+    ${NI.list.length?`<div style="margin-top:8px;text-align:right;font-weight:700;font-size:13px;line-height:1.9;"><b>تێبینی:</b><br>${NI.list.map(x=>dg(x.n)+' - '+escapeHtml(x.text)).join('<br>')}</div>`:''}</div>`;
 }
 function bwPrint(){
   const ori=(document.getElementById('bw-ori')||{}).value||'landscape';
   const paper=(document.getElementById('bw-paper')||{}).value||'A4';
-  const st = document.createElement('style'); st.id = 'bw-page-style';
-  st.textContent = `@media print{
-    @page{ size: ${paper} ${ori}; margin: 8mm; }
+  const rules = `
     footer.info{display:none !important;}
     #tab-bashwana .no-print{display:none !important;}
-    #bw-print{min-width:0 !important;width:100% !important;padding:0 !important;}
+    #bashwana-sheet{overflow:visible !important;}
+    #bw-print{min-width:0 !important;padding:0 !important;}
     #bw-print table{width:100% !important;}
-    #bw-print th,#bw-print td{font-size:14px !important;padding:4px 5px !important;line-height:1.35 !important;font-weight:600;}
-    #bw-print td[style*="font-size:14px"]{font-size:14px !important;}
+    #bw-print th,#bw-print td{font-size:14px !important;padding:4px 5px !important;line-height:1.35 !important;font-weight:600;white-space:normal !important;}
     #bw-print > table:first-child td{font-size:14px !important;}
     #bw-print > div{font-size:15px !important;}
-  }`;
+    #bw-print tr{break-inside:avoid;page-break-inside:avoid;}`;
+  // measure the narrowest width the table can take with this print styling, then zoom it to fit the paper width
+  const m = document.createElement('style'); m.id='bw-measure-style'; m.textContent = rules.replace(/#bw-print\{min-width:0 !important;padding:0 !important;\}/,'#bw-print{min-width:0 !important;padding:0 !important;width:min-content !important;}');
+  document.head.appendChild(m);
+  const el = document.getElementById('bw-print');
+  const nat = el ? Math.ceil(Math.max(el.scrollWidth, el.getBoundingClientRect().width)) + 40 : 0; /* +40px slack so the last column is never clipped */
+  m.remove();
+  const dims = paper==='A3' ? [297,420] : [210,297];
+  const wmm = (ori==='landscape' ? dims[1] : dims[0]) - 16;
+  const avail = Math.floor(wmm*96/25.4);
+  const z = nat>avail ? (avail/nat) : 1, width = nat>avail ? nat : avail;
+  const st = document.createElement('style'); st.id = 'bw-page-style';
+  st.textContent = `@media print{ @page{ size: ${paper} ${ori}; margin: 8mm; } ${rules} #bw-print{width:${width}px !important;zoom:${z.toFixed(4)};} }`;
   document.head.appendChild(st);
   const sec = document.getElementById('tab-bashwana');
   sec.classList.add('print-target');
@@ -9812,20 +9841,24 @@ function bwExcel(){
   const out = [];
   const head = ['ز','ناو','بارى فەرمانبەرێتی','جۆری فەرمانبەرێتی','پیشە','پسپۆری','بروانامە','وانەکان'];
   groups.forEach(g=>g.classes.forEach(c=>head.push(classGrade(c)+' '+(classSection(c)||''))));
-  head.push('کۆی بەشەوانە','نصابی');
+  head.push('کۆی بەشەوانە'); if(bwShowQuota()) head.push('نصابی'); head.push('تێبینی');
+  const NI = bwNoteInfo(rows), seenT = new Set();
   out.push(head);
   rows.forEach((r,i)=>{
     const s = r.s;
     const line = [i+1, s.name, s.workState||'لە کاردایە', s.status||'', s.job||'', s.specialty||'', s.degree||'', r.subj];
     groups.forEach(g=>g.classes.forEach(c=>line.push(r.per[c.id] ? r.per[c.id] : '')));
-    line.push(r.total ? r.total : '', r.quota!=='' ? (parseInt(r.quota,10)||0) : '');
+    line.push(r.total ? r.total : '');
+    if(bwShowQuota()) line.push(r.quota!=='' ? (parseInt(r.quota,10)||0) : '');
+    line.push(!seenT.has(s.id) && NI.map[s.id] ? NI.map[s.id] : ''); seenT.add(s.id);
     out.push(line);
   });
   { const tl = ['کۆ','','','','','','','']; let st = 0, sq = 0; const seen = new Set();
     groups.forEach(g=>g.classes.forEach(c=>{ const v = rows.reduce((n,r)=>n+(Number(r.per[c.id])||0),0); tl.push(v||''); }));
     rows.forEach(r=>{ st += Number(r.total)||0; if(!seen.has(r.s.id)){ seen.add(r.s.id); sq += parseInt(r.quota,10)||0; } });
-    tl.push(st||'', sq||''); out.push(tl); }
-  const widths = [5,26,16,16,12,14,14,16].concat(groups.flatMap(g=>g.classes.map(()=>8)), [12,9]);
+    tl.push(st||''); if(bwShowQuota()) tl.push(sq||''); tl.push(''); out.push(tl); }
+  if(NI.list.length){ out.push([]); out.push(['تێبینی']); NI.list.forEach(x=>out.push([x.n, x.text])); }
+  const widths = [5,26,16,16,12,14,14,16].concat(groups.flatMap(g=>g.classes.map(()=>8)), bwShowQuota()?[12,9,9]:[12,9]);
   // بۆ هەر مامۆستایەک کە زیاتر لە یەک وانەی هەیە، خانەکانی ناو و زانیارییە سەرەکییەکان لە ئێکسڵدا عمودی کۆدەکرێنەوە؛ تەنها خانەی وانە و ژمارەکانی پۆل و کۆی بەشەوانە جیا دەبنەوە.
   const merges = [];
   let start = 2;
@@ -9837,8 +9870,8 @@ function bwExcel(){
       // ز، ناو، باری فەرمانبەرێتی، جۆری فەرمانبەرێتی، پیشە، پسپۆری، بروانامە
       for(let c=0;c<=6;c++) merges.push(`${xlsxColName(c)}${start}:${xlsxColName(c)}${end}`);
       // نصابی هەمان مامۆستا لە هەموو ڕیزەکانی ئەوە.
-      const quotaCol = widths.length - 1;
-      merges.push(`${xlsxColName(quotaCol)}${start}:${xlsxColName(quotaCol)}${end}`);
+      const lastCols = bwShowQuota() ? [widths.length-2, widths.length-1] : [widths.length-1];
+      lastCols.forEach(qc=>merges.push(`${xlsxColName(qc)}${start}:${xlsxColName(qc)}${end}`));
     }
     start = end;
   }
