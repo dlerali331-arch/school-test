@@ -1507,7 +1507,7 @@ function applyLoadedConfig(loaded){
   config.sciNotes = (loaded.sciNotes && typeof loaded.sciNotes==='object' && !Array.isArray(loaded.sciNotes)) ? loaded.sciNotes : {};
   config.dutyPlans = Array.isArray(loaded.dutyPlans) ? loaded.dutyPlans : [];
   config.myCommittees = Array.isArray(loaded.myCommittees) ? loaded.myCommittees : [];
-  config.asstVis = Array.isArray(loaded.asstVis) ? loaded.asstVis : undefined;
+  if(Array.isArray(loaded.asstVis)) config.asstVis = loaded.asstVis; else delete config.asstVis;
   config.myExamForm = Array.isArray(loaded.myExamForm) ? loaded.myExamForm : [];
   config.mySeating = Array.isArray(loaded.mySeating) ? loaded.mySeating : [];
   config.notices = Array.isArray(loaded.notices) ? loaded.notices : [];
@@ -6196,7 +6196,7 @@ async function asstSendDiff(){
   const mine=(config.staff||[]).find(x=>x.id===currentTeacherId);
   if(JSON.stringify(ops).length>900000){ showAlert('گۆڕانکارییەکان زۆر گەورەن. بە چەند بەشێک بینێرە.'); return; }
   const ok=await arSend({t:'diff',ops});
-  if(ok){ asstBase=arSnap(); asstDirty=false; arBar(); }
+  if(ok){ asstBase=arSnap(); asstDirty=false; arBar(); setTimeout(()=>location.reload(),1800); }
 }
 function asstDiscard(){ showConfirm('هەموو گۆڕانکارییەکان هەڵبوەشێنرێنەوە؟',()=>location.reload()); }
 function arApplyDiff(it){
