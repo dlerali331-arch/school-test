@@ -9715,6 +9715,38 @@ async function regAdd(){
   if(!mode){ showAlert('نەکرا پاشەکەوت بکرێت.'); return; }
   renderLeaveReg();
 }
+
+/* ---- دەستکاریکردنی تۆماری مۆڵەت و نەهاتن ---- */
+async function regEdit(id){
+  const r=(await leaveListAll()).find(x=>x.id===id); if(!r){ showAlert('تۆمارەکە نەدۆزرایەوە.'); return; }
+  const people=leavePeople(), E=escapeHtml;
+  const ov=document.createElement('div'); ov.id='reg-ed-ov'; ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:12px;';
+  ov.innerHTML=`<div style="background:#fff;border-radius:14px;max-width:480px;width:100%;max-height:92vh;overflow:auto;padding:14px;" dir="rtl">
+    <div style="font-weight:900;font-size:18px;margin-bottom:8px;">دەستکاریکردنی تۆمار</div>
+    <div class="field"><label class="field-label">ناو</label><select id="re-person">${people.map(p=>`<option value="${p.id}" ${p.id===r.personId?'selected':''}>${E(p.name)}</option>`).join('')}</select></div>
+    <div class="field"><label class="field-label">جۆر</label><select id="re-type"><option value="leave" ${r.type==='leave'?'selected':''}>مۆڵەت</option><option value="absent" ${r.type==='absent'?'selected':''}>نەهاتوو</option></select></div>
+    <div class="field"><label class="field-label">لە بەرواری</label>${dfi('id="re-start" onchange="regEdRecalc()"', r.startDate)}</div>
+    <div class="field"><label class="field-label">بۆ بەرواری</label>${dfi('id="re-end" onchange="regEdRecalc()"', r.endDate)}</div>
+    <div class="field"><label class="field-label">ژمارەی ڕۆژەکان</label><input type="number" min="1" id="re-days" value="${r.days||1}"></div>
+    <div class="field"><label class="field-label">هۆکار</label><input type="text" id="re-reason" value="${E(r.reason||'')}"></div>
+    <div style="display:flex;gap:8px;margin-top:8px;"><button class="btn btn-primary" style="flex:1;" onclick="regEdSave('${id}')">پاشەکەوت</button><button class="btn btn-ghost" style="flex:1;" onclick="document.getElementById('reg-ed-ov').remove()">داخستن</button></div></div>`;
+  document.body.appendChild(ov); safe(syncDfld);
+  window.__regEdRec=r;
+}
+function regEdRecalc(){ const a=document.getElementById('re-start'), b=document.getElementById('re-end'), d=document.getElementById('re-days'); if(!a.value) return; if(!b.value||b.value<a.value) b.value=a.value; d.value=diffDaysInc(a.value,b.value); }
+async function regEdSave(id){
+  const r=window.__regEdRec; if(!r||r.id!==id) return;
+  const personId=document.getElementById('re-person').value, person=leavePeople().find(p=>p.id===personId);
+  const start=document.getElementById('re-start').value, end=document.getElementById('re-end').value, days=parseInt(document.getElementById('re-days').value)||0;
+  if(!person){ showAlert('ناو هەڵبژێرە.'); return; }
+  if(!start||!end||end<start){ showAlert('ڕێکەوتەکان دروست نین.'); return; }
+  if(days<1){ showAlert('ژمارەی ڕۆژەکان دروست نییە.'); return; }
+  const rec=Object.assign({},r,{ personId, ownerTid:personId, personName:person.name, type:document.getElementById('re-type').value, startDate:start, endDate:end, days, reason:document.getElementById('re-reason').value.trim() });
+  const mode=await leaveSave(rec);
+  if(!mode){ showAlert('نەکرا پاشەکەوت بکرێت.'); return; }
+  document.getElementById('reg-ed-ov').remove(); renderLeaveReg();
+}
+
 function regTotals(list){
   const f = t=>list.filter(r=>r.type===t);
   const sum = a=>a.reduce((n,r)=>n+(r.days||0),0);
@@ -9761,7 +9793,7 @@ async function renderLeaveReg(){
         <td style="padding:6px;border:1px solid var(--rule);text-align:center;">${toKurdishDigits(r.days)}</td>
         <td style="padding:6px;border:1px solid var(--rule);">${escapeHtml(r.reason||'')}</td>
         <td style="padding:6px;border:1px solid var(--rule);font-size:12px;">${r.source==='admin'?'بەڕێوەبەر':'داواکاری'}</td>
-        <td style="padding:6px;border:1px solid var(--rule);"><button type="button" class="btn btn-danger btn-sm" onclick="leaveDelete('${r.id}')">سڕینەوە</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="empty">هیچ تۆمارێک نییە.</p>'}`;
+        <td style="padding:6px;border:1px solid var(--rule);"><button type="button" class="btn btn-ghost btn-sm" onclick="regEdit('${r.id}')">✏️ دەستکاری</button> <button type="button" class="btn btn-danger btn-sm" onclick="leaveDelete('${r.id}')">سڕینەوە</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="empty">هیچ تۆمارێک نییە.</p>'}`;
 }
 async function regPrint(){
   const list = await regFiltered();
