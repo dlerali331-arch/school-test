@@ -1426,6 +1426,7 @@ function buildTeacherView(t){
     classIds,
     config:{
       planRoot: config.planRoot||'',
+      planKey: config.planKey||'',
       school:{ name:(config.school||{}).name||'', year:(config.school||{}).year||'', attendance:(config.school||{}).attendance||'' },
       classes:(config.classes||[]).filter(c=>classIds.includes(c.id)),
       teachers:[{ id:tid, name:t.name }],
@@ -1510,6 +1511,7 @@ function applyLoadedConfig(loaded){
   config.dutyPlans = Array.isArray(loaded.dutyPlans) ? loaded.dutyPlans : [];
   config.myCommittees = Array.isArray(loaded.myCommittees) ? loaded.myCommittees : [];
   config.planRoot = typeof loaded.planRoot==='string' ? loaded.planRoot : '';
+  config.planKey = typeof loaded.planKey==='string' ? loaded.planKey : '';
   if(Array.isArray(loaded.asstVis)) config.asstVis = loaded.asstVis; else delete config.asstVis;
   config.myExamForm = Array.isArray(loaded.myExamForm) ? loaded.myExamForm : [];
   config.mySeating = Array.isArray(loaded.mySeating) ? loaded.mySeating : [];
@@ -6235,16 +6237,22 @@ function lpId(v){ const s=String(v||'').trim(); let m=s.match(/folders\/([A-Za-z
 const LP_ORD={'یەکەم':1,'دووەم':2,'سێیەم':3,'چوارەم':4,'پێنجەم':5,'شەشەم':6,'حەوتەم':7,'هەشتەم':8,'نۆیەم':9,'دەیەم':10,'یازدەیەم':11,'یانزەیەم':11,'دوازدەیەم':12,'دوانزەیەم':12,'دوازدەهەم':12};
 function lpDigits(s){ return String(s||'').replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)); }
 function lpNums(s){ const out=new Set(); (lpDigits(s).match(/(?<!\d)\d{1,2}(?!\d)/g)||[]).forEach(x=>{ const n=Number(x); if(n>=1&&n<=12) out.add(n); }); return out; }
+function lpClassesFor(){
+  const sub=lp.stack.length?lp.stack[0].subs:null; if(!sub||!sub.length) return config.classes||[];
+  const ids=new Set((config.assignments||[]).filter(a=>sub.includes(a.subjectId)).map(a=>a.classId));
+  const cl=(config.classes||[]).filter(c=>ids.has(c.id)); return cl.length?cl:(config.classes||[]);
+}
 function lpMyGrades(){
   const out=new Set();
-  (config.classes||[]).forEach(c=>{ const g=String(c.grade||c.name||''); lpNums(g).forEach(n=>out.add(n)); const gn=lpNorm(g); Object.keys(LP_ORD).forEach(k=>{ if(gn.includes(lpNorm(k))) out.add(LP_ORD[k]); }); });
+  lpClassesFor().forEach(c=>{ const g=String(c.grade||c.name||''); lpNums(g).forEach(n=>out.add(n)); let gn=lpNorm(g); Object.keys(LP_ORD).sort((x,y)=>y.length-x.length).forEach(k=>{ const kn=lpNorm(k); if(gn.includes(kn)){ out.add(LP_ORD[k]); gn=gn.split(kn).join(' '); } }); });
   return out;
 }
-function lpMyStreams(){ const out=new Set(); (config.classes||[]).forEach(c=>{ const g=lpNorm((c.grade||'')+' '+(c.name||'')); if(g.includes(lpNorm('زانستی'))) out.add('z'); if(g.includes(lpNorm('وێژەیی'))) out.add('w'); }); return out; }
+function lpMyStreams(){ const out=new Set(); lpClassesFor().forEach(c=>{ const g=lpNorm((c.grade||'')+' '+(c.name||'')); if(g.includes(lpNorm('زانستی'))) out.add('z'); if(g.includes(lpNorm('وێژەیی'))) out.add('w'); }); return out; }
 function lpRoot(){ return String(config.planRoot||''); }
+function lpSetKey(v){ const k=String(v||'').trim(); if(k&&!/^AIza[0-9A-Za-z_-]{30,}$/.test(k)){ showAlert('کلیلەکە دروست نییە. دەبێت بە AIza دەستپێبکات.'); return; } config.planKey=k; scheduleSave(); lp.items=null; lp.err=''; renderLessonPlans(); showAlert(k?'کلیلەکە پاشەکەوت کرا.':'کلیلەکە لابرا.'); }
 function lpSetRoot(v){ const id=lpId(v); if(!id){ showAlert('لینکی فۆڵدەرەکە دروست نییە.'); return; } config.planRoot=id; scheduleSave(); lp.stack=[]; lp.items=null; lp.view=null; renderLessonPlans(); }
 async function lpList(folderId){
-  const key=FIREBASE_CONFIG.apiKey;
+  const key=(config.planKey||'')||FIREBASE_CONFIG.apiKey;
   const q=encodeURIComponent("'"+folderId+"' in parents and trashed=false");
   const url='https://www.googleapis.com/drive/v3/files?q='+q+'&fields='+encodeURIComponent('files(id,name,mimeType)')+'&pageSize=300&orderBy=name&supportsAllDrives=true&includeItemsFromAllDrives=true&key='+key;
   const r=await withTimeout(fetch(url),20000);
@@ -6267,13 +6275,13 @@ async function lpLoad(){
   }catch(e){ console.log('lp',e); lp.err=e&&e.message==='offline'?'ئینتەرنێت پێویستە.':(currentRole==='admin'?('Drive: '+(e&&e.message||'هەڵە')):'ناتوانرێت لیستەکە بکرێتەوە. دواتر هەوڵ بدەوە.'); }
   lp.busy=false; renderLessonPlans();
 }
-function lpOpen(i){ const f=(lp.items||[])[i]; if(!f) return; if(f.mimeType==='application/vnd.google-apps.folder'){ lp.stack.push({id:f.id,name:f.name}); lp.view=null; lpLoad(); } else { lp.view=f; renderLessonPlans(); window.scrollTo(0,0); } }
+function lpOpen(i){ const f=(lp.items||[])[i]; if(!f) return; if(f.mimeType==='application/vnd.google-apps.folder'){ const subs=lp.stack.length?lp.stack[0].subs:(config.subjects||[]).filter(x=>lpNorm(x.name)&&lpNorm(f.name).includes(lpNorm(x.name))).map(x=>x.id); lp.stack.push({id:f.id,name:f.name,subs}); lp.view=null; lpLoad(); } else { lp.view=f; renderLessonPlans(); window.scrollTo(0,0); } }
 function lpBack(n){ lp.stack=lp.stack.slice(0,n); lp.view=null; lpLoad(); }
 function lpClose(){ lp.view=null; renderLessonPlans(); }
 function renderLessonPlans(){
   const el=document.getElementById('lessonplans-body'); if(!el) return; const E=escapeHtml;
   let h='';
-  if(currentRole==='admin') h+=`<div class="card" style="padding:12px;margin-bottom:12px;"><label class="field-label">لینکی فۆڵدەری «پلانی وانە وتنەوە» لە Google Drive</label><div class="row" style="gap:8px;"><input type="text" id="lp-root" class="grow" style="flex:1;" placeholder="https://drive.google.com/drive/folders/..." value="${lpRoot()?'https://drive.google.com/drive/folders/'+E(lpRoot()):''}"><button class="btn btn-primary" onclick="lpSetRoot(document.getElementById('lp-root').value)">پاشەکەوت</button></div><p class="section-hint" style="margin:6px 0 0;">فۆڵدەرەکە دەبێت «Anyone with the link» بێت. مامۆستا تەنها فۆڵدەری وانەکانی خۆی دەبینێت.</p></div>`;
+  if(currentRole==='admin') h+=`<div class="card" style="padding:12px;margin-bottom:12px;"><label class="field-label">لینکی فۆڵدەری «پلانی وانە وتنەوە» لە Google Drive</label><div class="row" style="gap:8px;"><input type="text" id="lp-root" class="grow" style="flex:1;" placeholder="https://drive.google.com/drive/folders/..." value="${lpRoot()?'https://drive.google.com/drive/folders/'+E(lpRoot()):''}"><button class="btn btn-primary" onclick="lpSetRoot(document.getElementById('lp-root').value)">پاشەکەوت</button></div><details style="margin-top:8px;"><summary style="cursor:pointer;font-weight:700;">کلیلی Drive API (تەنها ئەگەر هەڵەی «blocked» هات)</summary><div class="row" style="gap:8px;margin-top:6px;"><input type="text" id="lp-key" class="grow" style="flex:1;direction:ltr;" placeholder="AIza..." value="${E(config.planKey||'')}"><button class="btn btn-ghost" onclick="lpSetKey(document.getElementById('lp-key').value)">پاشەکەوت</button></div></details><p class="section-hint" style="margin:6px 0 0;">فۆڵدەرەکە دەبێت «Anyone with the link» بێت. مامۆستا تەنها فۆڵدەری وانەکانی خۆی دەبینێت.</p></div>`;
   if(!lpRoot()){ el.innerHTML=h+'<p class="empty">هێشتا پلانێک دانەنراوە.</p>'; return; }
   if(lp.view){
     const f=lp.view;
