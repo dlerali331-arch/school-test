@@ -1264,6 +1264,12 @@ function withTimeout(promise, ms){
   });
 }
 let _lastNetMsg = 0;
+function cfgMain(){ const c = Object.assign({}, config); delete c.letters; return c; }
+function cfgBytes(){ try{ return new Blob([JSON.stringify({ config: cfgMain(), schedules })]).size; }catch(e){ return 0; } }
+/* نووسراوەکان لە بەڵگەی سەرەکی جیا کراونەتەوە: هەر ساڵ و جۆرێک بەڵگەیەکی خۆی هەیە (school/letters_ساڵ_جۆر) بۆ ئەوەی سنووری ١ مێگابایتی فایەربەیس نەگات */
+function lettersShards(){ const g = {}; (config.letters||[]).forEach(x=>{ const k = 'letters_'+String(x.yr||'0')+'_'+String(x.kind||'out'); (g[k] = g[k] || []).push(x); }); return g; }
+function lettersMaxBytes(){ let m = 0; try{ const g = lettersShards(); Object.keys(g).forEach(k=>{ m = Math.max(m, new Blob([JSON.stringify(g[k])]).size); }); }catch(e){} return m; }
+let _shardCache = {};
 function notifyOffline(what){
   if(Date.now() - _lastNetMsg < 8000) return;
   _lastNetMsg = Date.now();
@@ -1311,14 +1317,33 @@ async function persistAll(){
       }
     }
     const stamp = Date.now();
-    await withTimeout(fbSetDoc(fbDoc(fbDb, 'school', 'main'), { config, schedules, updatedAt: stamp }), 20000);
+    /* ١) سەرەتا نووسراوەکان (تەنها ئەو بەڵگانەی گۆڕاون)، ٢) پاشان بەڵگەی سەرەکی — بەم ڕیزبەندییە هیچ نووسراوێک ون نابێت */
+    const groups = lettersShards(), keys = Object.keys(groups), jobs = [], newCache = {};
+    keys.forEach(k=>{ const js = JSON.stringify(groups[k]); newCache[k] = js; if(_shardCache[k]!==js) jobs.push({ k, items:groups[k] }); });
+    Object.keys(_shardCache).forEach(k=>{ if(!(k in newCache)) jobs.push({ k, items:[] }); });
+    window.__failDoc = 'letters';
+    await Promise.all(jobs.map(j=>withTimeout(fbSetDoc(fbDoc(fbDb, 'school', j.k), { items:j.items, updatedAt:stamp }), 45000)));
+    _shardCache = newCache;
+    window.__failDoc = 'main';
+    await withTimeout(fbSetDoc(fbDoc(fbDb, 'school', 'main'), { config: cfgMain(), schedules, updatedAt: stamp, lettersSplit:true, letterShards:keys }), 45000);
     cloudStamp = stamp;
     window.__dirty = false;
     publishTeacherViews();
   }catch(e){
     console.log('save to Firestore failed', e);
     window.__dirty = true;
-    notifyOffline('پاشەکەوت نەکرا');
+    const code = String((e && e.code) || ''), emsg = String((e && e.message) || ''), kb = Math.round((window.__failDoc==='letters' ? lettersMaxBytes() : cfgBytes())/1024);
+    if(/exceeds the maximum|too large/i.test(emsg) || (code==='invalid-argument' && kb>950)){
+      if(Date.now()-_lastNetMsg > 8000){ _lastNetMsg = Date.now(); showAlert('پاشەکەوت نەکرا: داتای ئەپ زۆر گەورە بووە ('+toKurdishDigits(kb)+' کیلۆبایت لە ١٠٢٤)، و فایەربەیس بەرگە ناگرێت. ئەمە کێشەی ئینتەرنێت نییە. هەندێک نووسراو یان داتای کۆن بسڕەوە، یان ڕێگا بدە بۆ جیاکردنەوەی نووسراوەکان لە داتای سەرەکی.'); }
+    } else if(code==='permission-denied'){
+      if(Date.now()-_lastNetMsg > 8000){ _lastNetMsg = Date.now(); showAlert('پاشەکەوت نەکرا: ڕێگەپێدان نییە (permission-denied). دەبێت وەک بەڕێوەبەر بچیتە ژوورەوە یان ڕێساکانی فایەربەیس بپشکنیت.'); }
+    } else if(code==='resource-exhausted'){
+      if(Date.now()-_lastNetMsg > 8000){ _lastNetMsg = Date.now(); showAlert('پاشەکەوت نەکرا: سنووری ڕۆژانەی فایەربەیس (quota) تەواو بووە. بەیانی دووبارە هەوڵ بدەوە.'); }
+    } else if(code==='invalid-argument'){
+      if(Date.now()-_lastNetMsg > 8000){ _lastNetMsg = Date.now(); showAlert('پاشەکەوت نەکرا: هەڵەیەک لە داتادا هەیە، نەک ئینتەرنێت. ('+emsg.slice(0,120)+')'); }
+    } else {
+      notifyOffline('پاشەکەوت نەکرا'+(code?' ['+code+']':''));
+    }
   }
 }
 
@@ -1606,6 +1631,12 @@ async function loadAll(){
       cloudStamp = Number(data.updatedAt)||0;
       applyLoadedConfig(data.config);
       applyLoadedSchedules(data.schedules);
+      if(data.lettersSplit){
+        const ks = Array.isArray(data.letterShards) ? data.letterShards : [], all = [], cache = {};
+        const snaps = await Promise.all(ks.map(k=>withTimeout(fbGetDoc(fbDoc(fbDb, 'school', k)), 20000)));
+        snaps.forEach((sn,i)=>{ const it = sn.exists() ? ((sn.data()||{}).items||[]) : []; it.forEach(x=>all.push(x)); cache[ks[i]] = JSON.stringify(it); });
+        config.letters = all; _shardCache = cache;
+      }
     } else {
       applyLoadedConfig({});
     }
@@ -2682,7 +2713,7 @@ function renderLetters(){
       <div id="ltr-list" style="overflow-x:auto;"></div>
     </div>
     <div class="card" style="padding:12px;margin-top:12px;">
-      <div style="font-weight:800;margin-bottom:6px;">📥 هێنانی نووسراوەکانی ئەکسس / ئێکسڵ</div>
+      <div style="font-weight:800;margin-bottom:6px;">📥 هێنانی نووسراوەکانی ئەکسس / ئێکسڵ <span class="section-hint" style="margin:0;font-weight:600;">— گەورەترین بەشی نووسراوەکان: ${toKurdishDigits(Math.round(lettersMaxBytes()/1024))} کیلۆبایت لە ١٠٢٤ (هەر ساڵ و جۆرێک بەشێکی جیایە)</span></div>
       <p class="section-hint" style="margin:0 0 8px;">لە ئەکسس: خشتەکە بکەرەوە ← External Data ← Export ← Excel (یان Text File/CSV بە UTF-8). فایلەکە دەبێت ستوونی بەروار و ناوەڕۆک/بابەتی هەبێت. ستوونەکان: <b>جۆر</b> (هاتوو/ڕۆشتوو/فەرمان — ئارەزوومەندانە)، <b>ژمارە</b>، <b>بەروار</b>، <b>لایەنی نووسراو</b>، <b>بابەت</b>، <b>ناوەڕۆک</b>، <b>تێبینی</b>، <b>ژمارەی نووسراو</b>، <b>ڕێکەوتی نووسراو</b>. ئەگەر ستوونی «جۆر» نەبوو، هەمووی بەپێی هەڵبژاردنی خوارەوە تۆمار دەکرێت. ئەگەر ستوونی «ژمارە» نەبوو، ژمارە خۆکار دەدرێت. نووسراوی دووبارە ناهێنرێتەوە. ئەگەر فایلەکە ناونیشانی ستوونی نەبوو (وەک ئەکسسەکەی تۆ)، بەم ڕیزبەندییانە دەخوێنرێتەوە: <b>ڕۆشتوو</b> — A ژمارە، B ڕێکەوتی نووسراو، C جۆر، D لایەنی نووسراو، E ساڵ، F بابەت، G ناوەڕۆک، H ناوی کارمەند، I پیشە، <b>J تێبینی</b>؛ <b>هاتوو/ئەنباری کۆن</b> — A ژمارە، B بەروار، C جۆر، D لایەنی نووسراو، F بابەت، H ناو، I پیشە، J ناوەڕۆک، K تێبینی. <b>گرنگ:</b> فایلی ئەکسس هەموو ساڵەکان دەگرێت؛ «تەنها لە ڕێکەوتی...» دیاری بکە (بۆ نموونە ١/٩ی ئەم ساڵ) بۆ ئەوەی داتای ئەپ زۆر گەورە نەبێت.</p>
       <div class="row" style="gap:10px;flex-wrap:wrap;align-items:end;">
         <div class="field" style="min-width:200px;"><label class="field-label">چی بهێنم؟</label><select id="ltr-imp-kind">${LTR_KINDS.map(x=>`<option value="${x.k}" ${ltrS.kind===x.k?'selected':''}>تەنها ${x.label}</option>`).join('')}<option value="outin">ڕۆشتوو + هاتوو</option><option value="all">هەموویان (ڕۆشتوو + هاتوو + فەرمان)</option></select></div>
@@ -2932,7 +2963,7 @@ function ltrImpGo(){
   const header = document.getElementById('ltr-m-header').checked, before = ltrList().length;
   const r = ltrImportRows(P.rows, ltrKindsOf(P.kind), P.from, { idx, header });
   if(r.err){ showAlert(r.err); return; }
-  if(JSON.stringify(config).length > 850000){ config.letters.length = before; showAlert('فایلەکە زۆر گەورەیە و داتاکانی ئەپ لە سنوور تێدەپەڕێنێت، بۆیە نەهێنرا. «تەنها لە ڕێکەوتی... بەدواوە» هەڵبژێرە (بۆ نموونە سەرەتای ئەم ساڵی خوێندنە) و دووبارە هەوڵ بدەوە.'); return; }
+  if(lettersMaxBytes() > 900000){ config.letters.length = before; showAlert('فایلەکە زۆر گەورەیە و داتاکانی ئەپ لە سنوور تێدەپەڕێنێت، بۆیە نەهێنرا. «تەنها لە ڕێکەوتی... بەدواوە» هەڵبژێرە (بۆ نموونە سەرەتای ئەم ساڵی خوێندنە) و دووبارە هەوڵ بدەوە.'); return; }
   ltrImpCancel();
   if(r.added) scheduleSave();
   renderLetters();
