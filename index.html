@@ -2788,12 +2788,12 @@ function ltrBlankPrint(){
     <table style="width:100%;border-collapse:collapse;table-layout:fixed;"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`, '2mm 8mm 2mm 2mm', wide?'landscape':'portrait');
 }
 /* ---- بەرگی تۆمار (هاتوو / ڕۆشتوو) ---- */
-function ltrCoverPrint(){
+function ltrCoverPrint(tt){
   const K = ltrKind(), sc = config.school||{}, E = escapeHtml;
   const gen = sc.letterGen || 'بەڕێوەبەرایەتی گشتی پەروەردەی سلێمانی';
   let dir = sc.directorate || 'پەروەردەی ڕۆژهەڵات'; if(!/^بەڕێوەبەر/.test(dir)) dir = 'بەڕێوەبەرایەتی ' + dir;
   const GOLD='#b8923a', RED='#c8262e', GRN='#1f7a3a';
-  const title = K.k==='in' ? ['تۆماری','هاتووی نووسراوەکان'] : (K.k==='out' ? ['تۆماری','ڕۆشتووی نووسراوەکان'] : ['تۆماری','فەرمانی کارگێڕی']);
+  const title = tt ? tt : K.k==='in' ? ['تۆماری','هاتووی نووسراوەکان'] : (K.k==='out' ? ['تۆماری','ڕۆشتووی نووسراوەکان'] : ['تۆماری','فەرمانی کارگێڕی']);
   const ribbon=(rot)=>`<svg viewBox="0 0 300 300" style="position:absolute;${rot}width:80mm;height:80mm;" xmlns="http://www.w3.org/2000/svg"><path d="M0 0H300C230 20 120 90 0 210Z" fill="${GOLD}" opacity=".85"/><path d="M0 0H250C190 22 90 80 0 170Z" fill="${RED}"/><path d="M0 0H215C160 20 70 70 0 140Z" fill="#fff"/><path d="M0 0H185C130 18 55 60 0 112Z" fill="${GRN}"/><path d="M0 0H150C100 14 40 48 0 84Z" fill="${GOLD}" opacity=".9"/></svg>`;
   const orn=`<svg viewBox="0 0 200 24" style="width:70mm;display:block;margin:0 auto;" fill="none" stroke="${GOLD}" stroke-width="2"><path d="M10 12H78M122 12H190"/><path d="M100 2L112 12L100 22L88 12Z" fill="${GOLD}"/><circle cx="82" cy="12" r="3" fill="${GOLD}"/><circle cx="118" cy="12" r="3" fill="${GOLD}"/></svg>`;
   const book=`<svg viewBox="0 0 400 160" style="position:absolute;left:50%;bottom:30mm;transform:translateX(-50%);width:150mm;opacity:.16;" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="${GOLD}" stroke-width="3"><path d="M200 40C150 10 80 12 20 30V140C80 122 150 124 200 150C250 124 320 122 380 140V30C320 12 250 10 200 40Z"/><path d="M200 40V150"/><path d="M40 50C90 40 150 44 190 66M40 72C90 62 150 66 190 88M360 50C310 40 250 44 210 66M360 72C310 62 250 66 210 88"/></svg>`;
@@ -10873,6 +10873,51 @@ function leavePrintBlank(type){
   leaveDoPrint('portrait');
   { const x=document.getElementById('leave-page-style'); if(x) x.textContent=x.textContent.replace(/margin:\s*12mm/,'margin: 0')+'@media print{#leave-sheet{padding:14mm !important;box-sizing:border-box;}}'; }
 }
+
+/* ================= وەرەقەی تۆماری مۆڵەت و نەهاتنی کارمەند + بەرگی تۆمار ================= */
+function regSheetHtml(name, job, last){
+  const sc = config.school||{}, E = escapeHtml, F = 'font-size:12pt;';
+  const gen = sc.letterGen || 'بەڕێوەبەرایەتی گشتی پەروەردەی سلێمانی';
+  let dir = sc.directorate || 'پەروەردەی ڕۆژهەڵات'; if(!/^بەڕێوەبەر/.test(dir)) dir = 'بەڕێوەبەرایەتی ' + dir;
+  const dirStaff = (config.staff||[]).find(p=>p.job==='بەڕێوەبەر') || (config.staff||[]).find(p=>/بەڕێوەبەر/.test(p.job||'') && !/یاریدەدەر/.test(p.job||''));
+  const GRN='#1f7a3a', GOLD='#b8923a';
+  const cap = (k,e)=>`<div style="font-weight:800;${F}line-height:1.25;margin-top:.8mm;">${k}</div><div style="font-size:8pt;line-height:1.1;">${e}</div>`;
+  const th = 'border:1px solid #333;background:#e6f1e3;padding:1.5mm 1mm;font-weight:800;font-size:11pt;text-align:center;';
+  const td = 'border:1px solid #333;height:10mm;';
+  const dots = (w)=>`<span style="display:inline-block;border-bottom:1.3px dotted #333;width:${w}mm;height:1em;vertical-align:baseline;"></span>`;
+  const rows = Array.from({length:13},(_,i)=>`<tr><td style="${td}text-align:center;width:9mm;font-weight:700;">${toKurdishDigits(i+1)}</td><td style="${td}width:19mm;"></td><td style="${td}width:25mm;"></td><td style="${td}width:25mm;"></td><td style="${td}width:14mm;"></td><td style="${td}"></td><td style="${td}width:30mm;"></td><td style="${td}width:21mm;"></td></tr>`).join('');
+  return `<div dir="rtl" style="position:relative;box-sizing:border-box;height:282mm;overflow:hidden;font-family:'Vazirmatn',sans-serif;color:#1d1d1d;${last?'':'break-after:page;page-break-after:always;'}">
+    <div style="position:absolute;inset:0;border:.7mm solid ${GOLD};pointer-events:none;"></div><div style="position:absolute;inset:1.4mm;border:.25mm solid ${GOLD};pointer-events:none;"></div>
+    <div style="padding:5mm 6mm 0;">
+    <div style="text-align:center;font-weight:900;${F}line-height:1.45;">${E(gen)}<br>${E(dir)}</div>
+    <div style="display:flex;align-items:stretch;justify-content:space-between;margin:1.5mm 0;">
+      <div style="width:32%;text-align:center;"><img alt="" src="${LETTER_MINIS_LOGO}" style="height:15mm;">${cap('وەزارەتی پەروەردە','MINISTRY OF EDUCATION')}</div>
+      <div style="width:32%;text-align:center;"><img alt="" src="${LETTER_KRG_LOGO}" style="height:15mm;">${cap('حکومەتی هەرێمی کوردستان','KURDISTAN REGIONAL GOVERNMENT')}</div>
+      <div style="width:32%;text-align:center;"><img alt="" src="${LEAVE_LOGO}" style="height:15mm;">${cap(E(sc.name||''),E(sc.nameEn||''))}</div>
+    </div>
+    <div style="text-align:center;margin:2mm auto 3mm;width:150mm;background:linear-gradient(#2d9150,${GRN});border:.9mm solid ${GOLD};border-radius:5mm;color:#fff;padding:2mm 4mm;box-shadow:0 0 0 .4mm #fff inset;"><div style="font-weight:900;font-size:17pt;line-height:1.4;">وەرەقەی تۆماری مۆڵەت و نەهاتن</div><div style="font-size:11pt;line-height:1.3;color:#ffe9a6;font-weight:700;">ساڵی خوێندن: ${dh(E(sc.year||''))}</div></div>
+    <div style="border:1px solid #333;border-radius:2mm;padding:2.2mm 4mm;margin-bottom:3mm;background:#fbfaf4;line-height:2.1;${F}font-weight:700;">
+      <div style="display:flex;gap:6mm;"><div style="flex:1.5;">ناوی سیانی: ${name?'<b>'+E(name)+'</b>':dots(70)}</div><div style="flex:1;">پیشە / وانە: ${job?'<b>'+E(job)+'</b>':dots(38)}</div></div>
+      <div style="display:flex;gap:6mm;"><div style="flex:1.5;">ژمارەی مۆبایل: ${dots(55)}</div><div style="flex:1;">بەرواری دامەزراندن: ${dots(30)}</div></div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;"><thead><tr><th style="${th}">ز</th><th style="${th}">جۆر<div style="font-size:8pt;font-weight:600;">مۆڵەت / نەهاتن</div></th><th style="${th}">لە ڕێکەوتی</th><th style="${th}">بۆ ڕێکەوتی</th><th style="${th}">ڕۆژ</th><th style="${th}">هۆکار</th><th style="${th}">ڕای بەڕێوەبەر</th><th style="${th}">واژۆ</th></tr></thead><tbody>${rows}</tbody></table>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:3.5mm;${F}font-weight:700;line-height:2;">
+      <div style="border:1px solid #333;border-radius:2mm;padding:1.5mm 4mm;background:#fbfaf4;">کۆی مۆڵەت: ( ${dots(10)} ) جار — ( ${dots(10)} ) ڕۆژ<br>کۆی نەهاتن: ( ${dots(10)} ) جار — ( ${dots(10)} ) ڕۆژ</div>
+      <div style="text-align:center;min-width:55mm;"><div>بەڕێوەبەری خوێندنگە</div><div style="font-weight:900;">${dirStaff?E(dirStaff.name):dots(40)}</div><div style="margin-top:4mm;">واژۆ ${dots(28)}</div></div>
+    </div></div></div>`;
+}
+function regSheetPrint(mode){
+  const people = leavePeople();
+  if(mode==='all'){
+    if(!people.length){ showAlert('هیچ کارمەندێک تۆمار نەکراوە.'); return; }
+    const job = id=>((config.staff||[]).find(x=>x.id===id)||{}).job||'';
+    ltrRawPrint(people.map((p,i)=>regSheetHtml(p.name, job(p.id), i===people.length-1)).join(''), 7, 'portrait', true);
+    return;
+  }
+  const p = leaveRegPerson ? people.find(x=>x.id===leaveRegPerson) : null, job = p ? (((config.staff||[]).find(x=>x.id===p.id)||{}).job||'') : '';
+  ltrRawPrint(regSheetHtml(p?p.name:'', job, true), 7, 'portrait', true);
+}
+function regCoverPrint(){ ltrCoverPrint(['تۆماری','مۆڵەت و نەهاتن']); }
 function regPrintBlank(){
   const header=(config.school.leaveHeader!=null?config.school.leaveHeader:LEAVE_HEADER_DEFAULT).split('\n').filter(x=>x.trim());
   const td='padding:5px 6px;border:1px solid #444;height:9mm;';
@@ -10922,7 +10967,7 @@ async function renderLeaveReg(){
     <button type="button" class="btn btn-primary" onclick="regAdd()">زیادکردن بۆ تۆمار</button></div></details>
     <div class="field"><label class="field-label">گەڕان بە پێی مامۆستا / فەرمانبەر</label><select onchange="regSetPerson(this.value)">${popt('هەموو مامۆستایان و فەرمانبەران')}</select></div>
     <div class="card" style="padding:10px 12px;margin-bottom:12px;">${leaveRegPerson?`<b>${escapeHtml((people.find(p=>p.id===leaveRegPerson)||{}).name||'')}</b>: `:'کۆی گشتی: '}${regTotalsText(list)}</div>
-    <div class="row" style="margin-bottom:10px;"><button type="button" class="btn btn-ghost btn-sm" onclick="regPrint()">🖨️ پرینتی تۆمار</button><button type="button" class="btn btn-ghost btn-sm" onclick="pdfRun(()=>{ regPrint() })">📄 PDF</button><button type="button" class="btn btn-ghost btn-sm" onclick="regPrintBlank()">🖨️ پرینتی بەتاڵ</button><button type="button" class="btn btn-ghost btn-sm" onclick="pdfRun(()=>{ regPrintBlank() })">📄 PDF بەتاڵ</button></div>
+    <div class="row" style="margin-bottom:10px;"><button type="button" class="btn btn-ghost btn-sm" onclick="regPrint()">🖨️ پرینتی تۆمار</button><button type="button" class="btn btn-ghost btn-sm" onclick="pdfRun(()=>{ regPrint() })">📄 PDF</button><button type="button" class="btn btn-ghost btn-sm" onclick="regPrintBlank()">🖨️ پرینتی بەتاڵ</button><button type="button" class="btn btn-ghost btn-sm" onclick="pdfRun(()=>{ regPrintBlank() })">📄 PDF بەتاڵ</button><button type="button" class="btn btn-ghost btn-sm" onclick="regSheetPrint()">🪪 وەرەقەی مۆڵەتی کارمەند (بەتاڵ)</button><button type="button" class="btn btn-ghost btn-sm" onclick="regSheetPrint('all')">👥 وەرەقە بۆ هەموو کارمەندان</button><button type="button" class="btn btn-ghost btn-sm" onclick="regCoverPrint()">📕 بەرگی تۆمار</button></div>
     ${list.length ? `<div style="overflow-x:auto;"><table class="grid" style="width:100%;min-width:560px;border-collapse:collapse;">
       <thead><tr>${['ناو','جۆر','لە','بۆ','ڕۆژ','هۆکار','سەرچاوە',''].map(h=>`<th style="padding:6px;border:1px solid var(--rule);">${h}</th>`).join('')}</tr></thead>
       <tbody>${list.map(r=>`<tr>
