@@ -7732,7 +7732,7 @@ function showScreen(name){
     renderHome();
     return;
   }
-  if(name==='g_schedule' || name==='g_att' || name==='g_leave' || name==='g_exam' || name==='g_books' || name==='g_tatt' || name==='g_texam' || name==='g_cmt' || name==='g_stu'){
+  if(name==='g_schedule' || name==='g_att' || name==='g_leave' || name==='g_exam' || name==='g_books' || name==='g_tatt' || name==='g_texam' || name==='g_cmt' || name==='g_stu' || name==='g_train'){
     home.style.display = ''; bar.style.display = 'flex'; nav.style.display = 'none'; main.style.display = 'none';
     document.getElementById('home-bar-title').textContent = HOME_CARDS.find(c=>c.id===name).title;
     renderHome(name);
