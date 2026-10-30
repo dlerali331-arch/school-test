@@ -1633,6 +1633,9 @@ function applyLoadedConfig(loaded){
   if(Array.isArray(loaded.asstVis)) config.asstVis = loaded.asstVis; else delete config.asstVis;
   config.myExamForm = Array.isArray(loaded.myExamForm) ? loaded.myExamForm : [];
   config.mySeating = Array.isArray(loaded.mySeating) ? loaded.mySeating : [];
+  config.warnNums = (loaded.warnNums && typeof loaded.warnNums==='object' && !Array.isArray(loaded.warnNums)) ? loaded.warnNums : {};
+  config.warnSeq = Number(loaded.warnSeq)||0;
+  config.warnNotes = (loaded.warnNotes && typeof loaded.warnNotes==='object' && !Array.isArray(loaded.warnNotes)) ? loaded.warnNotes : {};
   if(loaded.myExamTable && typeof loaded.myExamTable==='object') config.myExamTable = loaded.myExamTable; else delete config.myExamTable;
   if(loaded.mySectorView && typeof loaded.mySectorView==='object') config.mySectorView = loaded.mySectorView; else delete config.mySectorView;
   config.notices = Array.isArray(loaded.notices) ? loaded.notices : [];
@@ -17685,12 +17688,42 @@ function letterHeaderHtml(){
   <div style="display:flex;justify-content:space-between;font-weight:800;font-size:16px;border-top:2px solid #000;border-bottom:2px solid #000;padding:6px 4px;margin-bottom:18px;">
     <span>ژمارە: ........</span><span>ساڵی خوێندن: ${dh(escapeHtml(sc.year||''))}</span><span>بەروار: ${dh(fmtDMY(iso))}</span></div>`;
 }
+function warnNoteFor(r,lvl){ const n=(config.warnNotes||{})[r.student.id+'__'+lvl]; return String(n||'').trim(); }
+function saveWarnNote(id,lvl,v){ if(!config.warnNotes||typeof config.warnNotes!=='object') config.warnNotes={}; const k=id+'__'+lvl; if(String(v).trim()) config.warnNotes[k]=v; else delete config.warnNotes[k]; scheduleSave(); }
+/* فەسڵکراوەکان: ژمارە لە تۆماری نووسراوەکان (ڕۆشتوو/هاتوو ← فەرمانی کارگێڕی) وەردەگیرێت و لەوێ تۆمار دەکرێت */
+function warnAdmNo(r,c){
+  const st=r.student, key=st.id+'__3';
+  if(!config.warnNums||typeof config.warnNums!=='object') config.warnNums={};
+  const ex=config.warnNums[key], found=ex?ltrList().find(x=>x.id===ex&&x.kind==='adm'):null;
+  if(found) return found.no;
+  const date=todayDateStr(), yr=ltrYear(date), n=toKurdishDigits(r.absentDays);
+  const rec={ id:uid(), kind:'adm', yr, no:ltrNext('adm',date,'','plain'), date,
+    content:'دوای تێپەڕاندنی ('+n+') ڕۆژی نەهاتن لەدوامی ڕەسمی خوێندنگە، بڕیار درا بە بێبەشکردنی (فەصڵکردنی) ('+st.name+') لە پۆلی ('+(c?classGrade(c):'')+') لق ('+(c?classSection(c):'')+') بۆ ساڵی خوێندنی ('+((config.school||{}).year||'')+').',
+    note:warnNoteFor(r,3), refNo:'', refDate:'', hNo:'', hDate:'', hParty:'', hx:[], party:'',
+    subject:'بێبەشکردنی خوێندکار لە خوێندن (فەصڵکردن)', sub:'plain', pname:st.name, pjob:'خوێندکار',
+    pcls:c?String(classGrade(c)):'', psec:c?String(classSection(c)):'', ptype:'', jor:'فەرمانی کارگێڕی' };
+  ltrList().push(rec); config.warnNums[key]=rec.id; scheduleSave();
+  return rec.no;
+}
+function warnNumFor(r,lvl,c){
+  if(lvl===3) return warnAdmNo(r,c);
+  const key=r.student.id+'__'+lvl; if(!config.warnNums||typeof config.warnNums!=='object') config.warnNums={};
+  if(!config.warnNums[key]){ config.warnSeq=(Number(config.warnSeq)||0)+1; config.warnNums[key]=config.warnSeq; scheduleSave(); }
+  return config.warnNums[key];
+}
+function warnHeaderHtml(num,lvl){
+  const sc=config.school||{}, today=new Date(), iso=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+  if(lvl===1||lvl===2){ return ltrLetterHeader({no:num,date:iso}).split('height:17mm;').join('height:11mm;').split('font-size:14pt;').join('font-size:11pt;').split('font-size:9pt;').join('font-size:7pt;').split('margin:1mm 0 1.5mm;').join('margin:0 0 0.5mm;').split('margin:1mm 0 2mm;').join('margin:0 0 1mm;').split('padding:2mm 1mm;margin-bottom:5mm;').join('padding:1mm 1mm;margin-bottom:3mm;').split('margin-top:1mm;').join('margin-top:0.5mm;'); }
+  return `<img alt="" src="${EXAM_BANNER}" style="width:88%;display:block;margin:0 auto 4px;">
+  <div style="display:flex;justify-content:space-between;font-weight:800;font-size:16px;border-top:2px solid #000;border-bottom:2px solid #000;padding:6px 4px;margin-bottom:18px;">
+    <span>ژمارە: ${toKurdishDigits(num)}</span><span>ساڵی خوێندن: ${dh(escapeHtml(sc.year||''))}</span><span>بەروار: ${dh(fmtDMY(iso))}</span></div>`;
+}
 function warnLetterHtml(c, r){
   const sc = config.school||{}, st = r.student;
   const dirStaff = (config.staff||[]).find(x=>/بەڕێوەبەر/.test(x.job||'') && !/یاریدەدەر/.test(x.job||''));
   const dirName = dirStaff ? dirStaff.name : '';
-  const lvl = r.level;
-  const titles = {1:['ئاگادارکردنەوەی یەکەم','#a8dc54'],2:['ئاگادارکردنەوەی دووەم','#ff6b6b']};
+  const lvl = r.level, wnum = warnNumFor(r,lvl,c), noteTxt = warnNoteFor(r,lvl) ? escapeHtml(warnNoteFor(r,lvl)) : '...............................................................................';
+  const titles = {1:['ئاگادارکردنەوەی یەکەم','#ffd84d'],2:['ئاگادارکردنەوەی دووەم','#ff6b6b']};
   const n = toKurdishDigits(r.absentDays);
   const b = t=>`<b>${escapeHtml(t)}</b>`;
   let bodyHtml;
@@ -17698,19 +17731,19 @@ function warnLetterHtml(c, r){
     bodyHtml = `<div style="text-align:center;margin:6px 0 24px;"><span style="display:inline-block;border:2px solid #000;background:${titles[lvl][1]};padding:6px 40px;font-weight:900;font-size:21px;">${titles[lvl][0]}</span></div>
     <p style="font-size:19px;line-height:2.3;text-align:justify;">ئاگاداری خوێندکار ( ${b(st.name)} ) لە پۆلی ( ${b(classGrade(c))} ) لق ( ${b(classSection(c))} ) دەکەین کە ژمارەی ڕۆژانی نەهاتنی گەیشتووەتە ( ${b(n)} ) ڕۆژ؛ لەبەرئەوەی زۆربوونی ژمارەی نەهاتن دەبێتە هۆی بێبەشکردنی لە خوێندن (فەصڵکردن) بۆ ئەم ساڵی خوێندنە، تکایە پابەندی دەوام بێت.</p>
     <p style="text-align:center;font-size:19px;margin:30px 0;">لەگەڵ ڕێزدا .....</p>
-    <p style="font-size:19px;font-weight:800;">تێبینی/ ...............................................................................</p>
-    <div style="display:flex;justify-content:space-between;margin-top:150px;font-size:18px;font-weight:800;line-height:2;">
+    <p style="font-size:19px;font-weight:800;">تێبینی/ ${noteTxt}</p>
+    <div style="display:flex;justify-content:space-between;margin-top:70px;font-size:18px;font-weight:800;line-height:2;">
       <div style="text-align:center;">واژۆی خوێندکار یان بەخێوکەری<br>${escapeHtml(st.name)}</div>
       <div style="text-align:center;">${escapeHtml(dirName)}<br>بەڕێوەبەر</div></div>`;
   } else {
     bodyHtml = `<div style="text-align:center;font-weight:900;font-size:23px;margin:6px 0 22px;">فەرمانی کارگێڕی</div>
     <p style="font-size:19px;font-weight:800;margin-bottom:26px;">بابەت/ بێبەشکردنی خوێندکار لە خوێندن (فەصڵکردن)</p>
     <p style="font-size:19px;line-height:2.4;text-align:justify;font-weight:700;">دوای تێپەڕاندنی ( ${b(n)} ) ڕۆژی نەهاتن لەدوامی ڕەسمی خوێندنگە، بەپێی ئەو دەسەڵاتەی پێمان دراوە بڕیارمدا بە بێبەشکردنی (فەصڵکردنی) ( ${b(st.name)} ) لە پۆلی ( ${b(classGrade(c))} ) لق ( ${b(classSection(c))} ) بۆ ساڵی خوێندنی ( ${b(sc.year||'')} ).</p>
-    <p style="font-size:19px;font-weight:800;margin-top:40px;">تێبینی/ ...............................................................................</p>
+    <p style="font-size:19px;font-weight:800;margin-top:40px;">تێبینی/ ${noteTxt}</p>
     <div style="margin-top:150px;font-size:18px;font-weight:800;line-height:2;text-align:right;width:40%;">${escapeHtml(dirName)}<br>بەڕێوەبەر</div>`;
   }
   const foot = sc.letterFooter ? `<div style="position:absolute;bottom:0;left:0;right:0;border:2px solid #000;padding:6px 8px;font-weight:700;font-size:14px;text-align:center;">${escapeHtml(sc.letterFooter)}</div>` : '';
-  return `<div dir="rtl" style="font-family:'Vazirmatn',sans-serif;color:#000;position:relative;min-height:262mm;page-break-after:always;border:2px solid #000;padding:14px 22px 60px;box-sizing:border-box;">${letterHeaderHtml()}${bodyHtml}${foot}</div>`;
+  return `<div dir="rtl" style="font-family:'Vazirmatn',sans-serif;color:#000;position:relative;min-height:250mm;max-height:276mm;overflow:hidden;page-break-after:always;page-break-inside:avoid;border:2px solid #000;padding:14px 22px 60px;box-sizing:border-box;">${warnHeaderHtml(wnum,lvl)}${bodyHtml}${foot}</div>`;
 }
 let warnItemsCache = [];
 function warnLetterPrint(idx){
@@ -17749,7 +17782,7 @@ async function renderWarnPage(){
     }
     return `<li><div class="warn-row" style="width:100%;">
       <span class="name"${level===3?' style="color:#c0392b;font-weight:700;"':''}>${escapeHtml(st.name)} <span class="subtext">پۆل: ${escapeHtml(classGrade(c))} · لق: ${escapeHtml(classSection(c))} · ${toKurdishDigits(r.absentDays)} ڕۆژ غیاب</span></span>
-      <span class="btnrow">${act}<button type="button" class="btn btn-ghost btn-sm" onclick="warnLetterPrint(${items.findIndex(x=>x.r===r)})">🖨️ نووسراو</button><button type="button" class="btn btn-ghost btn-sm" onclick="pdfRun(()=>{ warnLetterPrint(${items.findIndex(x=>x.r===r)}) })">📄 PDF</button></span></div></li>`;
+      <span class="btnrow">${act}<button type="button" class="btn btn-ghost btn-sm" onclick="warnLetterPrint(${items.findIndex(x=>x.r===r)})">🖨️ نووسراو</button><button type="button" class="btn btn-ghost btn-sm" onclick="pdfRun(()=>{ warnLetterPrint(${items.findIndex(x=>x.r===r)}) })">📄 PDF</button></span></div>${level<3?`<input type="text" class="att-note" maxlength="300" placeholder="تێبینی (ئارەزوومەندانە) — لە نووسراوەکەدا دەنووسرێت..." value="${escapeHtml(((config.warnNotes||{})[st.id+'__'+level])||'')}" oninput="saveWarnNote('${st.id}',${level},this.value)" style="width:100%;margin-top:6px;font-size:13px;padding:5px 8px;border:1px solid var(--rule);border-radius:8px;">`:''}</li>`;
   }).join('') + '</ul>';
 }
 function saveWarnPhone(id){
