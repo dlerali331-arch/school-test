@@ -786,6 +786,9 @@
         <p class="section-hint" style="margin-bottom:10px;">هەموو زانیاریەکان تەنها لەناو ئەم مۆبایل/براوزەرە هەڵدەگیرێن. باشترە هەندێک جار فایلی پاڵپشتی (Backup) دابەزێنیت، تاوەکو ئەگەر هەڵگرتنی خۆکار کێشەی هەبوو، داتاکەت لەدەست نەدەیت.</p>
         <div class="row" style="margin-bottom:10px;">
           <button class="btn btn-ghost" onclick="exportBackup()">داگرتنی فایلی پاڵپشتی</button>
+          <button class="btn btn-primary" onclick="fullBackup()">💾 پاڵپشتی تەواو (هەموو داتا لە Firebase)</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('full-restore-input').click()">♻️ گەڕاندنەوەی پاڵپشتی تەواو</button>
+          <input type="file" id="full-restore-input" accept=".json,application/json,.txt,text/plain,*/*" style="display:none" onchange="fullRestore(this.files[0])">
           <button class="btn btn-primary" onclick="dataDoctor()">🩺 پشکنینی داتای Firebase</button>
           <button class="btn btn-ghost" onclick="document.getElementById('import-file-input').click()">هێنانەوەی فایلی پاڵپشتی</button>
           <input type="file" id="import-file-input" accept=".json,application/json,.txt,text/plain,*/*" style="display:none" onchange="importBackup(this.files[0])">
@@ -1925,6 +1928,7 @@ async function startApp(){
   safe(()=>{ document.getElementById('app-root').style.display = ''; });
   safe(()=>{ document.getElementById('logout-btn').style.display = (REQUIRE_LOGIN && currentRole) ? 'inline-block' : 'none'; });
   if(currentRole==='admin') setTimeout(()=>publishTeacherViews(), 2500);
+  if(currentRole==='admin') setTimeout(()=>{ try{ fullBackupReminder(); }catch(e){} }, 7000);
   if(currentRole==='admin'){ setTimeout(()=>pfRefresh(), 3000); setInterval(()=>{ if(document.visibilityState!=='hidden') pfRefresh(); }, 300000); document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible' && Date.now()-(window.__pfLast||0)>60000) pfRefresh(); }); }
   if(currentRole==='teacher'){ updatePendingBar(); setTimeout(flushAttQueue, 2000); safe(ntfStart); }
   if(currentRole==='assistant'){ safe(asstSetup); safe(ntfStart); }
@@ -4308,7 +4312,8 @@ function updatePeriodTime(idx, field, val){
 function resetAll(){
   showConfirm('دڵنیایت لە سڕینەوەی هەموو داتاکان؟ ئەم کردارە ناگەڕێتەوە.', doResetAll);
 }
-function doResetAll(){
+async function doResetAll(){
+  try{ exportBackup(); await fullBackup(true); }catch(e){}
   config = { school:{name:'',year:'',attendance:''}, classes:[], teachers:[], subjects:[], assignments:[], constraints:[], students:[], committees:[], committeeNames:[], exams:{days:[],sectors:[],supervisorIds:[],supervisorAssignments:{}}, staff:[], settings:{ days:["شەممه","یەک شەممه","دوو شەممه","سێ شەممه","چوار شەممه"], periodsPerDay:6, periodTimes:[] } };
   schedules = {};
   ensurePeriodTimes();
@@ -4533,6 +4538,59 @@ function ddRestore(){
   Object.keys(_ddOrph).forEach(k=>{ _ddOrph[k].forEach(x=>{ const key=x.id||JSON.stringify(x); if(!have.has(key)){ have.add(key); config.letters.push(x); n++; } }); });
   _ddOrph={}; scheduleSave(); const o=document.getElementById('dd-ov'); if(o) o.remove();
   showAlert(toKurdishDigits(n)+' نووسراو گەڕێندرایەوە و پاشەکەوت دەکرێت.'); try{ if(typeof renderLetters==='function') renderLetters(); }catch(e){}
+}
+/* ---- پاڵپشتی تەواو: هەموو داتای Firebase (نووسراو، مۆڵەت، ڕابەری پۆل، پرسیار، هتد) لەگەڵ داتای ئەپ ---- */
+const FB_BK_COLS=['school','attendance','selfeval','archive','teacherAccounts','teacherLogins'];
+async function fullBackup(silent){
+  if(currentRole!=='admin'){ if(!silent) showAlert('تەنها بەڕێوەبەر.'); return false; }
+  if(!(fbDb&&fbCollection&&fbGetDocs)||!navigator.onLine){ if(!silent) showAlert('ئینتەرنێت پێویستە.'); return false; }
+  const st=t=>{ try{ arSetStatus(t); }catch(e){} };
+  try{
+    const cols={}; let total=0;
+    for(const c of FB_BK_COLS){
+      st('پاڵپشتی تەواو: '+c+' ...');
+      try{ const snap=await withTimeout(fbGetDocs(fbCollection(fbDb,c)),120000); const L=[]; snap.forEach(d=>L.push({ id:d.id, data:arSer(d.data()||{}) })); cols[c]=L; total+=L.length; }
+      catch(e){ console.log('backup skip',c,e); cols[c]=[]; }
+    }
+    const payload={ config, schedules, exportedAt:new Date().toISOString(), fullFormat:1, fb:cols };
+    const blob=new Blob([JSON.stringify(payload)],{type:'application/json'});
+    const url=URL.createObjectURL(blob), a=document.createElement('a');
+    a.href=url; a.download='khshtay-FULL-backup-'+new Date().toISOString().slice(0,16).replace(/[:T]/g,'-')+'.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(url),4000);
+    st(''); try{ localStorage.setItem('khshtay_fb_last',String(Date.now())); }catch(e){}
+    const sum=FB_BK_COLS.map(c=>c+': '+(cols[c]||[]).length).join('، ');
+    if(!silent) showAlert('پاڵپشتی تەواو داگیرا ('+toKurdishDigits(total)+' تۆمار). '+sum+'. فایلەکە لە شوێنێکی سەلامەتدا هەڵبگرە.');
+    return true;
+  }catch(e){ st(''); console.log(e); if(!silent) showAlert('پاڵپشتی تەواو سەرکەوتوو نەبوو. دووبارە هەوڵ بدەوە.'); return false; }
+}
+function fullBackupReminder(){
+  let last=0; try{ last=Number(localStorage.getItem('khshtay_fb_last'))||0; }catch(e){}
+  const days=(Date.now()-last)/86400000;
+  if(last && days<3) return;
+  showConfirm(last?('دوایین پاڵپشتی تەواو '+toKurdishDigits(Math.floor(days))+' ڕۆژ لەمەوبەر بوو. ئێستا پاڵپشتی تەواو دابگیرێت؟'):'هێشتا پاڵپشتی تەواو دانەگیراوە لەسەر ئەم ئامێرە. ئێستا دابگیرێت؟ (هەموو داتا لە Firebase)', ()=>{ fullBackup(); });
+}
+function fullRestore(file){
+  if(!file) return;
+  if(currentRole!=='admin'){ showAlert('تەنها بەڕێوەبەر.'); return; }
+  const r=new FileReader();
+  r.onload=e=>{
+    let payload; try{ payload=JSON.parse(e.target.result); }catch(err){ showAlert('ناتوانرا فایلەکە بخوێنرێتەوە.'); return; }
+    if(!payload||!payload.fb){ showAlert('ئەم فایلە پاڵپشتی تەواو نییە. بۆ فایلی ئاسایی دوگمەی «هێنانەوەی فایلی پاڵپشتی» بەکاربهێنە.'); return; }
+    const cnt=FB_BK_COLS.map(c=>c+': '+((payload.fb[c]||[]).length)).join('، ');
+    showConfirm('هەموو ئەو تۆمارانە دەنووسرێنەوە بۆ Firebase ('+cnt+'). ئەو تۆمارانەی دوای ئەو پاڵپشتییە دروست کراون نامێنن بەڵام نادرێنەوە. بەردەوام بیت؟', async ()=>{
+      if(!(fbDb&&fbDoc&&fbSetDoc)||!navigator.onLine){ showAlert('ئینتەرنێت پێویستە.'); return; }
+      const list=[]; FB_BK_COLS.forEach(c=>(payload.fb[c]||[]).forEach(d=>{ if(!(c==='school'&&d.id==='main')) list.push({c,id:d.id,data:d.data}); }));
+      let done=0;
+      const fail=await arPool(list,8,async x=>{ await withTimeout(fbSetDoc(fbDoc(fbDb,x.c,x.id),arDe(x.data)),30000); done++; if(done%25===0) try{ arSetStatus('گەڕاندنەوە: '+done+' / '+list.length); }catch(e){} });
+      try{ arSetStatus('هەڵگرتنی داتای سەرەکی ...'); }catch(e){}
+      try{ if(payload.config){ applyImportedPayload({ config:payload.config, schedules:payload.schedules||{} }); } }catch(e){ console.log(e); }
+      try{ arSetStatus(''); }catch(e){}
+      showAlert('گەڕاندنەوە تەواو بوو: '+toKurdishDigits(done)+' تۆمار'+(fail?' ('+toKurdishDigits(fail)+' نەگەڕایەوە)':'')+'. ئەپەکە دووبارە دەکرێتەوە.');
+      setTimeout(()=>location.reload(),2500);
+    });
+  };
+  r.readAsText(file);
+  const inp=document.getElementById('full-restore-input'); if(inp) inp.value='';
 }
 function exportBackup(){
   const payload = { config, schedules, exportedAt: new Date().toISOString() };
@@ -12312,6 +12370,7 @@ async function arRun(archive){
   const msg=(archive?'بەشە هەڵبژێردراوەکان لە ئەرشیفی «'+yl+'» هەڵدەگیرێن، پاشان لە بەشەکان دەسڕدرێنەوە.':'بەشە هەڵبژێردراوەکان بەبێ هەڵگرتن بۆ هەمیشە دەسڕدرێنەوە! ناگەڕێنەوە.')+' ('+toKurdishDigits(secs.length)+' بەش). بەردەوام بیت؟';
   showConfirm(msg, async ()=>{
     arS.busy=true; renderArchive();
+    try{ await fullBackup(true); }catch(e){}
     try{
       const yk=arYk(yl);
       if(archive){
