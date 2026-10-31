@@ -17812,25 +17812,32 @@ function warnLetterPrint(idx){
   leaveDoPrint('portrait');
 }
 function saveLetterFooter(v){ config.school.letterFooter = v; scheduleSave(); }
-async function renderWarnPage(){
-  const level = warnLevel;
-  const titles = { 1:'ئینزاری یەکەم', 2:'ئینزاری دووەم', 3:'فەسڵکراوەکان' };
-  document.getElementById('warn-title').textContent = titles[level];
-  document.getElementById('warn-hint').textContent = level<3
-    ? 'ئەگەر ژمارەی مۆبایل نەنووسرابێت، ژمارەی باوک بنووسە و پاشەکەوتی بکە، پاشان دوگمەی واتسئەپ دەردەکەوێت.'
-    : 'ئەم قوتابیانە فەسڵ کراون.';
-  const body = document.getElementById('warn-body');
-  body.innerHTML = '<p class="empty">چاوەڕێ بکە...</p>';
+let _wsCache={ t:0, p:null };
+async function warnSummaries(force,onProg){
+  if(!force && _wsCache.p && Date.now()-_wsCache.t<180000) return _wsCache.p;
+  window.__attFail=false;
+  const p=(async()=>{
+    const res={}, cs=(config.classes||[]).slice(); let i=0;
+    await Promise.all(Array.from({length:4},async()=>{ while(i<cs.length){ const c=cs[i++]; try{ res[c.id]=await computeClassAbsenceSummary(c.id); }catch(e){ window.__attFail=true; res[c.id]=[]; } try{ onProg&&onProg(c.id,res[c.id]); }catch(e){} } }));
+    if(window.__attFail) _wsCache={ t:0, p:null };
+    return res;
+  })();
+  _wsCache={ t:Date.now(), p };
+  return p;
+}
+function warnRefresh(){ _wsCache={ t:0, p:null }; renderWarnPage(); }
+function warnDraw(level,sums,note){
+  const body = document.getElementById('warn-body'); if(!body) return;
   const items = [];
   for(const c of config.classes){
-    const rows = await computeClassAbsenceSummary(c.id);
-    (rows||[]).filter(r=>r.level===level).forEach(r=>items.push({c,r}));
+    (sums[c.id]||[]).filter(r=>r.level===level).forEach(r=>items.push({c,r}));
   }
   if(level!==warnLevel) return;
+  const nt = note?`<div class="card" style="padding:8px 12px;margin-bottom:8px;background:#fff4c2;font-weight:700;">${note}</div>`:'';
   items.sort((a,b)=> String(classGrade(a.c)).localeCompare(String(classGrade(b.c)),'ckb') || String(classSection(a.c)).localeCompare(String(classSection(b.c)),'ckb') || a.r.student.name.localeCompare(b.r.student.name,'ckb'));
   warnItemsCache = items;
-  if(!items.length){ body.innerHTML = '<p class="empty">هیچ قوتابیێک لەم بەشەدا نییە.</p>'; return; }
-  body.innerHTML = `<p class="section-hint">کۆی گشتی: <b>${toKurdishDigits(items.length)}</b></p><div class="field" style="margin-bottom:8px;"><label class="field-label">دێڕی ناونیشان و ژمارەی پەیوەندی (لە خوارەوەی نووسراو)</label><input type="text" value="${escapeHtml((config.school||{}).letterFooter||'')}" onchange="saveLetterFooter(this.value)" placeholder="ناونیشان: ... ژمارەی تەلەفۆن: ... مۆبایل: ..."></div><div class="btnrow" style="margin-bottom:8px;"><button class="btn btn-primary" onclick="warnLetterPrint()">🖨️ چاپی نووسراوی هەموویان</button><button class="btn btn-ghost" onclick="pdfRun(()=>{ warnLetterPrint() })">📄 PDF</button></div><ul class="list">` + items.map(({c,r})=>{
+  if(!items.length){ body.innerHTML = nt+'<p class="empty">هیچ قوتابیێک لەم بەشەدا نییە.</p>'; return; }
+  body.innerHTML = nt+`<p class="section-hint">کۆی گشتی: <b>${toKurdishDigits(items.length)}</b> <button type="button" class="btn btn-ghost btn-sm" onclick="warnRefresh()">🔄 نوێکردنەوە</button></p><div class="field" style="margin-bottom:8px;"><label class="field-label">دێڕی ناونیشان و ژمارەی پەیوەندی (لە خوارەوەی نووسراو)</label><input type="text" value="${escapeHtml((config.school||{}).letterFooter||'')}" onchange="saveLetterFooter(this.value)" placeholder="ناونیشان: ... ژمارەی تەلەفۆن: ... مۆبایل: ..."></div><div class="btnrow" style="margin-bottom:8px;"><button class="btn btn-primary" onclick="warnLetterPrint()">🖨️ چاپی نووسراوی هەموویان</button><button class="btn btn-ghost" onclick="pdfRun(()=>{ warnLetterPrint() })">📄 PDF</button></div><ul class="list">` + items.map(({c,r})=>{
     const st = r.student;
     let act = '';
     if(level<3){
@@ -17843,6 +17850,40 @@ async function renderWarnPage(){
       <span class="name"${level===3?' style="color:#c0392b;font-weight:700;"':''}>${escapeHtml(st.name)} <span class="subtext">پۆل: ${escapeHtml(classGrade(c))} · لق: ${escapeHtml(classSection(c))} · ${toKurdishDigits(r.absentDays)} ڕۆژ غیاب</span></span>
       <span class="btnrow">${act}<button type="button" class="btn btn-ghost btn-sm" onclick="warnLetterPrint(${items.findIndex(x=>x.r===r)})">🖨️ نووسراو</button><button type="button" class="btn btn-ghost btn-sm" onclick="pdfRun(()=>{ warnLetterPrint(${items.findIndex(x=>x.r===r)}) })">📄 PDF</button></span></div>${level<3?`<input type="text" class="att-note" maxlength="300" placeholder="تێبینی (ئارەزوومەندانە) — لە نووسراوەکەدا دەنووسرێت..." value="${escapeHtml(((config.warnNotes||{})[st.id+'__'+level])||'')}" oninput="saveWarnNote('${st.id}',${level},this.value)" style="width:100%;margin-top:6px;font-size:13px;padding:5px 8px;border:1px solid var(--rule);border-radius:8px;">`:''}</li>`;
   }).join('') + '</ul>';
+}
+const WARN_LS='khshtay_warn_cache';
+function warnConv(o){
+  if(!o||!o.sums) return null; const sums={};
+  Object.keys(o.sums).forEach(cid=>{ sums[cid]=(o.sums[cid]||[]).map(r=>{ const st=(config.students||[]).find(x=>x.id===r.sid); return st?{ student:st, absentDays:r.a, leaveDays:r.l, warning:r.w, warnClass:r.wc, level:r.lv, dismissed:!!r.d }:null; }).filter(Boolean); });
+  return { t:o.t, sums };
+}
+function warnLoadOld(){ try{ return warnConv(JSON.parse(localStorage.getItem(WARN_LS)||'null')); }catch(e){ return null; } }
+async function warnLoadRemote(){
+  try{ if(!(fbDb&&fbDoc&&fbGetDoc)||!navigator.onLine) return null; const g=await withTimeout(fbGetDoc(fbDoc(fbDb,'school','warnSummary')),8000); return g.exists()?warnConv(g.data()):null; }catch(e){ return null; }
+}
+function warnSaveOld(sums){
+  try{ const o={}; Object.keys(sums).forEach(cid=>{ o[cid]=(sums[cid]||[]).filter(r=>r.level>0).map(r=>({ sid:r.student.id, a:r.absentDays, l:r.leaveDays, w:r.warning, wc:r.warnClass, lv:r.level, d:r.dismissed?1:0 })); }); const pl={ t:Date.now(), sums:o }; localStorage.setItem(WARN_LS,JSON.stringify(pl)); try{ if(currentRole==='admin'&&fbDb&&fbDoc&&fbSetDoc&&navigator.onLine) fbSetDoc(fbDoc(fbDb,'school','warnSummary'),pl).catch(()=>{}); }catch(e){} }catch(e){}
+}
+async function renderWarnPage(){
+  const level = warnLevel, E=toKurdishDigits;
+  const titles = { 1:'ئینزاری یەکەم', 2:'ئینزاری دووەم', 3:'فەسڵکراوەکان' };
+  document.getElementById('warn-title').textContent = titles[level];
+  document.getElementById('warn-hint').textContent = level<3
+    ? 'ئەگەر ژمارەی مۆبایل نەنووسرابێت، ژمارەی باوک بنووسە و پاشەکەوتی بکە، پاشان دوگمەی واتسئەپ دەردەکەوێت.'
+    : 'ئەم قوتابیانە فەسڵ کراون.';
+  const body = document.getElementById('warn-body');
+  const fresh = _wsCache.p && Date.now()-_wsCache.t<180000;
+  let old = fresh ? null : warnLoadOld();
+  if(!fresh && !old){ body.innerHTML = '<p class="empty">چاوەڕێ بکە...</p>'; old = await warnLoadRemote(); if(level!==warnLevel) return; }
+  const dstr=t=>{ const d=new Date(t); return E(String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')); };
+  if(old && Date.now()-old.t<600000){ warnDraw(level, old.sums, 'ئەنجام لە '+dstr(old.t)+' — بۆ نوێکردنەوە دوگمەی 🔄 بگوشە.'); return; }
+  if(old){ warnDraw(level, old.sums, '⏳ ئەنجامی کۆن (دوایین نوێکردنەوە: '+dstr(old.t)+') — نوێترینەکان لە ڕێگەدان...'); }
+  else if(!fresh) body.innerHTML = '<p class="empty">چاوەڕێ بکە...</p>';
+  let part=null, n=0; const total=(config.classes||[]).length;
+  const sums = await warnSummaries(false, (cid,rows)=>{ if(level!==warnLevel) return; part=part||Object.assign({}, old?old.sums:{}); part[cid]=rows; n++; if(n<total) warnDraw(level, part, '⏳ نوێکردنەوە: '+E(n)+' لە '+E(total)+' پۆل...'); });
+  if(level!==warnLevel) return;
+  warnSaveOld(sums);
+  warnDraw(level, sums, '');
 }
 function saveWarnPhone(id){
   const el = document.getElementById('wph-'+id);
@@ -18008,10 +18049,12 @@ async function listAttByClass(classId){
       const q = (currentRole==='teacher' && currentTeacherId)
         ? fbQuery(fbCollection(fbDb,'attendance'), fbWhere('classId','==',classId), fbWhere('ownerTid','==',currentTeacherId))
         : fbQuery(fbCollection(fbDb,'attendance'), fbWhere('classId','==',classId));
-      const snap = await withTimeout(fbGetDocs(q), 20000);
+      let snap=null, lastErr=null;
+      for(const to of [20000,45000]){ try{ snap = await withTimeout(fbGetDocs(q), to); break; }catch(e){ lastErr=e; if(e&&e.code==='permission-denied') break; } }
+      if(!snap) throw lastErr||new Error('read failed');
       snap.forEach(d=>{ out[d.id] = d.data(); });
-    }catch(e){ console.log('list attendance failed', e); notifyOffline('خوێندنەوە نەکرا'+((e&&e.code)?' ['+e.code+']':'')); }
-  } else notifyOffline('خوێندنەوە نەکرا');
+    }catch(e){ window.__attFail=true; console.log('list attendance failed', e); notifyOffline('خوێندنەوە نەکرا'+((e&&e.code)?' ['+e.code+']':'')); }
+  } else { window.__attFail=true; notifyOffline('خوێندنەوە نەکرا'); }
   return Object.values(out);
 }
 
