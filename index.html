@@ -9405,8 +9405,9 @@ function prettyTablePrint(o){
     const last=pi===pages.length-1;
     const body=idx.length?tb(thead+`<tbody>${idx.map(i=>rowH(rows[i],i)).join('')}</tbody>`):'';
     const foot=last?sign:`<div style="margin-top:auto;text-align:center;font-size:8.5pt;font-weight:600;">ماوەتی ...</div>`;
-    return exqPrettyBox(L,(pi===0?head:'')+body+foot,land?183:274,!last);
+    return exqPrettyBox(L,(pi===0?head:'')+body+foot,land?183:274,!last||!!o.brk);
   }).join('');
+  if(o.ret) return html;
   ltrRawPrint(html,10,land?'landscape':'portrait',true);
 }
 function gdPrint(info, entries){
@@ -14368,15 +14369,35 @@ function examSupervisorFirstLessonAssign(){
     const ps=teacherLessonsOnDay(tid,dn).map(x=>x.periodIndex);
     prio[ti][di]= ps.includes(P1)?0 : ps.includes(P2)?1 : ps.length?2 : 3;
   }));
+  // ٢.١ ڕۆژەکانی تاقیکردنەوەی خودی مامۆستا (وانەکەی خۆی لە خشتەی تاقیکردنەوەکان) — تەنها ئەگەر ئەو ڕۆژە دەوامی هەبێت
+  const sch0=ex.sched||{}, hasExam=teachers.map(()=>days.map(()=>false)), hasWork=teachers.map(()=>days.map(()=>false));
+  teachers.forEach((tid,ti)=>{
+    const myAs=(config.assignments||[]).filter(a=>a.teacherId===tid);
+    days.forEach((d,di)=>{
+      const dn=JS_DAY_TO_KURDISH[new Date(d.date+'T12:00:00').getDay()];
+      hasWork[ti][di]=teacherLessonsOnDay(tid,dn).length>0;
+      hasExam[ti][di]=myAs.some(a=>{ const c=(config.classes||[]).find(x=>x.id===a.classId); return c && ((sch0[d.id]||{})[classGrade(c)]||[]).includes(a.subjectId); });
+    });
+  });
   // ٣. کۆتای هەر مامۆستا (نزیکەی یەکسان)
   const base=Math.floor(total/T), rem=total-base*T;
   const order=teachers.map((_,i)=>i).sort((a,b)=>prio[b].filter(x=>x===0).length-prio[a].filter(x=>x===0).length);
   const quota=teachers.map(()=>base);
   for(let k=0;k<rem;k++) quota[order[k]]++;
   // ٤. کەمترین تێچوو (min-cost flow): مامۆستا -> ڕۆژ
-  const N=2+T+D, S=0, K=1+T+D; const edges=[], g=Array.from({length:N},()=>[]);
+  const N=2+T+D+T, S=0, K=1+T+D; const edges=[], g=Array.from({length:N},()=>[]);
   const add=(u,v,cap,cost)=>{ g[u].push(edges.length); edges.push({v,cap,cost}); g[v].push(edges.length); edges.push({v:u,cap:0,cost:-cost}); };
-  teachers.forEach((_,ti)=>{ add(S,1+ti,quota[ti],0); days.forEach((__,di)=>add(1+ti,1+T+di,1,prio[ti][di]*100+((ti*7+di*13)%11))); });
+  teachers.forEach((_,ti)=>{
+    add(S,1+ti,quota[ti],0);
+    const E=K+1+ti; add(1+ti,E,quota[ti],0); // هەموو ڕۆژەکانی تاقیکردنەوەی خۆی (بەدەوامەوە) تا سنووری کۆتای چاودێری
+    days.forEach((__,di)=>{
+      const base=prio[ti][di]*100+((ti*7+di*13)%11);
+      if(hasExam[ti][di]){
+        if(hasWork[ti][di]) add(E,1+T+di,1,base-1000); // ڕۆژی تاقیکردنەوە + دەوام: دەستکەوتی گەورە
+        /* ڕۆژی تاقیکردنەوە بەبێ دەوام: داناندرێت */
+      } else add(1+ti,1+T+di,1,base);
+    });
+  });
   days.forEach((_,di)=>add(1+T+di,K,need[di],0));
   for(;;){
     const dist=Array(N).fill(Infinity), prevE=Array(N).fill(-1), inq=Array(N).fill(false); dist[S]=0;
@@ -14387,11 +14408,12 @@ function examSupervisorFirstLessonAssign(){
   }
   // ٥. ئەنجام: کام مامۆستا کام ڕۆژ
   const dayTeachers=days.map(()=>[]);
-  teachers.forEach((_,ti)=>g[1+ti].forEach(ei=>{ const e=edges[ei]; if(e.v>T && e.v<K && ei%2===0 && e.cap===0) dayTeachers[e.v-1-T].push(ti); }));
+  const onExam=new Set();
+  teachers.forEach((_,ti)=>{ [1+ti,K+1+ti].forEach(nd=>g[nd].forEach(ei=>{ const e=edges[ei]; if(e.v>T && e.v<K && ei%2===0 && e.cap===0){ dayTeachers[e.v-1-T].push(ti); if(nd!==1+ti) onExam.add(ti+'|'+(e.v-1-T)); } })); });
   // ٦. دابەشکردنی کەرت بۆ مامۆستاکانی ڕۆژەکە، تا بکرێت کەرتی دووبارە نەبێت
   const secCount=teachers.map(()=>({}));
   ex.supervisorAssignments={};
-  let good=0, second=0, other=0, unfilled=0;
+  let good=0, second=0, other=0, unfilled=0, ownExam=0;
   days.forEach((d,di)=>{
     const map={}; const pool=dayTeachers[di].slice();
     daySecs[di].forEach(sec=>{
@@ -14399,13 +14421,14 @@ function examSupervisorFirstLessonAssign(){
       pool.sort((a,b)=>((secCount[a][sec]||0)-(secCount[b][sec]||0))||(a-b));
       const ti=pool.shift(); secCount[ti][sec]=(secCount[ti][sec]||0)+1;
       map[sec]=[teachers[ti]];
+      if(onExam.has(ti+'|'+di)) ownExam++;
       const pr=prio[ti][di]; if(pr===0) good++; else if(pr===1) second++; else other++;
     });
     ex.supervisorAssignments[d.id]=map;
   });
   scheduleSave(); renderExamSupervisors();
   showAlert(`کۆی کەرتەکانی هەموو ڕۆژەکان: ${toKurdishDigits(total)}، مامۆستا چاودێر: ${toKurdishDigits(T)} (نزیکەی ${toKurdishDigits(Math.floor(total/T))} بۆ ${toKurdishDigits(Math.ceil(total/T))} ڕۆژ بۆ هەر مامۆستایەک).\n`+
-    `لە ڕۆژی وانەی یەکەمیان: ${toKurdishDigits(good)} — لە ڕۆژی وانەی دووەمیان: ${toKurdishDigits(second)} — لە ڕۆژەکانی تر: ${toKurdishDigits(other)}`+(unfilled?`\nئاگاداری: ${toKurdishDigits(unfilled)} کەرت چاودێری بۆ دابین نەکرا، چونکە لە ڕۆژێکدا مامۆستای پێویست نەبوو.`:''));
+    `لە ڕۆژی تاقیکردنەوەی خودی مامۆستا (بە دەوامەوە): ${toKurdishDigits(ownExam)}\n`+`لە ڕۆژی وانەی یەکەمیان: ${toKurdishDigits(good)} — لە ڕۆژی وانەی دووەمیان: ${toKurdishDigits(second)} — لە ڕۆژەکانی تر: ${toKurdishDigits(other)}`+(unfilled?`\nئاگاداری: ${toKurdishDigits(unfilled)} کەرت چاودێری بۆ دابین نەکرا، چونکە لە ڕۆژێکدا مامۆستای پێویست نەبوو.`:''));
 }
 function examSupervisorRows(filterDay,filterTeacher){
   const ex=examSupervisors(), days=examDays().filter(d=>d.date && (!filterDay||d.id===filterDay)), sectors=examSectors();
@@ -14488,6 +14511,24 @@ function examSupervisorClear(mode){
     scheduleSave(); renderExamSupervisors();
   });
 }
+function examSupervisorPrintAllTeachers(){
+  const day=document.getElementById('exam-supervisor-print-day')?.value||'';
+  const ex=examSupervisors(), teachers=config.teachers||[];
+  const E=escapeHtml, kd=toKurdishDigits, examName=ex.name!=null?ex.name:'کۆتایی وەرزی یەکەم – خولی یەکەم';
+  const enm=['#2a9db0',E(examName)], yr=['#d93a3a','ساڵی خوێندن: '+dh(E(examAcademicYear()))];
+  const list=(ex.supervisorIds||[]).map(id=>teachers.find(t=>t.id===id)).filter(Boolean)
+    .sort((a,b)=>String(a.name).localeCompare(String(b.name),'ckb'))
+    .map(t=>({t, rows:examSupDutyRows(t.id,day)})).filter(x=>x.rows.length);
+  if(!list.length){ showAlert('هیچ مامۆستایەک چاودێری بۆ دیاری نەکراوە.'); return; }
+  const html=list.map((x,i)=>{
+    const nd=new Set(x.rows.map(r=>r.d.id)).size;
+    return prettyTablePrint({ ret:true, brk:i<list.length-1, title:'خشتەی چاودێری مامۆستا',
+      pills:[['#5aae3f','مامۆستا: '+E(examMPrefix(x.t.name))],enm,yr,['#7d6bb8','ژمارەی ڕۆژ: '+kd(nd)]],
+      cols:[{h:'ز',w:7},{h:'ڕێکەوت',w:20},{h:'ڕۆژ',w:20},{h:'کەرت',w:23},{h:'هاوچاودێر',w:30}],
+      rows:x.rows.map((r,j)=>[kd(j+1),dh(fmtSlash(r.d.date)),E(examDayName(r.d.date)),E(EXAM_SECTOR_NAMES[r.sec]),r.others.map(E).join('<br>')||'—']) });
+  }).join('');
+  ltrRawPrint(html,10,'portrait',true);
+}
 function examSupervisorPrintPretty(){
   const day=document.getElementById('exam-supervisor-print-day')?.value||'', tid=document.getElementById('exam-supervisor-print-teacher')?.value||'';
   const ex=examSupervisors(), teachers=config.teachers||[], sectors=examSectors(), days=examDays().filter(d=>d.date&&(!day||d.id===day));
@@ -14549,8 +14590,8 @@ function renderExamSupervisors(){
   const filterBar=`<div class="row" style="gap:10px;flex-wrap:wrap;align-items:end;margin:12px 0 4px;padding:10px;border:1px dashed #2a9db0;border-radius:10px;"><div class="field" style="min-width:190px;"><label class="field-label">فیلتەر: ڕۆژ</label><select id="exam-supervisor-print-day" onchange="renderExamSupervisors()"><option value="">هەموو ڕۆژەکان</option>${dayOpts}</select></div><div class="field" style="min-width:230px;"><label class="field-label">فیلتەر: مامۆستا</label><select id="exam-supervisor-print-teacher" onchange="renderExamSupervisors()"><option value="">هەموو مامۆستاکان</option>${tOpts}</select></div><button class="btn btn-ghost btn-sm" onclick="examSupFilterReset()">✖ لابردنی فیلتەر</button><span style="flex:1"></span><button class="btn btn-ghost btn-sm" style="color:#b3261e;" onclick="examSupervisorClear('day')">🗑️ سڕینەوەی ڕۆژە هەڵبژێردراوەکە</button><button class="btn btn-ghost btn-sm" style="color:#b3261e;" onclick="examSupervisorClear('teacher')">🗑️ سڕینەوەی مامۆستا هەڵبژێردراوەکە</button><button class="btn btn-ghost btn-sm" style="color:#b3261e;" onclick="examSupervisorClear('all')">🗑️ سڕینەوەی هەمووی</button></div>`;
   el.innerHTML=`<div class="card" style="padding:12px;margin-bottom:12px;"><h3 style="font-size:18px;">١. هەڵبژاردنی مامۆستا چاودێرەکان</h3><div style="margin-bottom:8px;"><button class="btn btn-ghost btn-sm" onclick="examSupervisorAll(true)">هەموو مامۆستاکان</button> <button class="btn btn-ghost btn-sm" onclick="examSupervisorAll(false)">هیچ</button></div><div style="display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:7px 14px;">${teachers.map(t=>`<label style="display:flex;align-items:center;gap:8px;padding:6px;"><input type="checkbox" ${ex.supervisorIds.includes(t.id)?'checked':''} onchange="examSupervisorToggle('${t.id}',this.checked)"><span>${escapeHtml(t.name)}</span></label>`).join('')}</div><p class="section-hint">تەنها ئەو مامۆستایانەی دیاری دەکەیت لە دابەشکردنی چاودێری بەکاردێن.</p></div>
   <div class="card" style="padding:12px;margin-bottom:12px;"><h3 style="font-size:18px;">٢. کورتەی ژمارەی ڕۆژەکانی چاودێری</h3>${ex.supervisorIds.length?`<table style="border-collapse:collapse;width:100%;font-size:14px;"><thead><tr style="background:#f4cccc;"><th style="padding:7px;border:1px solid #444;">#</th><th style="padding:7px;border:1px solid #444;">ناوی مامۆستا</th><th style="padding:7px;border:1px solid #444;">ژمارەی ڕۆژ</th><th style="padding:7px;border:1px solid #444;">ژمارەی کەرت</th></tr></thead><tbody>${statRows}</tbody></table>`:'<p class="empty">هێشتا مامۆستای چاودێر هەڵنەبژێردراوە.</p>'}</div>
-  <div class="card" style="padding:12px;margin-bottom:12px;"><h3 style="font-size:18px;">٣. دابەشکردنی چاودێرەکان</h3><p class="section-hint">بەپێی ژمارەی مامۆستا و ژمارەی ڕۆژ، ژمارەی چاودێرانی هەر کەرت خۆکارانە دیاری دەکرێت. بۆ نموونە ١٧ مامۆستا و ٨ ڕۆژ = ٢ چاودێر بۆ هەر کەرت لە هەر ڕۆژێکدا. هەر مامۆستا لە هەمان ڕۆژدا تەنها یەک کەرت وەردەگرێت.</p><button class="btn btn-primary" onclick="examSupervisorAutoAssign()">🎲 دابەشکردنی خۆکار</button> <button class="btn btn-primary" style="background:#2a9db0;" onclick="examSupervisorFirstLessonAssign()">🎯 دابەشکردنی خۆکار بەپێی وانەی یەکەم</button><p class="section-hint" style="margin-top:8px;">دوگمەی دووەم: کەرتەکانی هەر ڕۆژێک دەژمێرێت و بەسەر مامۆستایاندا بە یەکسانی دابەشی دەکات، و هەوڵ دەدات هەر مامۆستایەک لەو ڕۆژانەدا بێت کە لە خشتەی وانە وانەی یەکەمی هەیە؛ ئەگەر ڕۆژی وانەی یەکەم نەبوو، ڕۆژی وانەی دووەمی دەدرێتێ.</p><span style="margin-right:10px;font-weight:800;">ئێستا: ${toKurdishDigits(perSector)} چاودێر بۆ هەر کەرت/ڕۆژ</span>${filterBar}${assignmentTable}</div>
-  <div class="card" style="padding:12px;"><h3 style="font-size:18px;">٤. ڕاپۆرت و چاپکردن</h3><div class="row" style="gap:10px;flex-wrap:wrap;align-items:end;"><div class="field" style="min-width:150px;"><label class="field-label">ئاڕاستە</label><select id="exam-supervisor-ori"><option value="landscape" ${pOri==='landscape'?'selected':''}>لاندسکەیپ (پان)</option><option value="portrait" ${pOri==='portrait'?'selected':''}>پۆرترەیت (درێژ)</option></select></div><button class="btn btn-primary" onclick="examSupervisorPrintPretty()">🖨️ چاپی ڕاپۆرت (دیزاینی جوان)</button><button class="btn btn-ghost" onclick="pdfRun(()=>{ examSupervisorPrintPretty() })">📄 PDF</button></div><p class="section-hint">هەموو ڕۆژەکان: خشتەی یەکگرتوو. یەک ڕۆژ: ڕۆژ و ڕێکەوت و ناوی تاقیکردنەوە لە سەرەوە. یەک مامۆستا: ناوی مامۆستا، ناوی تاقیکردنەوە، پاشان ڕۆژ و ڕێکەوت و کەرتەکان.</p></div>`;
+  <div class="card" style="padding:12px;margin-bottom:12px;"><h3 style="font-size:18px;">٣. دابەشکردنی چاودێرەکان</h3><p class="section-hint">بەپێی ژمارەی مامۆستا و ژمارەی ڕۆژ، ژمارەی چاودێرانی هەر کەرت خۆکارانە دیاری دەکرێت. بۆ نموونە ١٧ مامۆستا و ٨ ڕۆژ = ٢ چاودێر بۆ هەر کەرت لە هەر ڕۆژێکدا. هەر مامۆستا لە هەمان ڕۆژدا تەنها یەک کەرت وەردەگرێت.</p><button class="btn btn-primary" onclick="examSupervisorAutoAssign()">🎲 دابەشکردنی خۆکار</button> <button class="btn btn-primary" style="background:#2a9db0;" onclick="examSupervisorFirstLessonAssign()">🎯 دابەشکردنی خۆکار بەپێی وانەی یەکەم</button><p class="section-hint" style="margin-top:8px;">دوگمەی دووەم: کەرتەکانی هەر ڕۆژێک دەژمێرێت و بەسەر مامۆستایاندا بە یەکسانی دابەشی دەکات، و هەوڵ دەدات هەر مامۆستایەک لەو ڕۆژانەدا بێت کە لە خشتەی وانە وانەی یەکەمی هەیە؛ ئەگەر ڕۆژی وانەی یەکەم نەبوو، ڕۆژی وانەی دووەمی دەدرێتێ. هەروەها بۆ هەر مامۆستایەک ژمارەی ڕۆژە چاودێرییەکانی مامۆستا لەو ڕۆژانە دادەنرێن کە وانەکەی خۆی تاقیکردنەوەی هەیە (بۆ نموونە ١ ڕۆژ تاقیکردنەوە = ١ ڕۆژ چاودێری لەو ڕۆژەدا، ٢ ڕۆژ = ٢ ڕۆژ، تا کۆی ڕۆژەکانی چاودێریی) (بەپێی خشتەی تاقیکردنەوەکان) بەو مەرجەی ئەو ڕۆژە دەوامی هەبێت؛ ئەگەر تاقیکردنەوەی هەبوو و دەوامی نەبوو، ئەو ڕۆژە بۆی دانانرێت.</p><span style="margin-right:10px;font-weight:800;">ئێستا: ${toKurdishDigits(perSector)} چاودێر بۆ هەر کەرت/ڕۆژ</span>${filterBar}${assignmentTable}</div>
+  <div class="card" style="padding:12px;"><h3 style="font-size:18px;">٤. ڕاپۆرت و چاپکردن</h3><div class="row" style="gap:10px;flex-wrap:wrap;align-items:end;"><div class="field" style="min-width:150px;"><label class="field-label">ئاڕاستە</label><select id="exam-supervisor-ori"><option value="landscape" ${pOri==='landscape'?'selected':''}>لاندسکەیپ (پان)</option><option value="portrait" ${pOri==='portrait'?'selected':''}>پۆرترەیت (درێژ)</option></select></div><button class="btn btn-primary" onclick="examSupervisorPrintPretty()">🖨️ چاپی ڕاپۆرت (دیزاینی جوان)</button><button class="btn btn-ghost" onclick="pdfRun(()=>{ examSupervisorPrintPretty() })">📄 PDF</button><button class="btn btn-primary" style="background:#5aae3f;" onclick="examSupervisorPrintAllTeachers()">🖨️ چاپی هەموو مامۆستاکان (هەریەکە لە وەرەقەیەکی جیا)</button><button class="btn btn-ghost" onclick="pdfRun(()=>{ examSupervisorPrintAllTeachers() })">📄 PDF هەموو مامۆستاکان</button></div><p class="section-hint">هەموو ڕۆژەکان: خشتەی یەکگرتوو. یەک ڕۆژ: ڕۆژ و ڕێکەوت و ناوی تاقیکردنەوە لە سەرەوە. یەک مامۆستا: ناوی مامۆستا، ناوی تاقیکردنەوە، پاشان ڕۆژ و ڕێکەوت و کەرتەکان. چاپی هەموو مامۆستاکان: بۆ هەر مامۆستایەک وەرەقەیەکی جیا، هەموو بە یەکجار؛ ئەگەر ڕۆژێک لە فیلتەرەکە هەڵبژێریت تەنها ئەو ڕۆژە دەچێتە ناو وەرەقەکان.</p></div>`;
 }
 function examSupervisorComboSet(dayId,sector,slot,teacherId){
   const ex=examSupervisors(), sectors=examSectors();
