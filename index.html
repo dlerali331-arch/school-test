@@ -1080,6 +1080,7 @@
         <div class="row form">
           <div class="field grow" style="min-width:200px"><label class="field-label">لیژنە بۆ چاپکردن</label><select id="committee-print-select" onchange="setCommitteePrintSel(this.value)"></select></div>
           <button class="btn btn-ghost" onclick="window.print()">چاپکردن (کۆمپیوتەر)</button><button class="btn btn-ghost" onclick="pdfRun(()=>window.print())">📄 PDF</button>
+          <button class="btn btn-primary" onclick="cmtPrettyPrint()">✨ چاپی جوان</button>
           <button class="btn btn-accent" onclick="downloadCommitteesPrintable()">داگرتن بۆ چاپکردن (مۆبایل)</button>
           <button class="btn btn-primary" onclick="exportCommitteesExcel()">ئێکسپۆرتی ئێکسڵ (Excel)</button>
         </div>
@@ -6975,6 +6976,61 @@ function committeeCardHTML(c){
 
 
 function cmtSetMode(v){ window.__cMode=v; renderCommittees(); if(v){ const e=document.getElementById('cmt-create-card'); if(e) setTimeout(()=>e.scrollIntoView({behavior:'smooth'}),50); } }
+/* ---- چاپی جوانی لیژنەکان (هەمان شێوازی تۆماری نمرەی جوان) — بژاردەیەکی زیادە، چاپە ئاساییەکە وەک خۆی ماوەتەوە ---- */
+function cmtPrettyPill(bg,t){ return `<span style="display:inline-block;background:${bg};color:#fff;font-weight:800;font-size:12.5px;padding:2px 11px;border-radius:18px;white-space:nowrap;box-shadow:0 1px 0 rgba(0,0,0,.18);">${t}</span>`; }
+function cmtPrettyDir(){ return String((config.exams||{}).director||'').trim() || ((config.staff||[]).find(x=>/بەڕێوەبەر/.test(x.job||'')&&!/یاریدەدەر/.test(x.job||''))||{}).name || ''; }
+function cmtPrettyHead(pills){ return `${exqBannerHtml()}<div style="height:1.5mm;"></div><div style="display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:5px;margin-bottom:2mm;">${pills.join('')}</div>`; }
+const CMT_TIERS=[{fs:13,tf:13,rh:8,pd:2},{fs:12,tf:12,rh:6.5,pd:1.4},{fs:11,tf:11,rh:5.5,pd:1},{fs:10,tf:10,rh:5,pd:.7}];
+function cmtPrettyTable(heads, widths, rowsHtml, T){
+  const BD='1px solid #6f9aa5';
+  const cg='<colgroup>'+widths.map(w=>`<col style="width:${w}%;">`).join('')+'</colgroup>';
+  const th=heads.map(h=>`<th style="border:${BD};background:#2a9db0;color:#fff;font-size:${T.fs}px;font-weight:800;padding:${T.pd}mm 1mm;text-align:center;">${h}</th>`).join('');
+  return `<div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;"><table style="width:100%;border-collapse:collapse;table-layout:fixed;">${cg}<thead><tr>${th}</tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
+}
+function cmtPrettyRow(cells, i, nameCol, T){
+  const BD='1px solid #6f9aa5';
+  return `<tr style="background:${i%2?'#f1f7f9':'#fff'};">`+cells.map((c,k)=>`<td style="border:${BD};padding:${T.pd}mm 1.5mm;font-size:${T.fs}px;height:${T.rh}mm;text-align:${k===nameCol?'right':'center'};${(k===0||k===nameCol)?'font-weight:700;':''}">${c}</td>`).join('')+'</tr>';
+}
+function cmtPrettySign(T){ return `<div style="margin-top:auto;padding-top:${T.pd*1.5}mm;display:flex;justify-content:flex-end;font-weight:800;text-align:center;font-size:12pt;"><div style="min-width:50mm;"><div style="color:#d93a3a;">بەڕێوەبەر</div><div style="margin-top:1mm;">${escapeHtml(cmtPrettyDir())}</div></div></div>`; }
+function cmtPrettyInner(c, T){
+  const sc=config.school||{}, E=escapeHtml, kd=toKurdishDigits;
+  const members=sortedCommitteeMembers(c), tasks=c.tasks||[], yr=c.year||sc.year||'';
+  const pills=[cmtPrettyPill('#f08a24','لیژنە'),cmtPrettyPill('#2a9db0',E(c.name))].concat(yr?[cmtPrettyPill('#d93a3a','ساڵی خوێندن: '+dh(E(yr)))]:[]);
+  const rows=members.length?members.map((m,i)=>cmtPrettyRow([kd(i+1),E(committeeMemberName(m)),E(committeeMemberJob(m))||'—',E((committeeMemberStaff(m)||{}).specialty||'')||'—',E((committeeMemberStaff(m)||{}).status||'')||'—',E(m.role||''),''],i,1,T)).join(''):'<tr><td colspan="7" style="border:1px solid #6f9aa5;padding:3mm;text-align:center;">—</td></tr>';
+  const desc=c.description?`<div style="text-align:center;font-size:${T.tf}px;font-weight:600;margin:0 0 2mm;">${E(c.description)}</div>`:'';
+  /* ئەرکەکان: دوو ئەرک لە هەر ڕیزێک بۆ ئەوەی لە یەک وەرەقەدا جێ ببێتەوە */
+  const tasksHtml=tasks.length?`<div style="border:1.2px solid #f08a24;border-radius:3mm;padding:${T.pd}mm 4mm ${T.pd*1.2}mm;margin-bottom:${T.pd*1.5}mm;-webkit-print-color-adjust:exact;print-color-adjust:exact;"><div style="text-align:center;margin-bottom:1mm;">${cmtPrettyPill('#f08a24','ئەرکەکانی لیژنە')}</div><div style="display:grid;grid-template-columns:1fr 1fr;column-gap:5mm;row-gap:.6mm;">${tasks.map((t,i)=>`<div style="display:flex;gap:2mm;align-items:flex-start;font-size:${T.tf}px;line-height:1.6;font-weight:600;"><span style="flex:none;width:5.2mm;height:5.2mm;border-radius:50%;background:#2a9db0;color:#fff;font-weight:800;text-align:center;line-height:5.2mm;font-size:${T.tf-1.5}px;margin-top:.6mm;">${kd(i+1)}</span><span style="flex:1;min-width:0;">${E(t.text)}</span></div>`).join('')}</div></div>`:'';
+  return cmtPrettyHead(pills)+desc+tasksHtml+cmtPrettyTable(['ژ','ناو','پیشە','پسپۆڕی','باری فەرمانبەری','ڕۆڵ','واژۆ'],[5,25,13,15,14,11,17],rows,T)+cmtPrettySign(T);
+}
+/* گەورەترین ئاست هەڵدەبژێرێت کە هەموو شتێک لە یەک وەرەقەدا جێ ببێتەوە */
+function cmtPrettyPage(inner, L){ return exqPrettyBox(L, inner, 274, false); }
+function cmtPrettyCommitteeHtml(c, brk){
+  const L={dir:'rtl',al:'right'}; let pick=CMT_TIERS.length-1, html='';
+  for(let k=0;k<CMT_TIERS.length;k++){
+    const inner=cmtPrettyInner(c,CMT_TIERS[k]); const h=exqMeasure([inner],L,176)[0];
+    if(h<=262 || k===CMT_TIERS.length-1){ pick=k; html=inner; if(h>262) pick=-1; break; }
+  }
+  return pick===-1 ? exqPrettyBox(L, html, 0, brk) : exqPrettyBox(L, html, 274, brk);
+}
+function cmtPrettyNamesHtml(){
+  const sc=config.school||{}, E=escapeHtml, kd=toKurdishDigits, L={dir:'rtl',al:'right'}, T=CMT_TIERS[0];
+  const pills=[cmtPrettyPill('#f08a24','لیژنەکانی قوتابخانە')].concat(sc.year?[cmtPrettyPill('#d93a3a','ساڵی خوێندن: '+dh(E(sc.year)))]:[]);
+  const rows=(config.committees||[]).map((c,i)=>cmtPrettyRow([kd(i+1),E(c.name)],i,1,T)).join('');
+  return exqPrettyBox(L, cmtPrettyHead(pills)+cmtPrettyTable(['ژ','ناوی لیژنە'],[10,90],rows,T)+cmtPrettySign(T), 0, false);
+}
+function cmtPrettyNamesPrint(){
+  if(!(config.committees||[]).length){ showAlert('هیچ لیژنەیەک نییە.'); return; }
+  ltrRawPrint(cmtPrettyNamesHtml(), 10, 'portrait', true);
+}
+function cmtPrettyPrint(){
+  const all=config.committees||[];
+  if(!all.length){ showAlert('سەرەتا لیژنەیەک دروست بکە.'); return; }
+  const sel=window.__cPrintSel;
+  if(sel==='__names'){ cmtPrettyNamesPrint(); return; }
+  const list=sel?all.filter(c=>c.id===sel):all;
+  if(!list.length){ showAlert('هیچ لیژنەیەک نییە.'); return; }
+  ltrRawPrint(list.map((c,i)=>cmtPrettyCommitteeHtml(c,i<list.length-1)).join(''), 10, 'portrait', true);
+}
 function cmtNamesPrint(){
   const sc=config.school||{}, E=escapeHtml, kd=toKurdishDigits, B='1px solid #000';
   const rows=(config.committees||[]).map((c,i)=>`<tr><td style="border:${B};padding:2mm;text-align:center;width:14mm;">${kd(i+1)}</td><td style="border:${B};padding:2mm 3mm;">${E(c.name)}</td></tr>`).join('');
@@ -7019,7 +7075,7 @@ function renderCommittees(){
     const cfOpts = '<option value="">هەموو لیژنەکان</option>' + config.committees.map(c=>`<option value="${c.id}" ${c.id===window.__cFilter?'selected':''}>${escapeHtml(c.name)}</option>`).join('');
     const cfRows = config.committees.map((c,i)=>`<tr style="${c.id===window.__cFilter?'background:var(--success-soft);':''}"><td style="padding:5px 8px;border:1px solid var(--rule);text-align:center;width:34px;">${toKurdishDigits(i+1)}</td><td style="padding:5px 8px;border:1px solid var(--rule);cursor:pointer;" onclick="window.__cFilter='${c.id}';renderCommittees()">${escapeHtml(c.name)}</td><td style="padding:5px 6px;border:1px solid var(--rule);white-space:nowrap;"><button class="btn btn-ghost btn-sm" onclick="openEditItem('committee','${c.id}')">✏️</button> <button class="btn btn-danger btn-sm" onclick="removeCommittee('${c.id}')">🗑</button></td></tr>`).join('');
     const cmode=window.__cMode||'';
-    const cfBar = `<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;margin-bottom:12px;"><div style="flex:1 1 240px;display:flex;flex-direction:column;gap:10px;"><div class="field" style="margin:0;"><label class="field-label">فلتەر: پیشاندانی لیژنە</label><select onchange="window.__cFilter=this.value;renderCommittees()">${cfOpts}</select></div><div class="field" style="margin:0;"><label class="field-label">دروستکردنی لیژنەی نوێ</label><select onchange="cmtSetMode(this.value)"><option value="" ${cmode===''?'selected':''}>— هیچ —</option><option value="auto" ${cmode==='auto'?'selected':''}>خۆکار (ئەندام خۆکار هەڵدەبژێردرێن)</option><option value="manual" ${cmode==='manual'?'selected':''}>دەستی (ئەندام خۆم زیاد دەکەم)</option></select></div></div><div class="card" style="flex:0 1 380px;padding:10px 12px;margin:0;"><div style="font-weight:800;font-size:16px;margin-bottom:8px;">لیژنەکان (${toKurdishDigits(config.committees.length)})</div>${config.committees.length?`<table style="width:100%;border-collapse:collapse;font-size:13.5px;"><tbody>${cfRows}</tbody></table>`:'<p class="empty">هیچ لیژنەیەک نییە</p>'}<button type="button" class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%;" onclick="cmtNamesPrint()">🖨️ چاپکردنی ناوی لیژنەکان</button></div></div>`;
+    const cfBar = `<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;margin-bottom:12px;"><div style="flex:1 1 240px;display:flex;flex-direction:column;gap:10px;"><div class="field" style="margin:0;"><label class="field-label">فلتەر: پیشاندانی لیژنە</label><select onchange="window.__cFilter=this.value;renderCommittees()">${cfOpts}</select></div><div class="field" style="margin:0;"><label class="field-label">دروستکردنی لیژنەی نوێ</label><select onchange="cmtSetMode(this.value)"><option value="" ${cmode===''?'selected':''}>— هیچ —</option><option value="auto" ${cmode==='auto'?'selected':''}>خۆکار (ئەندام خۆکار هەڵدەبژێردرێن)</option><option value="manual" ${cmode==='manual'?'selected':''}>دەستی (ئەندام خۆم زیاد دەکەم)</option></select></div></div><div class="card" style="flex:0 1 380px;padding:10px 12px;margin:0;"><div style="font-weight:800;font-size:16px;margin-bottom:8px;">لیژنەکان (${toKurdishDigits(config.committees.length)})</div>${config.committees.length?`<table style="width:100%;border-collapse:collapse;font-size:13.5px;"><tbody>${cfRows}</tbody></table>`:'<p class="empty">هیچ لیژنەیەک نییە</p>'}<button type="button" class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%;" onclick="cmtNamesPrint()">🖨️ چاپکردنی ناوی لیژنەکان</button><button type="button" class="btn btn-primary btn-sm" style="margin-top:6px;width:100%;" onclick="cmtPrettyNamesPrint()">✨ چاپی جوانی ناوی لیژنەکان</button></div></div>`;
     const topEl=document.getElementById('committees-top'); if(topEl) topEl.innerHTML=cfBar;
     const nc=document.getElementById('cmt-names-card'); if(nc) nc.style.display=cmode?'':'none'; const cc=document.getElementById('cmt-create-card'); if(cc){ cc.style.display=cmode?'':'none'; const ca=document.getElementById('committee-auto'); if(ca){ ca.checked=(cmode==='auto'); toggleCommitteeAuto(ca.checked); } const lab=ca&&ca.closest('label'); if(lab) lab.style.display='none'; }
     el.innerHTML = config.committees.length
@@ -10633,7 +10689,17 @@ function cardSheetHtml(o){
   const B='1px solid #000', n=o.subs.length, rh=n>13?4.8:(n>10?5.4:6.2), many=cols.length>12, fsz=many?11.5:12.5;
   const cell=`border:${B};padding:0 1px;text-align:center;font-size:${fsz}px;height:${rh}mm;line-height:1.1;`;
   const cnt=g=>cols.filter(x=>x[4]===g).length, hasKh=!!sel.kh;
-  const vth=(x,rs)=>`<th ${rs?`rowspan="${rs}" `:''}style="border:${B};background:${x[2]};padding:0;"><div style="writing-mode:vertical-rl;transform:rotate(180deg);margin:0 auto;height:${hasKh?'26':'30'}mm;font-size:${many?10:11}px;font-weight:800;line-height:1.1;">${x[0]}</div></th>`;
+  const baseFs=many?11:12, VHpx=132, colPx=W*3.7795*wcol/100-4;
+  const cvx=(grgPrettySheet._cv||(grgPrettySheet._cv=document.createElement('canvas').getContext('2d')));
+  const tw1=t=>{ cvx.font='700 100px '+GRG_LBL_FONT; return cvx.measureText(t).width/100*1.08; }; /* پانی نووسین بە فۆنتی ڕاستەقینە، بۆ قەبارەی ١ پیکسڵ */
+  const lblHtml=t=>{ const ws=String(t).split(' ').filter(Boolean), one=ws.join(' ');
+    let best={ fs:Math.min(baseFs,VHpx/Math.max(tw1(one),.01)), html:E(one) };
+    if(best.fs<baseFs-0.01 && ws.length>1){
+      for(let i=1;i<ws.length;i++){ const x=ws.slice(0,i).join(' '), y=ws.slice(i).join(' '), fs=Math.min(baseFs,VHpx/Math.max(tw1(x),tw1(y),.01),colPx/2.25);
+        if(fs>best.fs) best={ fs, html:E(x)+'<br>'+E(y) }; }
+    }
+    return { fs:Math.max(6.5,Math.floor(best.fs*10)/10), html:best.html }; };
+  const vth=(x,rs)=>{ const lb=lblHtml(x[0]); return `<th ${rs?'rowspan="2" ':''}style="border:${BD};background:${rs?pal(x[3])[0]:(x[2]?pal(x[3])[2]:pal(x[3])[1])};color:${rs?'#fff':'#1c2b33'};padding:1px 0;text-align:center;"><div style="writing-mode:vertical-rl;transform:rotate(180deg);margin:0 auto;height:38mm;text-align:center;font-family:${GRG_LBL_FONT};font-size:${lb.fs}px;font-weight:700;line-height:1.15;white-space:nowrap;overflow:hidden;">${lb.html}</div></th>`; };
   const grp=(t,k,col,fs)=>`<th colspan="${k}" style="border:${B};background:${col};font-size:${fs||13}px;font-weight:900;padding:1px;">${t}</th>`;
   const bg='#ff9d6e', hr=hasKh?3:2;
   let h1='', h2='', h3='';
@@ -10954,6 +11020,92 @@ async function gimDo(){
   }
   gim.busy=false; gimClose(); renderAdmGrades();
   showAlert('هێنرا: '+toKurdishDigits(okS)+' بابەت'+(sk.length?'\nنەهێنرا (مامۆستا دیاری نەکراوە یان ئینتەرنێت): '+sk.join('، '):'')+(skipV?'\nنمرەی لە سنوور زیاتر نەهێنران: '+toKurdishDigits(skipV):''));
+}
+/* ---- ڕاپۆرتی جوانی تۆماری نمرە (بەتاڵ / پڕکراو): سەرپەڕەی کورت، ڕیز نابڕدرێت، سەرپەڕە لە هەر لاپەڕەیەک دووبارە دەبێتەوە ---- */
+const GRG_LBL_FONT = "'Noto Naskh Arabic','Segoe UI',Tahoma,Arial,sans-serif";
+const GRG_PAL = { t1:['#3f7fc4','#dbe9f8','#b3d0ef'], t2:['#f08a24','#fee9d2','#f9cd9a'], kh:['#d9a406','#fcf2c4','#f5de80'], r2:['#d93a3a','#fadcdc','#f1b0b0'] };
+function grgPrettyCols(H, ex){
+  const TM=2*H+GDR_TN+GDR_TKW, SM=2*H, KM=SM+80;
+  const TN='ئەنجامی وەرزی ';
+  const T=g=>[['هەڵسەنگاندنی یەکەم',H,0,g],['تاقیکردنەوەی نووسینەکی',GDR_TN,0,g],['هەڵسەنگاندنی دووەم',H,0,g],['تاقیکردنەوەی کۆتایی وەرز',GDR_TKW,0,g],[TN+(g==='t1'?'یەکەم':'دووەم'),TM,1,g]];
+  return ex ? [['تاقیکردنەوەی کۆتایی وەرز',GDR_TKW,0,'t1'],[TN+'یەکەم',100,1,'t1'],['تاقیکردنەوەی کۆتایی وەرز',GDR_TKW,0,'t2'],[TN+'دووەم',100,1,'t2'],['ئەنجامی خولی یەکەم',100,1,'kh'],
+      ['تاقیکردنەوەی وەرزی یەکەم',80,0,'r2'],[TN+'یەکەم',100,1,'r2'],['تاقیکردنەوەی وەرزی دووەم',80,0,'r2'],[TN+'دووەم',100,1,'r2'],['ئەنجامی کۆتایی',100,1,'r2']]
+    : [].concat(T('t1'),T('t2'),[['ئەنجامی خولی یەکەم',TM,1,'kh']],
+      [['هەڵسەنگاندنی وەرزی یەکەم',SM,0,'r2'],['تاقیکردنەوەی وەرزی یەکەم',80,0,'r2'],[TN+'یەکەم',KM,1,'r2'],
+       ['هەڵسەنگاندنی وەرزی دووەم',SM,0,'r2'],['تاقیکردنەوەی وەرزی دووەم',80,0,'r2'],[TN+'دووەم',KM,1,'r2'],
+       ['ئەنجامی کۆتایی',KM,1,'r2']]);
+}
+function grgPrettySheet(o, brk){
+  const E=escapeHtml, kd=toKurdishDigits, L={dir:'rtl',al:'right'}, W=176, CAP=262, MORE=7;
+  const H=o.H||10, filled=o.filled, sel=o.sel, rows=o.rows, ex=!!o.ext;
+  const all=grgPrettyCols(H,ex), idx=[]; all.forEach((x,j)=>{ if(sel[x[3]]) idx.push(j); });
+  const cols=idx.map(j=>all[j]), many=cols.length>12;
+  const namePct=many?31:(cols.length>6?34:40), numPct=4.5, wcol=(100-numPct-namePct)/Math.max(cols.length,1);
+  const cg=`<colgroup><col style="width:${numPct}%;"><col style="width:${namePct}%;">${cols.map(()=>`<col style="width:${wcol}%;">`).join('')}</colgroup>`;
+  const tb=inner=>`<table style="width:100%;border-collapse:collapse;table-layout:fixed;">${cg}${inner}</table>`;
+  const BD='1px solid #6f9aa5', FS=13, RH='5.3mm';
+  const pal=g=>GRG_PAL[g];
+  /* ناونیشانی ستوونەکان: قەبارەی نووسین بەپێی بەرزی و پانی خانە دەگونجێت، ئەگەر نەگونجا دەبێتە دوو دێڕ (هەمیشە لەناو خانەکەدا) */
+  const lbBase=many?10:11, lbVH=41*3.7795-10, lbColPx=W*3.7795*wcol/100-5;
+  const lbCache={};
+  const lbFits=(html,fs)=>{ const w=document.createElement('div'); w.style.cssText='position:absolute;left:-9999px;top:0;visibility:hidden;width:'+lbColPx+'px;';
+    const d=document.createElement('div'); d.style.cssText='writing-mode:vertical-rl;transform:rotate(180deg);margin:0 auto;height:41mm;text-align:center;font-family:'+GRG_LBL_FONT+';font-size:'+fs+'px;font-weight:700;line-height:1.15;white-space:nowrap;overflow:hidden;';
+    d.innerHTML=html; w.appendChild(d); document.body.appendChild(w);
+    const ok=d.scrollHeight<=d.clientHeight+0.5 && d.offsetWidth<=lbColPx+0.5; w.remove(); return ok; };
+  const lbBest=html=>{ let lo=5, hi=lbBase; if(!lbFits(html,lo)) return 0; for(let k=0;k<8;k++){ const m=(lo+hi)/2; if(lbFits(html,m)) lo=m; else hi=m; } return Math.floor(lo*10)/10; };
+  const lbl=t=>{ if(lbCache[t]) return lbCache[t]; const ws=String(t).split(' ').filter(Boolean), one=ws.join(' ');
+    let best={ fs:lbBest(E(one)), html:E(one) };
+    for(let i=1;i<ws.length;i++){ const h=E(ws.slice(0,i).join(' '))+'<br>'+E(ws.slice(i).join(' ')), fs=lbBest(h); if(fs>best.fs) best={ fs, html:h }; }
+    if(best.fs<=0) best.fs=5;
+    return (lbCache[t]=best); };
+  const gth=(t,n,g)=>`<th colspan="${n}" style="border:${BD};background:${pal(g)[0]};color:#fff;font-size:14px;font-weight:900;padding:2px;text-align:center;">${t}</th>`;
+  const vth=(x,rs)=>{ const lb=lbl(x[0]); return `<th ${rs?'rowspan="2" ':''}style="border:${BD};background:${rs?pal(x[3])[0]:(x[2]?pal(x[3])[2]:pal(x[3])[1])};color:${rs?'#fff':'#1c2b33'};padding:1px 0;text-align:center;"><div style="writing-mode:vertical-rl;transform:rotate(180deg);margin:0 auto;height:41mm;text-align:center;font-family:${GRG_LBL_FONT};font-size:${lb.fs}px;font-weight:700;line-height:1.15;white-space:nowrap;overflow:hidden;">${lb.html}</div></th>`; };
+  const g1=[]; if(sel.t1) g1.push(gth('وەرزی یەکەم',ex?2:5,'t1')); if(sel.t2) g1.push(gth('وەرزی دووەم',ex?2:5,'t2')); if(sel.kh) g1.push(vth(all.find(x=>x[3]==='kh'),1)); if(sel.r2) g1.push(gth('خولی دووەم',ex?5:7,'r2'));
+  const base=`border:${BD};padding:0 2px;text-align:center;font-size:${FS}px;height:${RH};`;
+  const thead=`<thead>
+    <tr><th rowspan="2" style="border:${BD};background:#2a9db0;color:#fff;font-size:12.5px;font-weight:800;text-align:center;">ز</th><th rowspan="2" style="border:${BD};background:#2a9db0;color:#fff;font-size:14px;font-weight:800;text-align:center;">ناوی چواری</th>${g1.join('')}</tr>
+    <tr>${cols.map(x=>x[3]==='kh'?'':vth(x)).join('')}</tr>
+    <tr><td style="${base}background:#e8f3f5;"></td><td style="${base}background:#e8f3f5;font-weight:800;text-align:right;padding-right:6px;">نمرەی تەواو</td>${cols.map(x=>`<td style="${base}background:${x[2]?pal(x[3])[2]:pal(x[3])[1]};font-weight:800;">${kd(x[1])}</td>`).join('')}</tr></thead>`;
+  const rowH=(r,i)=>`<tr style="background:${i%2?'#f1f7f9':'#fff'};"><td style="${base}font-weight:700;">${kd(i+1)}</td><td style="${base}text-align:right;padding:0 5px;font-weight:700;white-space:nowrap;overflow:hidden;font-size:${String(r.name).length>34?11:(String(r.name).length>27?12:13.5)}px;">${E(r.name)}</td>${idx.map((j,k)=>{ const x=filled?r.v[j]:null; const isR=cols[k][2]; return `<td style="${base}${isR?'font-weight:800;background:'+pal(cols[k][3])[1]+';':''}">${x===null||x===undefined?'':kd(x)+((r.fl&&r.fl[j])?' <span style="font-size:7px;font-weight:700;">'+(r.fl[j]==='p'?'بەپەڕینەوە':'بڕیار')+'</span>':'')}</td>`; }).join('')}</tr>`;
+  const vals=j=>rows.map(r=>r.v[j]).filter(x=>x!==null&&x!==undefined), okN=(j,x)=>rows.filter(r=>{ const n=r.v[j]; return n!==null&&n!==undefined&&(n>=x[1]/2||(r.fl&&r.fl[j]==='p')); }).length;
+  const stat=(label,fn)=>`<tr><td colspan="2" style="${base}height:5mm;background:#2a9db0;color:#fff;font-weight:800;text-align:right;padding-right:8px;">${label}</td>${cols.map((x,k)=>`<td style="${base}height:5mm;background:${x[2]?pal(x[3])[2]:'#e8f3f5'};font-weight:800;">${(x[2]&&filled)?fn(idx[k],x):''}</td>`).join('')}</tr>`;
+  const stats=stat('ژمارەی خوێندکاران',j=>kd(vals(j).length))+stat('ژمارەی خوێندکارانی دەرچوو',(j,x)=>kd(okN(j,x)))+stat('ژمارەی خوێندکارانی کەوتوو',(j,x)=>kd(vals(j).length-okN(j,x)))+stat('ڕێژەی سەدی دەرچوون',(j,x)=>vals(j).length?kd(Math.round(okN(j,x)/vals(j).length*100))+'%':'%');
+  const pill=(bg,t)=>`<span style="display:inline-block;background:${bg};color:#fff;font-weight:800;font-size:12.5px;padding:2px 11px;border-radius:18px;white-space:nowrap;box-shadow:0 1px 0 rgba(0,0,0,.18);">${t}</span>`;
+  const sc=config.school||{};
+  const dirName=String((config.exams||{}).director||'').trim() || ((config.staff||[]).find(x=>/بەڕێوەبەر/.test(x.job||'')&&!/یاریدەدەر/.test(x.job||''))||{}).name || '';
+  const pills=[pill('#f08a24','تۆماری نمرەکان'),pill('#2a9db0','پۆل: '+E(classGrade(o.cls)))].concat(ex?[pill('#5aae3f','جۆر: دەرەکی')]:[pill('#5aae3f','لق: '+E(classSection(o.cls)||''))]).concat([pill('#7d6bb8','بابەت: '+E(o.subj.name)),pill('#d93a3a','ساڵی خوێندن: '+dh(E(sc.year||'')))]);
+  const head=`${exqBannerHtml()}<div style="height:1.5mm;"></div><div style="display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:5px;margin-bottom:1.5mm;">${pills.join('')}</div>`;
+  const sign=`<div style="margin-top:auto;padding-top:2mm;display:flex;justify-content:space-between;gap:10px;font-weight:800;text-align:center;font-size:12pt;"><div style="min-width:46mm;"><div style="color:#d93a3a;">مامۆستای وانە</div><div style="margin-top:1mm;">${E(o.teacherName||'')}</div></div><div style="min-width:46mm;"><div style="color:#d93a3a;">بەڕێوەبەر</div><div style="margin-top:1mm;">${E(dirName)}</div></div></div>`;
+  const data=rows.length?rows:[{name:'',v:[],fl:{}}];
+  const m=exqMeasure([head,tb(thead),sign,tb(stats)].concat(data.map((r,i)=>tb(rowH(r,i)))),L,W);
+  const hH=m[0], tH=m[1], sH=m[2], stH=m[3], rh=m.slice(4);
+  const pages=[]; let cur=[], used=0; const avail=CAP-MORE-hH-tH;
+  data.forEach((r,i)=>{ if(cur.length && used+rh[i]>avail){ pages.push(cur); cur=[]; used=0; } cur.push(i); used+=rh[i]; });
+  pages.push(cur);
+  if(used+stH+sH+3>avail) pages.push([]);
+  return pages.map((ix,pi)=>{
+    const last=pi===pages.length-1;
+    const body=tb(thead+`<tbody>${ix.map(i=>rowH(data[i],i)).join('')}${last?stats:''}</tbody>`);
+    const foot=last?sign:`<div style="margin-top:auto;text-align:center;font-size:8.5pt;font-weight:600;">ماوەتی ...</div>`;
+    return exqPrettyBox(L,head+body+foot,274,!last||!!brk);
+  }).join('');
+}
+async function grgPrettyPrint(filled){
+  try{
+    if(!document.getElementById('grg-font')){ await new Promise(res=>{ const lk=document.createElement('link'); lk.id='grg-font'; lk.rel='stylesheet'; lk.href='https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@600;700&display=swap'; lk.onload=res; lk.onerror=res; document.head.appendChild(lk); setTimeout(res,3000); }); }
+    await Promise.race([document.fonts.load('700 14px "Noto Naskh Arabic"'), new Promise(r=>setTimeout(r,2500))]);
+  }catch(e){}
+  const R=agr.reg; if(!R.cid){ showAlert('پۆل هەڵبژێرە.'); return; }
+  const c=regCls(R.cid), is12=gdrIs12(R.cid), ext=regIsExt(R.cid);
+  if(R.group==='r2'&&is12){ showAlert('پۆلی ١٢ خولی دووەمی نییە.'); return; }
+  const sel=R.group==='all'?{t1:1,t2:1,kh:1,r2:!is12}:(R.group==='r2'?{r2:1}:{[R.group]:1});
+  const sids=R.sid?[R.sid]:regSubjectIds(R.cid);
+  if(!sids.length){ showAlert('بۆ ئەم پۆلە هیچ بابەتێک دابەش نەکراوە.'); return; }
+  const html=sids.map((sid,si)=>{
+    const sb=(config.subjects||[]).find(x=>x.id===sid)||{name:''}, a=regAsg(R.cid,sid), tn=a?(config.teachers||[]).find(t=>t.id===a.teacherId):null;
+    return grgPrettySheet({ cls:c, subj:sb, teacherName:tn?tn.name:'', rows:regRowsGrp(R.cid,sid,R.group).map(r=>({name:r.name,v:r.v,fl:r.fl||{}})), filled, sel, H:regH(R.cid,sid), ext }, si<sids.length-1);
+  }).join('');
+  ltrRawPrint(html,10,'portrait',true);
 }
 function grgPrint(filled){
   const R=agr.reg; if(!R.cid){ showAlert('پۆل هەڵبژێرە.'); return; }
@@ -11306,7 +11458,7 @@ function renderAdmReg(el){
     <div class="field" style="min-width:170px;"><label class="field-label">وەرز / خول</label><select onchange="regSet('group',this.value)">${groups.map(g=>`<option value="${g[0]}" ${g[0]===R.group?'selected':''}>${g[1]}</option>`).join('')}</select></div>
     <button class="btn btn-ghost" onclick="agrLoad()">🔄 نوێکردنەوە</button>
     <button class="btn btn-primary" onclick="gimOpen()">📥 هێنانی نمرە لە ئێکسڵ</button>
-    <button class="btn btn-primary" onclick="grgPrint(true)">🖨️ ڕاپۆرتی پڕکراو</button><button class="btn btn-ghost" onclick="grgPrint(false)">🖨️ ڕاپۆرتی بەتاڵ</button><button class="btn btn-ghost" onclick="covAdmPrint()">📕 بەرگی تۆمار</button>
+    <button class="btn btn-primary" onclick="grgPrint(true)">🖨️ ڕاپۆرتی پڕکراو</button><button class="btn btn-ghost" onclick="grgPrint(false)">🖨️ ڕاپۆرتی بەتاڵ</button><button class="btn btn-primary" style="background:#2a9db0;" onclick="grgPrettyPrint(true)">✨ ڕاپۆرتی جوان پڕکراوە</button><button class="btn btn-ghost" onclick="grgPrettyPrint(false)">✨ ڕاپۆرتی جوان بەتاڵ</button><button class="btn btn-ghost" onclick="covAdmPrint()">📕 بەرگی تۆمار</button>
     <button class="btn btn-ghost" onclick="regCoverPrint('cls')">🎨 بەرگی تۆماری نمرە</button><button class="btn btn-ghost" onclick="regCoverPrint('all')">🎨 بەرگ بۆ هەموو پۆل و بابەتەکان</button>
     <button class="btn btn-primary" onclick="pctPrint(true)">📊 ڕێژەی سەدی (پڕکراو)</button><button class="btn btn-ghost" onclick="pctPrint(false)">📊 ڕێژەی سەدی (بەتاڵ)</button>
     <button class="btn btn-ghost" onclick="regNotesPrint()">📄 تێبینییەکانی تۆمار</button></div>
