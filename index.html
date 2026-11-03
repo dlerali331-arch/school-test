@@ -310,6 +310,11 @@
   .radio-row label{display:flex;align-items:center;gap:6px;font-size:13.5px;cursor:pointer;}
 
   footer.info{text-align:center;color:var(--ink-soft);font-size:12px;padding:14px;}
+  /* پشتەی سپی بۆ خشتەی وانەکانم و خشتەی تاقیکردنەوەکان */
+  #mytimetable-body, #examtable-body, #myextable-body{background:#fff;color:#1a1a1a;border-radius:12px;padding:10px;}
+  #mytimetable-body select, #mytimetable-body input, #examtable-body select, #examtable-body input, #myextable-body select, #myextable-body input{background:#fff;color:#1a1a1a;}
+  #mytimetable-body .card, #examtable-body .card, #myextable-body .card{background:#fff;}
+  #mytimetable-body td.empty-cell, #examtable-body td.empty-cell, #myextable-body td.empty-cell{background:#fff;}
 
   @media print{
     @page{ size: landscape; margin: 8mm; }
@@ -538,7 +543,7 @@
       <h2 class="section-title">بەخێرهاتن</h2>
       <p class="section-hint">دیمەنی گشتی هەموو پۆلەکان پێکەوە، ئامادە بۆ چاپکردن.</p>
       <div class="row form no-print">
-        <button class="btn btn-ghost" onclick="window.print()">چاپکردن (کۆمپیوتەر)</button><button class="btn btn-ghost" onclick="pdfRun(()=>window.print())">📄 PDF</button>
+        <span class="no-print" style="display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap;margin-inline-end:8px;"><select id="ov-paper" onchange="ttPrefSave('ov')" title="کاغەز"><option value="A4">A4</option><option value="A3">A3</option></select><select id="ov-ori" onchange="ttPrefSave('ov')" title="ئاراستە"><option value="landscape">لاندسکەیپ (پان)</option><option value="portrait">پۆرترەیت (ستوونی)</option></select><label style="display:inline-flex;gap:4px;align-items:center;font-weight:700;"><input type="checkbox" id="ov-bold" checked onchange="ttPrefSave('ov')"> نووسینی تۆخ</label></span><button class="btn btn-ghost" onclick="ttPrint('ov')">چاپکردن (کۆمپیوتەر)</button><button class="btn btn-ghost" onclick="pdfRun(()=>ttPrint('ov'))">📄 PDF</button>
         <button class="btn btn-accent" onclick="downloadAsPrintableHTML('overview-print-area','خشتەی هەموو پۆلەکان','xshtay-hemu-polakan.html', false)">داگرتن بۆ چاپکردن (مۆبایل)</button>
         <button class="btn btn-accent" onclick="exportExcelReport()">ئێکسپۆرت بۆ ئێکسڵ (Excel)</button>
       </div>
@@ -914,7 +919,7 @@
       <div class="row form" id="timetable-select-row">
         <select id="timetable-select" class="grow" onchange="renderTimetableGrid()"></select>
         <select id="timetable-day-select" style="display:none;" onchange="renderTimetableGrid()"></select>
-        <button class="btn btn-ghost btn-sm no-print" onclick="window.print()">چاپکردن (کۆمپیوتەر)</button><button class="btn btn-ghost btn-sm no-print" onclick="pdfRun(()=>window.print())">📄 PDF</button>
+        <span class="no-print" style="display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap;margin-inline-end:8px;"><select id="tt-paper" onchange="ttPrefSave('tt')" title="کاغەز"><option value="A4">A4</option><option value="A3">A3</option></select><select id="tt-ori" onchange="ttPrefSave('tt')" title="ئاراستە"><option value="landscape">لاندسکەیپ (پان)</option><option value="portrait">پۆرترەیت (ستوونی)</option></select><label style="display:inline-flex;gap:4px;align-items:center;font-weight:700;"><input type="checkbox" id="tt-bold" checked onchange="ttPrefSave('tt')"> نووسینی تۆخ</label></span><button class="btn btn-ghost btn-sm no-print" onclick="ttPrint('tt')">چاپکردن (کۆمپیوتەر)</button><button class="btn btn-ghost btn-sm no-print" onclick="pdfRun(()=>ttPrint('tt'))">📄 PDF</button>
         <button class="btn btn-accent btn-sm no-print" onclick="downloadTimetableAsPrintableHTML()">داگرتن بۆ چاپکردن</button>
         <button class="btn btn-whatsapp btn-sm no-print" id="whatsapp-btn" style="display:none" onclick="sendTeacherWhatsapp()">ناردن بە واتسئەپ</button>
       </div>
@@ -1517,11 +1522,10 @@ function buildTeacherView(t){
       const studs=(config.students||[]).filter(x=>x.classId===c.id).slice().sort((x,y)=>String(x.name).localeCompare(String(y.name),'ckb'));
       days.forEach(d=>{
         if(!((sched[d.id]||{})[classGrade(c)]||[]).includes(sb.id)) return;
-        const items=[]; studs.forEach(st=>{ const r=abs[st.id+'__'+d.id+'__'+sb.id]; if(r&&r.absent) items.push({ name:st.name, kind:r.kind||'', note:r.note||'' }); });
-        if(items.length) myAbsent.push({ date:d.date, cls:c.name, subj:sb.name, items });
+        studs.forEach(st=>{ const r=abs[st.id+'__'+d.id+'__'+sb.id]; if(r&&r.absent) myAbsent.push({ date:d.date, exam:examDayExamName(d), grade:classGrade(c), section:classSection(c)||'', subj:sb.name, name:st.name, code:String(st.code||''), sector:(Number.isInteger(st.sector)?(EXAM_SECTOR_NAMES[st.sector]||''):''), kind:r.kind||'', note:r.note||'', time:r.time||'' }); });
       });
     });
-    myAbsent.sort((a,b)=>a.date<b.date?-1:(a.date>b.date?1:0));
+    myAbsent.sort((a,b)=>a.date<b.date?-1:(a.date>b.date?1:(String(a.grade).localeCompare(String(b.grade),'ckb')||String(a.section||'').localeCompare(String(b.section||''),'ckb')||String(a.name).localeCompare(String(b.name),'ckb'))));
   });
   const st = config.settings||{};
   let myDisc = { on:false };
@@ -1661,6 +1665,7 @@ function applyLoadedConfig(loaded){
   config.warnNotes = (loaded.warnNotes && typeof loaded.warnNotes==='object' && !Array.isArray(loaded.warnNotes)) ? loaded.warnNotes : {};
   if(loaded.myExamTable && typeof loaded.myExamTable==='object') config.myExamTable = loaded.myExamTable; else delete config.myExamTable;
   if(loaded.mySectorView && typeof loaded.mySectorView==='object') config.mySectorView = loaded.mySectorView; else delete config.mySectorView;
+  config.myAbsent = Array.isArray(loaded.myAbsent) ? loaded.myAbsent : [];
   config.notices = Array.isArray(loaded.notices) ? loaded.notices : [];
   config.stLeaves = Array.isArray(loaded.stLeaves) ? loaded.stLeaves : [];
   config.letters = Array.isArray(loaded.letters) ? loaded.letters : [];
@@ -2598,10 +2603,12 @@ function renderDelegReg(){
       <div class="row" style="gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:10px;">
         <div class="field" style="min-width:150px;"><label class="field-label">لە بەرواری</label><input type="date" value="${dgS.d1}" onchange="dgS.d1=this.value;renderDelegReg()"></div>
         <div class="field" style="min-width:150px;"><label class="field-label">تا بەرواری</label><input type="date" value="${dgS.d2}" onchange="dgS.d2=this.value;renderDelegReg()"></div>
-        <button class="btn btn-ghost" onclick="dgPrint(false)">🖨️ چاپی تۆمار (پڕکراوە)</button><button class="btn btn-ghost" onclick="dgPrint(true)">📄 چاپی تۆماری بەتاڵ</button><button class="btn btn-ghost" onclick="dgCover()">📕 بەرگی تۆمار</button></div>
+        <div class="field" style="min-width:130px;"><label class="field-label">ئاراستەی تۆمار</label><select id="dg-ori" onchange="dgOri.reg=this.value"><option value="landscape" ${dgOri.reg==='landscape'?'selected':''}>لاندسکەیپ (پان)</option><option value="portrait" ${dgOri.reg==='portrait'?'selected':''}>پۆرترەیت (ستوونی)</option></select></div><button class="btn btn-ghost" onclick="dgPrint(false)">🖨️ چاپی تۆمار (پڕکراوە)</button><button class="btn btn-ghost" onclick="dgPrint(true)">📄 چاپی تۆماری بەتاڵ</button>
+        <div class="field" style="min-width:130px;"><label class="field-label">ئاراستەی بەرگ</label><select id="dg-cov-ori" onchange="dgOri.cov=this.value"><option value="portrait" ${dgOri.cov==='portrait'?'selected':''}>پۆرترەیت (ستوونی)</option><option value="landscape" ${dgOri.cov==='landscape'?'selected':''}>لاندسکەیپ (پان)</option></select></div><button class="btn btn-ghost" onclick="dgCover()">📕 بەرگی تۆمار</button></div>
       ${(()=>{ const L = dgFiltered(); return L.length?`<div style="overflow-x:auto;"><table class="ltr-t" style="min-width:680px;"><thead><tr><th>ز</th><th>بەروار</th><th>کات</th><th>ڕاسپێردراو</th><th>هۆکار</th><th></th></tr></thead><tbody>${L.map((x,i)=>`<tr><td class="c">${toKurdishDigits(L.length-i)}</td><td class="c">${d(x.date)}${x.dateTo?' — '+d(x.dateTo):''}</td><td class="c">${x.kind==='hrs'?toKurdishDigits(x.tFrom)+' — '+toKurdishDigits(x.tTo):'هەموو ڕۆژ'}</td><td class="c"><b>${E(x.toName)}</b>${x.toJob?'<br>'+E(x.toJob):''}</td><td>${E(x.reason)}${x.note?'<br><span style="color:#666;">'+E(x.note)+'</span>':''}</td><td class="c" style="white-space:nowrap;"><button class="btn btn-ghost btn-sm" onclick="dgEdit('${x.id}')">✏️</button> <button class="btn btn-ghost btn-sm" onclick="dgDel('${x.id}')">🗑️</button></td></tr>`).join('')}</tbody></table></div><p class="section-hint">${toKurdishDigits(L.length)} تۆمار</p>`:'<p class="empty">هیچ ڕاسپاردنێک تۆمار نەکراوە.</p>'; })()}
     </div>`;
 }
+const dgOri = { reg:'landscape', cov:'portrait' };
 function dgPrintHtml(blank){
   const sc = config.school||{}, E = escapeHtml, GRN = '#1f7a3a', dir = dgDir();
   const gen = sc.letterGen || 'بەڕێوەبەرایەتی گشتی پەروەردەی سلێمانی'; let dr = sc.directorate || 'پەروەردەی ڕۆژهەڵات'; if(!/^بەڕێوەبەر/.test(dr)) dr = 'بەڕێوەبەرایەتی ' + dr;
@@ -2609,7 +2616,7 @@ function dgPrintHtml(blank){
   const td = 'border:1px solid #222;padding:0 1.5mm;height:13mm;font-size:11pt;text-align:center;';
   const d = x=>x?dh(fmtSlash(x)):'';
   const list = blank ? [] : dgFiltered().slice().reverse();
-  const N = blank ? 8 : list.length;
+  const portrait = dgOri.reg==='portrait', N = blank ? (portrait?14:8) : list.length;
   if(!blank && !list.length){ showAlert('هیچ تۆمارێک نییە بۆ چاپکردن.'); return ''; }
   const dname = dir.name ? '<b>'+E(dir.name)+'</b><br>'+E(dir.job) : 'بەڕێوەبەر';
   const rows = Array.from({length:N},(_,i)=>{ const x = list[i]; const dn = x ? '<b>'+E(x.dirName||dir.name)+'</b><br>'+E(x.dirJob||dir.job) : dname;
@@ -2618,10 +2625,10 @@ function dgPrintHtml(blank){
     <div style="text-align:center;font-weight:800;font-size:12pt;line-height:1.45;">${E(gen)}<br>${E(dr)}</div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin:1mm 0;"><img alt="" src="${LETTER_MINIS_LOGO}" style="height:13mm;"><div style="text-align:center;"><img alt="" src="${LEAVE_LOGO}" style="height:13mm;"><div style="font-weight:900;font-size:12pt;">${E(sc.name||'')}</div></div><img alt="" src="${LETTER_KRG_LOGO}" style="height:13mm;"></div>
     <div style="text-align:center;margin:1mm 0 3mm;"><span style="display:inline-block;background:${GRN};color:#fff;border-radius:3mm;padding:1.2mm 10mm;font-weight:900;font-size:15pt;">تۆماری ڕاسپاردن</span>${sc.year?`<div style="font-weight:700;font-size:11pt;margin-top:1mm;">ساڵی خوێندن: ${dh(E(sc.year))}</div>`:''}</div>
-    <table style="width:100%;border-collapse:collapse;"><thead><tr><th style="${th}">ز</th><th style="${th}">ناو و پیشەی ڕاسپێرەر</th><th style="${th}">ناوی ڕاسپێردراو</th><th style="${th}">پیشە</th><th style="${th}">بەروار</th><th style="${th}">کات</th><th style="${th}">هۆکار / شوێنی چوون</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    <table style="width:100%;border-collapse:collapse;"><thead><tr><th style="${th}">ز</th><th style="${th}">ناو و پیشەی ڕاسپێرەر</th><th style="${th}">ناوی ڕاسپێردراو</th><th style="${th}">پیشە</th><th style="${th}">بەروار</th><th style="${th}">کات</th><th style="${th}">هۆکار / شوێنی چوون</th></tr></thead><tbody>${portrait?rows.replace(/width:(\d+)mm/g,(m,w)=>'width:'+Math.round(w*0.78)+'mm'):rows}</tbody></table></div>`;
 }
-function dgPrint(blank){ const h = dgPrintHtml(blank); if(h) ltrRawPrint(h, 8, 'landscape', true); }
-function dgCover(){ ltrCoverPrint(['تۆماری','ڕاسپاردن']); }
+function dgPrint(blank){ const h = dgPrintHtml(blank); if(h) ltrRawPrint(h, 8, dgOri.reg==='portrait'?'portrait':'landscape', true); }
+function dgCover(){ ltrCoverPrint(['تۆماری','ڕاسپاردن'], dgOri.cov); }
 
 /* ================= قوتابیانی دابڕاو (بەڕێوەبەر): تۆمار، پۆل و لق (خۆکار یان بە دەست)، تێبینی، چاپی پڕکراوە و بەتاڵ، بەرگ ================= */
 const dpS = { editId:'', pg:'', ps:'', f:{ name:'', grade:'', section:'', note:'', date:'' } };
@@ -3566,7 +3573,8 @@ function ltrBlankPrint(){
     <table style="width:100%;border-collapse:collapse;table-layout:fixed;"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`, '2mm 8mm 2mm 2mm', wide?'landscape':'portrait');
 }
 /* ---- بەرگی تۆمار (هاتوو / ڕۆشتوو) ---- */
-function ltrCoverPrint(tt){
+function ltrCoverPrint(tt, orient){
+  const LAND = orient==='landscape';
   const K = ltrKind(), sc = config.school||{}, E = escapeHtml;
   const gen = sc.letterGen || 'بەڕێوەبەرایەتی گشتی پەروەردەی سلێمانی';
   let dir = sc.directorate || 'پەروەردەی ڕۆژهەڵات'; if(!/^بەڕێوەبەر/.test(dir)) dir = 'بەڕێوەبەرایەتی ' + dir;
@@ -3578,12 +3586,12 @@ function ltrCoverPrint(tt){
   const html = `<div dir="rtl" style="position:relative;width:100%;height:100%;overflow:hidden;box-sizing:border-box;font-family:'Vazirmatn',sans-serif;color:#1d1d1d;background:radial-gradient(circle at 50% 40%,#fffdf6,#f5ecd0);">
     <div style="position:absolute;inset:8mm;border:.8mm solid ${GOLD};"></div><div style="position:absolute;inset:10.5mm;border:.3mm solid ${GOLD};"></div>
     ${ribbon('left:0;top:0;')}${ribbon('right:0;bottom:0;transform:rotate(180deg);')}${book}
-    <div style="position:relative;text-align:center;padding-top:20mm;">
-      <img alt="" src="${LEAVE_LOGO}" style="width:62mm;height:52mm;object-fit:contain;mix-blend-mode:multiply;">
+    <div style="position:relative;text-align:center;padding-top:${LAND?'13mm':'20mm'};">
+      <img alt="" src="${LEAVE_LOGO}" style="width:${LAND?'46mm':'62mm'};height:${LAND?'38mm':'52mm'};object-fit:contain;mix-blend-mode:multiply;">
       <div style="font-weight:800;font-size:21px;line-height:1.9;margin-top:3mm;">${E(gen)}<br>${E(dir)}</div>
       <div style="font-weight:900;font-size:27px;color:${GRN};margin-top:1mm;">${E(sc.name||'')}</div>
     </div>
-    <div style="position:absolute;left:0;right:0;top:132mm;">
+    <div style="position:absolute;left:0;right:0;top:${LAND?'96mm':'132mm'};">
       ${orn}
       <div style="position:relative;width:158mm;margin:5mm auto;background:linear-gradient(#2d9150,${GRN} 55%,#14562a);border:1.6mm solid ${GOLD};border-radius:10mm;box-shadow:0 0 0 .7mm #fff inset,0 1.5mm 4mm rgba(0,0,0,.25);text-align:center;color:#fff;padding:9mm 8mm;">
         <div style="font-weight:900;font-size:40px;line-height:1.4;">${title[0]}</div>
@@ -3591,7 +3599,7 @@ function ltrCoverPrint(tt){
       </div>
       ${orn}
     </div></div>`;
-  ltrRawPrint(html, 0);
+  ltrRawPrint(html, 0, LAND?'landscape':undefined);
 }
 /* ---- هێنانی نووسراو لە ئەکسس / ئێکسڵ / CSV ---- */
 function ltrDateParse(v){
@@ -5679,7 +5687,7 @@ function renderTimetableGrid(){
 
   if(timetableView==='all'){
     poolPanel.innerHTML='';
-    el.innerHTML = buildFullGridHTML();
+    el.innerHTML = buildFullGridHTML(true);
     return;
   }
 
@@ -5719,8 +5727,8 @@ function renderTimetableGrid(){
         if(a){
           const subj = config.subjects.find(s=>s.id===a.subjectId)||{name:'؟',color:'#eee'};
           const teacher = config.teachers.find(t=>t.id===a.teacherId)||{name:'؟'};
-          cells += `<td class="cell readonly" style="background:${subj.color}"><div class="subj">${escapeHtml(subj.name)}</div><div class="teach">${escapeHtml(teacher.name)}</div></td>`;
-        } else cells += `<td class="cell empty-cell readonly">—</td>`;
+          cells += `<td class="cell" style="background:${subj.color}"${ttEditAttrs(cls.id,dayName,p)}><div class="subj">${escapeHtml(subj.name)}</div><div class="teach">${escapeHtml(teacher.name)}</div></td>`;
+        } else cells += `<td class="cell empty-cell"${ttEditAttrs(cls.id,dayName,p)}>—</td>`;
       });
       rows += `<tr><th>${toKurdishDigits(p+1)}</th><th style="font-size:11px;">${time?`${toKurdishDigits(time.start)}–${toKurdishDigits(time.end)}`:''}</th>${cells}</tr>`;
     }
@@ -6487,7 +6495,35 @@ function renderSummary(){
 }
 
 /* ---------------- Overview / cover ---------------- */
-function buildFullGridHTML(){
+
+/* ---- چاپی خشتەی وانەکان: A4/A3، پۆرترەیت/لاندسکەیپ، نووسینی تۆخ ---- */
+function ttPrefGet(){ try{ return JSON.parse(localStorage.getItem('khshtay_ttprint')||'{}')||{}; }catch(e){ return {}; } }
+function ttPrefSave(pre){
+  const g=id=>document.getElementById(pre+'-'+id); if(!g('paper')) return;
+  const o={ paper:g('paper').value, ori:g('ori').value, bold:g('bold').checked };
+  try{ localStorage.setItem('khshtay_ttprint', JSON.stringify(o)); }catch(e){}
+  ['ov','tt'].forEach(q=>{ const a=document.getElementById(q+'-paper'),b=document.getElementById(q+'-ori'),c=document.getElementById(q+'-bold'); if(a)a.value=o.paper; if(b)b.value=o.ori; if(c)c.checked=o.bold; });
+}
+function ttPrefApply(){ const o=ttPrefGet(); if(!o.paper) return; ['ov','tt'].forEach(q=>{ const a=document.getElementById(q+'-paper'),b=document.getElementById(q+'-ori'),c=document.getElementById(q+'-bold'); if(a)a.value=o.paper; if(b)b.value=o.ori; if(c)c.checked=o.bold!==false; }); }
+function ttPrint(pre){
+  const g=id=>document.getElementById(pre+'-'+id);
+  const paper=(g('paper')||{}).value||'A4', ori=(g('ori')||{}).value||'landscape', bold=g('bold')?g('bold').checked:true;
+  const wmm = ori==='portrait' ? (paper==='A3'?297:210) : (paper==='A3'?420:297);
+  const fs = Math.max(10, Math.min(22, Math.round(14*wmm/297)));
+  let css = '@media print{ @page{ size:'+paper+' '+ori+'; margin:8mm; } table.grid th, table.grid td{ font-size:'+fs+'px !important; } table.grid td.cell .subj, table.grid td.cell .teach{ font-size:'+fs+'px !important; }';
+  if(bold) css += ' table.grid th, table.grid td, table.grid td.cell .subj, table.grid td.cell .teach, .cover h2, .schoolinfo, .schoolinfo b, .report-block h3{ font-weight:900 !important; color:#000 !important; } table.grid th, table.grid td{ border:1.5px solid #000 !important; } table.grid thead th, table.grid td.daygroup{ background:#1b1b1b !important; color:#fff !important; } table.grid tbody th{ background:#e4e4e4 !important; color:#000 !important; }';
+  css += ' }';
+  let st=document.getElementById('tt-print-style'); if(st) st.remove();
+  st=document.createElement('style'); st.id='tt-print-style'; st.textContent=css; document.head.appendChild(st);
+  const cleanup=()=>{ const x=document.getElementById('tt-print-style'); if(x) x.remove(); window.removeEventListener('afterprint',cleanup); };
+  window.addEventListener('afterprint',cleanup);
+  setTimeout(()=>window.print(),100);
+}
+setTimeout(()=>{ try{ ttPrefApply(); }catch(e){} }, 0);
+function ttEditAttrs(classId, day, p){
+  return ` id="cell-${classId}-${day}-${p}" draggable="true" ondragstart="onCellDragStart(event,'${classId}','${day}',${p})" ondragover="onCellDragOver(event)" ondragleave="onCellDragLeave(event)" ondrop="onCellDrop(event,'${classId}','${day}',${p})" onclick="openCellModal('${classId}','${day}',${p})"`;
+}
+function buildFullGridHTML(editable){
   if(config.classes.length===0){
     return '<div class="empty" style="padding:30px;">سەرەتا پۆلێک زیاد بکە</div>';
   }
@@ -6509,9 +6545,9 @@ function buildFullGridHTML(){
         if(a){
           const subj = config.subjects.find(s=>s.id===a.subjectId) || {name:'؟',color:'#eee'};
           const teacher = config.teachers.find(t=>t.id===a.teacherId) || {name:'؟'};
-          body += `<td class="cell readonly" style="background:${subj.color}"><div class="subj">${escapeHtml(subj.name)}</div><div class="teach">${escapeHtml(teacher.name)}</div></td>`;
+          body += `<td class="cell${editable?'':' readonly'}" style="background:${subj.color}"${editable?ttEditAttrs(cls.id,day,p):''}><div class="subj">${escapeHtml(subj.name)}</div><div class="teach">${escapeHtml(teacher.name)}</div></td>`;
         } else {
-          body += `<td class="cell empty-cell readonly">—</td>`;
+          body += `<td class="cell empty-cell${editable?'':' readonly'}"${editable?ttEditAttrs(cls.id,day,p):''}>—</td>`;
         }
       });
       body += '</tr>';
@@ -13935,8 +13971,25 @@ function renderMyExTable(){
 let mySecClass='';
 function renderMyAbsent(){
   const el=document.getElementById('myabsent-body'); if(!el) return;
-  const E=escapeHtml, list=config.myAbsent||[], kinds={ cheat:'گزی کردن', late:'درەنگ هاتن', leave:'مۆڵەت' };
-  el.innerHTML=list.length?list.map(g=>`<div class="card" style="padding:12px;margin-bottom:10px;"><div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px;"><span style="background:#2a9db0;color:#fff;border-radius:16px;padding:3px 12px;font-weight:800;">${E(g.cls)}</span><span style="background:#5aae3f;color:#fff;border-radius:16px;padding:3px 12px;font-weight:800;">${E(g.subj)}</span><span style="background:#f08a24;color:#fff;border-radius:16px;padding:3px 12px;font-weight:800;">${E(examDayName(g.date))} — ${dh(fmtSlash(g.date))}</span><span style="margin-inline-start:auto;font-weight:800;">${toKurdishDigits(g.items.length)} قوتابی</span></div><ol style="margin:0;padding-inline-start:24px;line-height:2;">${g.items.map(it=>`<li style="font-weight:700;">${E(it.name)}${it.kind&&kinds[it.kind]?` <span class="subtext">(${kinds[it.kind]})</span>`:''}${it.note?` <span class="subtext">— ${E(it.note)}</span>`:''}</li>`).join('')}</ol></div>`).join(''):'<div class="card" style="padding:12px;"><p class="empty">هیچ قوتابییەک لە تاقیکردنەوەی وانەکانت نەهاتوو نییە.</p></div>';
+  const E=escapeHtml, kd=toKurdishDigits, kinds={ cheat:'گزی کردن', late:'درەنگ هاتن', leave:'مۆڵەت' };
+  const rows=[]; (config.myAbsent||[]).forEach(g=>{ if(g && Array.isArray(g.items)) g.items.forEach(it=>rows.push({ date:g.date, exam:'', grade:g.cls||'', subj:g.subj, name:it.name, code:'', sector:'', kind:it.kind, note:it.note, time:'' })); else if(g) rows.push(g); });
+  if(!rows.length){ el.innerHTML='<div class="card" style="padding:12px;"><p class="empty">هیچ قوتابییەک لە تاقیکردنەوەی وانەکانت نەهاتوو نییە.</p></div>'; return; }
+  const th='padding:8px;border:1px solid #c9bfa8;background:#f1ead6;font-weight:800;', td='padding:7px 8px;border:1px solid #d5ccb8;text-align:center;font-weight:700;';
+  const days=Array.from(new Set(rows.map(r=>r.date))).sort();
+  el.innerHTML=days.map(date=>{
+    const dr=rows.filter(r=>r.date===date), exam=(dr.find(r=>r.exam)||{}).exam||'';
+    const grades=Array.from(new Set(dr.map(r=>r.grade))).sort((a,b)=>String(a).localeCompare(String(b),'ckb'));
+    return `<div class="card" style="padding:0;margin-bottom:12px;overflow:hidden;">
+      <div style="background:#ffe9e9;padding:9px 12px;font-weight:900;display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;">
+        <span>📅 ${E(examDayName(date))}${exam?' — '+E(exam):''} — <span dir="ltr" style="unicode-bidi:isolate;">${E(fmtSlash(date))}</span></span>
+        <span style="color:#c0392b;">${kd(dr.length)} نەهاتوو</span></div>
+      ${grades.map(gr=>Array.from(new Set(dr.filter(r=>r.grade===gr).map(r=>r.subj||''))).sort((a,b)=>String(a).localeCompare(String(b),'ckb')).map(sj=>{ const gl=dr.filter(r=>r.grade===gr && (r.subj||'')===sj); return `<div style="padding:6px 12px;background:#f7f3e8;font-weight:900;color:#2a7f8e;">${E(gr)}${sj?' — '+E(sj):''} — ${kd(gl.length)} قوتابی</div>
+      <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;text-align:center;"><thead><tr><th style="${th}">#</th><th style="${th}">کۆد</th><th style="${th}">ناوی قوتابی</th><th style="${th}">تاقیکردنەوە</th><th style="${th}">پۆل</th><th style="${th}">لق</th><th style="${th}">کەرت</th><th style="${th}">بابەت</th><th style="${th}">تێبینی</th></tr></thead><tbody>
+      ${gl.map((o,i)=>{ const note=[kinds[o.kind]||'', o.time||'', o.note||''].filter(Boolean).join(' — ');
+        return `<tr><td style="${td}">${kd(i+1)}</td><td style="${td}">${E(o.code||'')}</td><td style="${td}text-align:right;">${E(o.name||'')}</td><td style="${td}font-size:13px;color:#7a3b00;">${E(o.exam||exam)}</td><td style="${td}">${E(o.grade)}</td><td style="${td}">${E(o.section||'')}</td><td style="${td}">${E(o.sector||'')}</td><td style="${td}">${E(o.subj||'')}</td><td style="${td}font-size:12px;">${E(note)}</td></tr>`; }).join('')}
+      </tbody></table></div>`; }).join('')).join('')}
+    </div>`;
+  }).join('');
 }
 function renderMySectors(){
   const el=document.getElementById('mysectors-body'); if(!el) return;
