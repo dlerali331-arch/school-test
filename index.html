@@ -5164,7 +5164,7 @@ async function bkDirLabel(){ const el=document.getElementById('bk-dir-name'); if
 async function bkPickDir(){
   if(!window.showDirectoryPicker){ showAlert('ئەم براوزەرە ڕێگە نادات فۆڵدەر هەڵبژێریت. لەسەر کۆمپیوتەر Chrome یان Edge بەکاربهێنە. لە ئایفۆن فایلەکە دادەبەزێت و دەتوانیت لە «Files» هەڵیبگریت.'); return; }
   try{ const h=await window.showDirectoryPicker({ mode:'readwrite' }); await bkSetDir(h); await bkDirLabel(); showAlert('فۆڵدەر دیاری کرا: '+h.name+'. لە ئێستاوە «پاڵپشتی تەواو» لەو فۆڵدەرەدا هەڵدەگیرێت. ئەگەر ئەو فۆڵدەرە لەناو Google Drive بێت (Drive for Desktop)، خۆی دەچێتە Drive.'); }
-  catch(e){ if(e&&e.name!=='AbortError'){ console.log(e); showAlert('فۆڵدەرەکە دیاری نەکرا.'); } }
+  catch(e){ if(e&&e.name!=='AbortError'){ console.log(e); showAlert('فۆڵدەرەکە دیاری نەکرا. هۆکار: '+(e.name||'')+' — '+String(e.message||'').slice(0,140)+'. ئەگەر ئەو فۆڵدەرە Documents / Downloads / Desktop یان ڕۆتی درایڤ (D:\\) بێت، Chrome ڕێگە نادات؛ فۆڵدەرێکی نوێ لەناو درایڤەکە دروست بکە (بۆ نموونە D:\\BackUp) و ئەوە هەڵبژێرە.'); } }
 }
 let bkWhy='';
 async function bkDirReady(ask){
