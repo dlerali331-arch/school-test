@@ -3871,7 +3871,7 @@ function ptSuspend(){ const L=Array.from(document.querySelectorAll('main section
 function ltrRawPrint(html, pad, orient, multi){
   const ptBack=ptSuspend();
   const HMM = orient==='landscape' ? 205 : 296;
-  const MULTI = multi ? ' @media print{ .app,main{display:block !important;min-height:0 !important;} #tab-leaveprint,#leave-sheet{height:auto !important;max-height:none !important;overflow:visible !important;break-after:auto !important;page-break-after:auto !important;} tr{page-break-inside:avoid !important;break-inside:avoid !important;} thead{display:table-header-group;} }' : '';
+  const MULTI = multi ? ' @media print{ #tab-leaveprint,#leave-sheet{height:auto !important;max-height:none !important;overflow:visible !important;break-after:auto !important;page-break-after:auto !important;} tr{page-break-inside:avoid !important;break-inside:avoid !important;} thead{display:table-header-group;} }' : '';
   document.getElementById('leave-sheet').innerHTML = html;
   /* ئیتاری جوان: پادینگی سەرەوە تەنها بۆ لاپەڕەی یەکەمە؛ هەر ئیتارێک دوای شکاندنی لاپەڕە دێت (لاپەڕەی دووەم، لیژنەی دواتر، ...) بۆشاییەکی هاوشێوەی لاپەڕەی یەکەمی پێ دەدرێت تا ئیتارەکەی لە پرینتدا نەبڕێت */
   if(multi){ const sh=document.getElementById('leave-sheet'), gap=(typeof pad==='number'?pad+'mm':pad);
@@ -14360,7 +14360,6 @@ function exqBlankHtml(text,key,ans){
   parts.forEach((p,i)=>{ out+=exqMath(p); if(i<m.length){ const a=(ans||[])[b++]; out+= key? `<b style="text-decoration:underline;">${E(a||'')}</b>` : `<span style="white-space:nowrap;">${'.'.repeat(18)}</span>`; } });
   return out;
 }
-function exqBl(x){ const t=String(x==null?'':x); if(!(t.match(EXQ_BL)||[]).length) return exqT(t); return exqBlankHtml(t,false).replace(/\[\[([^\[\]]+)\]\]/g,'<u>$1</u>').replace(/\n/g,'<br>'); }
 function exqSecSum(c){ return EXQ_SECS.reduce((a,k)=>a+((c.sec[k]&&c.sec[k].on)?(Number(c.sec[k].total)||0):0),0); }
 function exqPerm(n){ if(n<2) return [0]; let k=2; const g=(a,b)=>b?g(b,a%b):a; if(n===2) k=1; else while(g(k,n)!==1) k++; return Array.from({length:n},(_,i)=>(i*k+1)%n); }
 function exqRunConv(h,w){
@@ -14555,8 +14554,8 @@ function exqPaperHtml(rec, key){
     items.forEach((it,i)=>{
       const q=exqT(it.q); let h='';
       if(k==='mcq'){
-        const od=j=>{ const ok=key&&it.ans===j; const lt=exqLets(rec,L)[j]; const lb=(L.dir==='rtl')?`<span dir="ltr" style="display:inline-block;unicode-bidi:isolate;min-width:8mm;text-align:right;">(${lt}</span>`:`${lt})`; return `<div style="${ok?'font-weight:900;text-decoration:underline;':''}">${lb} ${exqBl((it.opts||[])[j]||'')}${ok?' ✓':''}</div>`; };
-        h=`<div style="margin:2mm 0 1mm;font-size:12pt;font-weight:700;">${lab(i)} ${exqBl(it.q)}${mk}</div>`+(W_?`<table style="width:100%;font-size:12pt;"><tr><td style="width:50%;">${od(0)}</td><td>${od(1)}</td></tr><tr><td>${od(2)}</td><td>${od(3)}</td></tr></table>`:`<div style="display:grid;grid-template-columns:1fr 1fr;gap:1mm 6mm;margin:0 6mm 2mm;font-size:12pt;">${[0,1,2,3].map(od).join('')}</div>`);
+        const od=j=>{ const ok=key&&it.ans===j; return `<div style="${ok?'font-weight:900;text-decoration:underline;':''}">${exqLets(rec,L)[j]})${/^[A-Za-z]$/.test(exqLets(rec,L)[j])?'&lrm;':''} ${exqT((it.opts||[])[j]||'')}${ok?' ✓':''}</div>`; };
+        h=`<div style="margin:2mm 0 1mm;font-size:12pt;font-weight:700;">${lab(i)} ${q}${mk}</div>`+(W_?`<table style="width:100%;font-size:12pt;"><tr><td style="width:50%;">${od(0)}</td><td>${od(1)}</td></tr><tr><td>${od(2)}</td><td>${od(3)}</td></tr></table>`:`<div style="display:grid;grid-template-columns:1fr 1fr;gap:1mm 6mm;margin:0 6mm 2mm;font-size:12pt;">${[0,1,2,3].map(od).join('')}</div>`);
       } else if(k==='blank'){
         h=`<div style="margin:2mm 0;font-size:12pt;line-height:2;font-weight:700;">${lab(i)} ${exqBlankHtml(it.q,key,it.ans)}${mkN(exqBlankCount(it.q))}</div>`;
       } else if(k==='tf'){
@@ -14591,7 +14590,7 @@ function exqPaperHtml(rec, key){
   const luck=`<div style="border-top:2px solid #000;margin-top:5mm;"></div><div style="text-align:center;font-weight:900;font-size:13pt;margin-top:3mm;">${L.luck}</div>`;
   const nameH=`<div dir="ltr" style="margin-top:auto;padding-top:4mm;text-align:left;font-size:11.5pt;font-weight:800;line-height:1.7;">${E(tn)}<br><span style="font-weight:600;">${L.teacher}</span></div>`;
   const more=`<div style="margin-top:auto;text-align:center;font-size:8.5pt;font-weight:600;">${L.more}</div>`;
-  const box=(inner,h,brk)=>P ? `<div dir="${L.dir}" style="font-family:'Vazirmatn',sans-serif;color:#000;text-align:${L.al};box-sizing:border-box;width:calc(100% - 4mm);margin:0 auto;${h?'height:'+h+'mm;':''}border:3px solid #2a9db0;border-radius:4mm;padding:1.4mm;${brk?'page-break-after:always;break-after:page;':''}"><div style="box-sizing:border-box;height:100%;border:1.4px solid #f08a24;border-radius:3mm;padding:2mm 4mm;display:flex;flex-direction:column;overflow:hidden;">${inner}</div></div>` : `<div dir="${L.dir}" style="font-family:'Vazirmatn',sans-serif;color:#000;text-align:${L.al};box-sizing:border-box;width:calc(100% - 4mm);margin:0 auto;${h?'height:'+h+'mm;':''}border:2px solid #000;border-radius:3mm;padding:4mm 5mm;display:flex;flex-direction:column;overflow:hidden;${brk?'page-break-after:always;break-after:page;':''}">${inner}</div>`;
+  const box=(inner,h,brk)=>P ? `<div dir="${L.dir}" style="font-family:'Vazirmatn',sans-serif;color:#000;text-align:${L.al};box-sizing:border-box;${h?'height:'+h+'mm;':''}border:3px solid #2a9db0;border-radius:4mm;padding:1.4mm;${brk?'page-break-after:always;break-after:page;':''}"><div style="box-sizing:border-box;height:100%;border:1.4px solid #f08a24;border-radius:3mm;padding:2mm 4mm;display:flex;flex-direction:column;overflow:hidden;">${inner}</div></div>` : `<div dir="${L.dir}" style="font-family:'Vazirmatn',sans-serif;color:#000;text-align:${L.al};box-sizing:border-box;${h?'height:'+h+'mm;':''}border:2px solid #000;border-radius:3mm;padding:4mm 5mm;display:flex;flex-direction:column;overflow:hidden;${brk?'page-break-after:always;break-after:page;':''}">${inner}</div>`;
   if(exq.w) return headH+blocks.join('')+luck+nameH;
   // کۆپی: ڕۆژانە، دوو لەبەرگرتنەوە لە ورەقەیەکدا
   if(daily && !key && Number(rec.copies)===2){
@@ -14599,7 +14598,7 @@ function exqPaperHtml(rec, key){
     const cell=exq.pdf?`<div style="height:136mm;overflow:hidden;"><div style="transform:scale(0.7);transform-origin:top ${L.dir==='rtl'?'right':'left'};width:142.857%;">${zin}</div></div>`:`<div style="height:136mm;overflow:hidden;"><div style="zoom:0.7;">${zin}</div></div>`;
     return `<div style="height:274mm;display:flex;flex-direction:column;gap:2mm;">${cell}<div style="border-top:1px dashed #666;"></div>${cell}</div>`;
   }
-  const W=176, CAP=243, MORE=7;
+  const W=176, CAP=262, MORE=7;
   const headU=P?headP:headH;
   const m=exqMeasure([headU,luck+nameH].concat(blocks),L,W), hH0=m[0], fH0=m[1]+4, bH0=m.slice(2);
   const paginate=(z)=>{
@@ -14616,8 +14615,7 @@ function exqPaperHtml(rec, key){
   const zw=(h)=>Z===1?h:'<div style="zoom:'+Z+';">'+h+'</div>';
   return pages.map((p,i)=>{
     const inner=(p.first?zw(headU):'')+p.b.map(zw).join('')+(p.last?zs(luck)+zs(nameH):more);
-    const bx=box(inner,255,false);
-    return (exq.pdf||exq.w||i===0)?bx:`<div style="break-before:page;page-break-before:always;padding-top:10mm;">${bx}</div>`;
+    return box(inner,274,!p.last);
   }).join('');
 }
 function exqRecOf(x){ return { copies:x.copies, etype:x.etype, title:x.title, time:x.time, teacherName:x.teacherName, total:x.total, lang:x.lang||'ku', classId:x.classId, subjectId:x.subjectId, className:x.className, subjectName:x.subjectName, date:x.date, clsText:x.clsText, clsKu:x.clsKu, tnText:x.tnText, json:x.json }; }
@@ -14627,30 +14625,13 @@ function exqPrintId(id,key,pretty){ const x=exq.list.find(r=>r.id===id); if(!x) 
 /* PDF + ناردن بە واتسئەپ (دوو فایل: پرسیار و وەڵام) */
 async function exqPdfBlob(rec,key){
   await pdfLib();
-  const host=document.createElement('div'); host.style.cssText='position:fixed;left:-30000px;top:0;width:190mm;background:#fff;color:#000;';
+  const wrap=document.createElement('div'); const host=document.createElement('div'); host.style.cssText='position:fixed;left:-30000px;top:0;width:190mm;'; wrap.style.cssText='background:#fff;color:#000;width:190mm;';
   if(document.fonts&&document.fonts.ready) await document.fonts.ready;
-  exq.pdf=true; try{ host.innerHTML=exqPaperHtml(rec,key); } finally { exq.pdf=false; }
-  document.body.appendChild(host);
+  exq.pdf=true; try{ wrap.innerHTML=exqPaperHtml(rec,key); } finally { exq.pdf=false; }
+  host.appendChild(wrap); document.body.appendChild(host);
   try{
-    const pages=Array.from(host.children);
-    if(!pages.length) throw new Error('empty');
-    /* هەر لاپەڕەیەک بە جیا دەکرێتە وێنە و دەخرێتە PDF — بەبێ page-break ی CSS، بۆ ئەوەی لاپەڕەی بەتاڵ و بڕینی ئیتار نەمێنێت */
-    const base={ margin:[10,10,10,10], image:{ type:'jpeg', quality:0.96 }, html2canvas:{ scale:2, useCORS:true, backgroundColor:'#ffffff', scrollX:0, scrollY:0 }, jsPDF:{ unit:'mm', format:'a4', orientation:'portrait' }, pagebreak:{ mode:[] } };
-    /* جەسەی PDF بە لاپەڕەیەکی نمونەیی دروست دەکرێت و دواتر ئەو لاپەڕەیە دەسڕدرێتەوە؛ هەر لاپەڕەیەک وەک یەک وێنە دادەنرێت و هەرگیز نابڕدرێت */
-    const dm=document.createElement('div'); dm.style.cssText='width:20mm;height:10mm;background:#fff;'; host.appendChild(dm);
-    const pdf=await html2pdf().set(base).from(dm).toPdf().get('pdf');
-    dm.remove();
-    const keep=[];
-    for(let i=0;i<pages.length;i++){
-      const p=pages[i]; p.style.pageBreakAfter='auto'; p.style.breakAfter='auto'; p.style.marginBottom='0';
-      const cv=await html2pdf().set(base).from(p).toCanvas().get('canvas');
-      let ww=190, hh=cv.height*190/cv.width; if(hh>276){ ww=ww*276/hh; hh=276; }
-      pdf.addPage(); pdf.addImage(cv.toDataURL('image/jpeg',0.96),'JPEG',10+(190-ww)/2,10,ww,hh);
-      keep.push(pdf.internal.getCurrentPageInfo().pageNumber);
-    }
-    /* هەموو لاپەڕەیەک جگە لەو لاپەڕانەی وێنەی تێدا دانراوە (لاپەڕەی بەتاڵ و نمونەیی) دەسڕدرێتەوە */
-    for(let n=pdf.getNumberOfPages(); n>=1; n--){ if(keep.indexOf(n)<0 && pdf.getNumberOfPages()>1) pdf.deletePage(n); }
-    return pdf.output('blob');
+    const opt={ margin:10, filename:'exam.pdf', image:{ type:'jpeg', quality:0.96 }, html2canvas:{ scale:2, useCORS:true, backgroundColor:'#ffffff', scrollX:0, scrollY:0 }, jsPDF:{ unit:'mm', format:'a4', orientation:'portrait' }, pagebreak:{ mode:['css','legacy'] } };
+    return await html2pdf().set(opt).from(wrap).outputPdf('blob');
   } finally { host.remove(); }
 }
 function exqFileName(rec,key){ const sb=((config.subjects||[]).find(x=>x.id===rec.subjectId)||{}).name||rec.subjectName||'', cn=((config.classes||[]).find(x=>x.id===rec.classId)||{}).name||rec.className||''; return (key?'وەڵام':'پرسیار')+' - '+sb+' - '+cn+' - '+String(rec.title||'').trim()+'.pdf'; }
