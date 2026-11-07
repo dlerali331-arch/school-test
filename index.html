@@ -797,6 +797,8 @@
         <div class="row" style="margin-bottom:10px;">
           <button class="btn btn-ghost" onclick="exportBackup()">داگرتنی فایلی پاڵپشتی</button>
           <button class="btn btn-primary" onclick="fullBackup()">💾 پاڵپشتی تەواو (هەموو داتا لە Firebase)</button>
+          <button class="btn btn-ghost" onclick="bkPickDir()">📁 هەڵبژاردنی فۆڵدەری پاڵپشتی</button>
+          <span class="subtext" id="bk-dir-name"></span>
           <button class="btn btn-ghost" onclick="document.getElementById('full-restore-input').click()">♻️ گەڕاندنەوەی پاڵپشتی تەواو</button>
           <input type="file" id="full-restore-input" accept=".json,application/json,.txt,text/plain,*/*" style="display:none" onchange="fullRestore(this.files[0])">
           <button class="btn btn-primary" onclick="dataDoctor()">🩺 پشکنینی داتای Firebase</button>
@@ -5154,11 +5156,40 @@ function ddRestore(){
   showAlert(toKurdishDigits(n)+' نووسراو گەڕێندرایەوە و پاشەکەوت دەکرێت.'); try{ if(typeof renderLetters==='function') renderLetters(); }catch(e){}
 }
 /* ---- پاڵپشتی تەواو: هەموو داتای Firebase (نووسراو، مۆڵەت، ڕابەری پۆل، پرسیار، هتد) لەگەڵ داتای ئەپ ---- */
+/* ---- هەڵبژاردنی فۆڵدەری پاڵپشتی (Chrome / Edge لەسەر کۆمپیوتەر): فایلەکە ڕاستەوخۆ لەو فۆڵدەرەدا هەڵدەگیرێت بە ناوی backup + بەروار و کات ---- */
+function bkIdb(){ return new Promise((res,rej)=>{ const r=indexedDB.open('khshtay_bk',1); r.onupgradeneeded=()=>r.result.createObjectStore('h'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+async function bkGetDir(){ try{ const db=await bkIdb(); return await new Promise(res=>{ const q=db.transaction('h').objectStore('h').get('dir'); q.onsuccess=()=>res(q.result||null); q.onerror=()=>res(null); }); }catch(e){ return null; } }
+async function bkSetDir(h){ const db=await bkIdb(); await new Promise((res,rej)=>{ const t=db.transaction('h','readwrite'); t.objectStore('h').put(h,'dir'); t.oncomplete=res; t.onerror=()=>rej(t.error); }); }
+async function bkDirLabel(){ const el=document.getElementById('bk-dir-name'); if(!el) return; const h=await bkGetDir(); el.textContent=h?('فۆڵدەر: '+h.name):''; }
+async function bkPickDir(){
+  if(!window.showDirectoryPicker){ showAlert('ئەم براوزەرە ڕێگە نادات فۆڵدەر هەڵبژێریت. لەسەر کۆمپیوتەر Chrome یان Edge بەکاربهێنە. لە ئایفۆن فایلەکە دادەبەزێت و دەتوانیت لە «Files» هەڵیبگریت.'); return; }
+  try{ const h=await window.showDirectoryPicker({ mode:'readwrite' }); await bkSetDir(h); await bkDirLabel(); showAlert('فۆڵدەر دیاری کرا: '+h.name+'. لە ئێستاوە «پاڵپشتی تەواو» لەو فۆڵدەرەدا هەڵدەگیرێت. ئەگەر ئەو فۆڵدەرە لەناو Google Drive بێت (Drive for Desktop)، خۆی دەچێتە Drive.'); }
+  catch(e){ if(e&&e.name!=='AbortError'){ console.log(e); showAlert('فۆڵدەرەکە دیاری نەکرا.'); } }
+}
+async function bkDirReady(ask){
+  try{ const h=await bkGetDir(); if(!h) return null; let p=await h.queryPermission({mode:'readwrite'}); if(p!=='granted'&&ask) p=await h.requestPermission({mode:'readwrite'}); return p==='granted'?h:null; }catch(e){ return null; }
+}
+function bkStamp(){ const d=new Date(), z=n=>String(n).padStart(2,'0'); return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+'_'+z(d.getHours())+'-'+z(d.getMinutes()); }
+setTimeout(()=>{ try{ bkDirLabel(); }catch(e){} },2500);
+/* دوای هەڵگرتنی پاڵپشتیی نوێ، تەنها فایلەکانی backup-بەروار_کات.json کە لە ٤ ڕۆژ (ئەمڕۆ + ٣ ڕۆژی پێشتر) کۆنترن لەو فۆڵدەرەدا دەسڕدرێنەوە؛ هیچ فایلێکی تر ناسڕدرێتەوە */
+const BK_KEEP_DAYS=4;
+async function bkPrune(dirH, keepName){
+  let n=0; const lim=new Date(); lim.setHours(0,0,0,0); lim.setDate(lim.getDate()-(BK_KEEP_DAYS-1));
+  try{
+    const names=[]; for await (const [nm,h] of dirH.entries()){ if(h.kind==='file') names.push(nm); }
+    for(const nm of names){
+      const m=/^backup-(\d{4})-(\d{2})-(\d{2})_\d{2}-\d{2}\.json$/.exec(nm); if(!m||nm===keepName) continue;
+      if(new Date(+m[1],+m[2]-1,+m[3])<lim){ try{ await dirH.removeEntry(nm); n++; }catch(e){ console.log('prune failed',nm,e); } }
+    }
+  }catch(e){ console.log('prune scan failed',e); }
+  return n;
+}
 const FB_BK_COLS=['school','attendance','selfeval','archive','teacherAccounts','teacherLogins'];
 async function fullBackup(silent){
   if(currentRole!=='admin'){ if(!silent) showAlert('تەنها بەڕێوەبەر.'); return false; }
   if(!(fbDb&&fbCollection&&fbGetDocs)||!navigator.onLine){ if(!silent) showAlert('ئینتەرنێت پێویستە.'); return false; }
   const st=t=>{ try{ arSetStatus(t); }catch(e){} };
+  const dirH=await bkDirReady(!silent);
   try{
     const cols={}; let total=0;
     for(const c of FB_BK_COLS){
@@ -5168,12 +5199,14 @@ async function fullBackup(silent){
     }
     const payload={ config, schedules, exportedAt:new Date().toISOString(), fullFormat:1, fb:cols };
     const blob=new Blob([JSON.stringify(payload)],{type:'application/json'});
-    const url=URL.createObjectURL(blob), a=document.createElement('a');
-    a.href=url; a.download='khshtay-FULL-backup-'+new Date().toISOString().slice(0,16).replace(/[:T]/g,'-')+'.json';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(url),4000);
+    const fname='backup-'+bkStamp()+'.json'; let savedIn='', pruned=0;
+    if(dirH){ try{ const fh=await dirH.getFileHandle(fname,{create:true}), w=await fh.createWritable(); await w.write(blob); await w.close(); savedIn=dirH.name; pruned=await bkPrune(dirH,fname); }catch(e){ console.log('folder save failed',e); } }
+    if(!savedIn){ const url=URL.createObjectURL(blob), a=document.createElement('a');
+      a.href=url; a.download=fname;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(url),4000); }
     st(''); try{ localStorage.setItem('khshtay_fb_last',String(Date.now())); }catch(e){}
     const sum=FB_BK_COLS.map(c=>c+': '+(cols[c]||[]).length).join('، ');
-    if(!silent) showAlert('پاڵپشتی تەواو داگیرا ('+toKurdishDigits(total)+' تۆمار). '+sum+'. فایلەکە لە شوێنێکی سەلامەتدا هەڵبگرە.');
+    if(!silent) showAlert('پاڵپشتی تەواو '+(savedIn?('لە فۆڵدەری «'+savedIn+'» هەڵگیرا'):'داگیرا')+' ('+toKurdishDigits(total)+' تۆمار). فایل: '+fname+'. '+(pruned?('فایلە کۆنەکان ('+toKurdishDigits(pruned)+') سڕانەوە. '):'')+sum+'.'+(savedIn?'':' فایلەکە لە شوێنێکی سەلامەتدا هەڵبگرە.'));
     return true;
   }catch(e){ st(''); console.log(e); if(!silent) showAlert('پاڵپشتی تەواو سەرکەوتوو نەبوو. دووبارە هەوڵ بدەوە.'); return false; }
 }
