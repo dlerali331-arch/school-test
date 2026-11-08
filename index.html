@@ -17447,7 +17447,7 @@ async function pdfExport(){
     const mg=parseFloat((css.match(/margin:\s*(\d+(?:\.\d+)?)mm/)||[])[1]); const margin=isNaN(mg)?10:mg;
     const W={ a4:[210,297], a3:[297,420] }[fmt], pw=orient==='landscape'?W[1]:W[0];
     wrap=document.createElement('div'); wrap.dir='rtl';
-    wrap.style.cssText='position:fixed;left:-30000px;top:0;background:#fff;color:#000;width:'+(pw-2*margin)+'mm;';
+    wrap.style.cssText='position:fixed;left:-30000px;top:0;background:#fff;color:#000;-webkit-text-size-adjust:100%;text-size-adjust:100%;width:'+(pw-2*margin)+'mm;';
     const clone=src.cloneNode(true); clone.removeAttribute('id'); clone.style.display='block'; clone.style.position='static';
     clone.querySelectorAll('.no-print,button,script').forEach(x=>x.remove());
     const kids=Array.from(clone.children); let chunks;
