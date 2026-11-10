@@ -10809,6 +10809,7 @@ function renderMyGuide(keep){
     <div style="overflow-x:auto;">${gdtEntries.length?`<table style="border-collapse:collapse;width:100%;"><thead><tr><th style="${th}">ز</th><th style="${th}">بەروار</th><th style="${th}">ڕۆژ</th><th style="${th}">چالاکی</th><th style="${th}"></th></tr></thead><tbody>${gdtEntries.map((e,i)=>`<tr><td style="${td}text-align:center;">${toKurdishDigits(i+1)}</td><td style="${td}white-space:nowrap;">${dh(fmtSlash(e.date))}</td><td style="${td}">${escapeHtml(examDayName(e.date))}</td><td style="${td}">${escapeHtml(e.text)}</td><td style="${td}"><button class="btn btn-ghost btn-sm" onclick="gdtPrintOne(${i})" title="چاپ">🖨️</button></td></tr>`).join('')}</tbody></table>`:'<p class="empty">هێشتا هیچ چالاکییەک تۆمار نەکراوە.</p>'}</div></div>`;
 }
 
+
 /* ================= داشبۆردی غیابات (مانگانە) ================= */
 const adState = { month:'', loaded:'', recs:[], day:'' };
 async function adLoad(){
@@ -10918,7 +10919,7 @@ function renderCtlPanel(){
 }
 
 /* ================= چالاکی مامۆستا بۆ بەرزکردنەوەی ئاستی زانستی خوێندکاران ================= */
-const acl = { cid:'', sid:'', entries:[], photos:[], date:'', text:'', loaded:'', all:false };
+const acl = { cid:'', sid:'', entries:[], photos:[], date:'', text:'', loaded:'', all:false, editId:'' };
 function aclGradeOf(cid){ const c=(config.classes||[]).find(x=>x.id===cid); return c?classGrade(c):''; }
 function aclGroupSecs(e){
   if(!e||e.secs) return e;
@@ -11023,6 +11024,18 @@ function aclPrintSingle(e){
     <div style="margin-top:40px;display:flex;justify-content:flex-end;font-weight:800;font-size:16px;text-align:center;"><div>${adm?'بەڕێوەبەر':'مامۆستا'}<br>${E(aclAuthor(e))}</div></div></div>`;
   leaveDoPrint('portrait');
 }
+function aclEdit(id){ acl.editId=id; renderMyActs(true); }
+function aclEditCancel(){ acl.editId=''; renderMyActs(true); }
+async function aclEditSave(id){
+  const e=acl.entries.find(x=>x.id===id); if(!e) return;
+  const text=String((document.getElementById('acl-edit-text')||{}).value||'').trim(), date=String((document.getElementById('acl-edit-date')||{}).value||'').trim();
+  if(!text){ showAlert('نووسینی چالاکی بەتاڵ نابێت.'); return; }
+  if(text.length>1000){ showAlert('نووسینەکە زۆر درێژە.'); return; }
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){ showAlert('بەروار دیاری بکە.'); return; }
+  if(!(fbDb && fbDoc && fbSetDoc) || !navigator.onLine){ notifyOffline('گۆڕین نەکرا'); return; }
+  try{ await withTimeout(fbSetDoc(fbDoc(fbDb,'attendance',id), { text, date, editedAt:Date.now() }, { merge:true }), 15000); e.text=text; e.date=date; e.editedAt=Date.now(); acl.entries.sort((a,b)=>String(a.date).localeCompare(String(b.date))); acl.editId=''; renderMyActs(true); }
+  catch(err){ console.log(err); showAlert(err&&err.code==='permission-denied'?'ناتوانرێت. بەڕێوەبەر دەبێت ڕێسای نوێ لە Firebase دابنێت (firestore.rules) و «ناردنی خشتە بۆ مامۆستا» بکات.':'گۆڕین سەرنەکەوت. ئینتەرنێت بپشکنە.'); }
+}
 function aclPrintOne(i){ const e=acl.entries[i]; if(e) aclPrintSingle(e); }
 function alaPrintOne(id){ const e=alaState.entries.find(x=>x.id===id); if(e) aclPrintSingle(e); }
 function aclPrintMine(){ if(!acl.entries.length){ showAlert('هیچ چالاکییەک نییە.'); return; } aclPrintDoc(acl.entries, acl.cid, acl.sid, currentTeacherId, false); }
@@ -11045,8 +11058,8 @@ function renderMyActs(keep){
       <input type="file" id="acl-cam" accept="image/*" capture="environment" style="display:none" onchange="aclPick(this)"><input type="file" id="acl-gal" accept="image/*" multiple style="display:none" onchange="aclPick(this)">
       <div style="margin-top:6px;">${(acl.photos||[]).map((ph,i)=>`<span style="position:relative;display:inline-block;"><img src="${ph}" style="height:64px;width:64px;object-fit:cover;border-radius:6px;border:1px solid var(--rule);margin:2px;"><button type="button" onclick="aclRemovePhoto(${i})" style="position:absolute;top:-2px;inset-inline-start:-2px;background:#c0392b;color:#fff;border:0;border-radius:50%;width:20px;height:20px;cursor:pointer;">×</button></span>`).join('')}</div></div>
     <div class="btnrow"><button class="btn btn-primary" onclick="aclSave()">💾 تۆمارکردن</button><button class="btn btn-ghost" onclick="aclPrintMine()">🖨️ چاپکردن</button><button class="btn btn-ghost" onclick="pdfRun(()=>{ aclPrintMine() })">📄 PDF</button></div>
-    <p class="section-hint">دوای تۆمارکردن ناگۆڕدرێت و ناسڕدرێتەوە؛ تەنها بەڕێوەبەر دەتوانێت.</p></div>
-  <div class="card" style="padding:12px;overflow-x:auto;">${acl.loaded!==acl.cid+'|'+acl.sid?'<p class="empty">چاوەڕێ بکە...</p>':(acl.entries.length?`<table style="border-collapse:collapse;width:100%;"><thead><tr><th style="${th}">ز</th><th style="${th}">بەروار</th><th style="${th}">چالاکی</th><th style="${th}">بەڵگە</th><th style="${th}"></th></tr></thead><tbody>${acl.entries.map((e,i)=>`<tr><td style="${td}text-align:center;">${toKurdishDigits(i+1)}</td><td style="${td}white-space:nowrap;">${dh(fmtSlash(e.date))}</td><td style="${td}">${escapeHtml(e.text)}</td><td style="${td}">${peCell(e,'t')}</td><td style="${td}"><button class="btn btn-ghost btn-sm" onclick="aclPrintOne(${i})" title="چاپ">🖨️</button></td></tr>`).join('')}</tbody></table>`:'<p class="empty">هێشتا هیچ چالاکییەک تۆمار نەکراوە بۆ ئەم پۆل و وانەیە.</p>')}</div>`;
+    <p class="section-hint">دەتوانیت نووسین و بەرواری چالاکییەکانی خۆت بە ✏️ دەستکاری بکەیت؛ سڕینەوە تەنها بۆ بەڕێوەبەرە.</p></div>
+  <div class="card" style="padding:12px;overflow-x:auto;">${acl.loaded!==acl.cid+'|'+acl.sid?'<p class="empty">چاوەڕێ بکە...</p>':(acl.entries.length?`<table style="border-collapse:collapse;width:100%;"><thead><tr><th style="${th}">ز</th><th style="${th}">بەروار</th><th style="${th}">چالاکی</th><th style="${th}">بەڵگە</th><th style="${th}"></th></tr></thead><tbody>${acl.entries.map((e,i)=>`<tr><td style="${td}text-align:center;">${toKurdishDigits(i+1)}</td>${acl.editId===e.id?`<td style="${td}"><input type="date" id="acl-edit-date" value="${escapeHtml(e.date)}"></td><td style="${td}"><textarea id="acl-edit-text" rows="4" maxlength="1000" style="width:100%;min-width:180px;">${escapeHtml(e.text)}</textarea></td><td style="${td}">${peCell(e,'t')}</td><td style="${td}"><button class="btn btn-primary btn-sm" onclick="aclEditSave('${e.id}')">💾</button> <button class="btn btn-ghost btn-sm" onclick="aclEditCancel()">✖</button></td>`:`<td style="${td}white-space:nowrap;">${dh(fmtSlash(e.date))}</td><td style="${td}">${escapeHtml(e.text)}</td><td style="${td}">${peCell(e,'t')}</td><td style="${td}white-space:nowrap;"><button class="btn btn-ghost btn-sm" onclick="aclEdit('${e.id}')" title="دەستکاری">✏️</button> <button class="btn btn-ghost btn-sm" onclick="aclPrintOne(${i})" title="چاپ">🖨️</button></td>`}</tr>`).join('')}</tbody></table>`:'<p class="empty">هێشتا هیچ چالاکییەک تۆمار نەکراوە بۆ ئەم پۆل و وانەیە.</p>')}</div>`;
   if(!keep && acl.loaded!==acl.cid+'|'+acl.sid) aclLoad();
 }
 /* ---- بەڕێوەبەر ---- */
@@ -14372,8 +14385,14 @@ function exqDefTime(k){ return ['f1','f2','r1','r2'].includes(k)?'٢ کاتژم�
 function exqLatMc(o){ o=o||exq.cur; if(!o) return false; const sb=(config.subjects||[]).find(x=>x.id===o.subjectId), nm=(sb&&sb.name)||o.subjectName||''; let g12=false, g1011=false; try{ g12=gdrIs12(o.classId); const c=regCls(o.classId); const g=c?(String(classGrade(c)||'')+' '+String(c.name||'')):String(o.className||''); g1011=/دەیەم|یازدە|(^|[^\d١-٩])(10|11|١٠|١١)([^\d١-٩]|$)/.test(g); }catch(e){} return g12 || (g1011 && /بیرکاری|بیرکارى|ریاضیات|رياضيات|math/i.test(nm)); }
 function exqLets(o,L){ return ['A','B','C','D']; }
 function exqMcqTot(t){ return t<=5?t:Math.round(t*(exqLatMc()?0.5:0.2)*100)/100; }
-const EXQ_SECS=['mcq','blank','tf','match','def','analyze','open','other'];
-const EXQ_SECT={ mcq:'هەڵبژاردن (٤ ئۆپشن)', blank:'بۆشایی', tf:'ڕاست و هەڵە', match:'گەیاندن', def:'پێناسە', analyze:'شیکارکردن (وانە زانستییەکان)', open:'پرسیاری ئاسایی', other:'پرسیاری تر (خۆت دەینووسیت)' };
+const EXQ_PARTS=[['g','ڕێزمان'],['a','ئەدەب'],['r','ڕەوانبێژی']], EXQ_PSEC=['blank','tf','match','def','open','other','other2','other3'];
+const EXQ_SECS=['mcq','blank','tf','match','def','analyze','open','other','other2','other3'].concat(...EXQ_PARTS.map(x=>EXQ_PSEC.map(t=>x[0]+'.'+t)));
+const exqB=k=>String(k).split('.').pop(), exqP=k=>String(k).indexOf('.')>0?String(k).split('.')[0]:'';
+const exqIsOther=k=>/^other\d*$/.test(exqB(k));
+function exqPartIs(sec,p){ return !p || !!(sec.parts&&sec.parts[p]&&sec.parts[p].on); }
+function exqIsKu(sid){ const sb=(config.subjects||[]).find(x=>x.id===sid); return !!sb && /کوردی/.test(String(sb.name||'').replace(/[كڪ]/g,'ک').replace(/[يى]/g,'ی')); }
+const EXQ_SECT={ mcq:'هەڵبژاردن (٤ ئۆپشن)', blank:'بۆشایی', tf:'ڕاست و هەڵە', match:'گەیاندن', def:'پێناسە', analyze:'شیکارکردن (وانە زانستییەکان)', open:'پرسیاری ئاسایی', other:'پرسیاری تر (خۆت دەینووسیت)' , other2:'پرسیاری تر ٢ (خۆت دەینووسیت)', other3:'پرسیاری تر ٣ (خۆت دەینووسیت)'};
+EXQ_PARTS.forEach(x=>EXQ_PSEC.forEach(t=>{ EXQ_SECT[x[0]+'.'+t]=EXQ_SECT[t]; }));
 const EXQ_L={
   ku:{ dir:'rtl', al:'right', letters:['أ','ب','ج','د'], l8:['أ','ب','ج','د','هـ','و','ز','ح'], qs:'پ', ord:['یەکەم','دووەم','سێیەم','چوارەم','پێنجەم','شەشەم','حەوتەم'], q:'پرسیاری', mark:'نمرە', each:'هەر یەک', name:'ناوی خوێندکار', cls:'پۆل', subj:'وانە', date:'بەروار', total:'نمرەی تەواو', key:'(وەڵامی دروست)', luck:'بەهیوای سەرکەوتن', more:'ماوەتی ...', exam:'تاقیکردنەوەی', qmark:'نمرەی پرسیار', teacher:'مامۆستای وانە', year:'ساڵی خوێندن', dur:'ماوە', t:'ڕاست', f:'هەڵە', fix:'دروست:', school:'خوێندنگە',
     h:{ mcq:'وەڵامی دروست بۆ ئەمانە هەڵبژێرە', blank:'ئەم بۆشاییانە پڕبکەرەوە', tf:'ڕاست و هەڵە دیاری بکە', tfx:'وەڵامی ڕاست هەڵبژێرە (ڕاست / هەڵە) و هەڵەکان ڕاست بکەرەوە', tfu:'وەڵامی ڕاست هەڵبژێرە (ڕاست / هەڵە) و وشە هێڵ بەژێرەکە ڕاست بکەرەوە', tfn:'وەڵامی ڕاست هەڵبژێرە (ڕاست / هەڵە) و هەڵەکان ڕاست بکەرەوە بەبێ گۆڕینی وشە هێڵ بەژێرەکە', match:'ئەمانە بگەیەنە', def:'ئەمانە پێناسە بکە', analyze:'ئەمانە شیکار بکە', open:'وەڵامی ئەمانە بدەرەوە', other:'' } },
@@ -14382,7 +14401,7 @@ const EXQ_L={
   en:{ dir:'ltr', al:'left', letters:['A','B','C','D'], l8:['A','B','C','D','E','F','G','H'], qs:'Q', ord:['One','Two','Three','Four','Five','Six','Seven'], q:'Question', mark:'marks', each:'each', name:'Student name', cls:'Class', subj:'Subject', date:'Date', total:'Total marks', key:'(Answer key)', luck:'Good luck', more:'Continued ...', exam:'Exam:', qmark:'Question marks', teacher:'Subject teacher', year:'Academic year', dur:'Duration', t:'True', f:'False', fix:'Correct:', school:'School',
     h:{ mcq:'Choose the correct answer', blank:'Fill in the blanks', tf:'Write (T) for true or (F) for false', tfx:'Write (T) for true or (F) for false, and correct the false ones', tfu:'Write (T) for true or (F) for false, and correct the underlined word', tfn:'Write (T) for true or (F) for false, and correct the false ones without changing the underlined word', match:'Match the following', def:'Define the following', analyze:'Analyze the following', open:'Answer the following questions', other:'' } }
 };
-const exq={ list:[], loaded:'', mode:'list', cur:null, busy:false, forTid:'', dg:'ku' };
+const exq={ list:[], loaded:'', mode:'list', cur:null, busy:false, forTid:'', dg:'ku', ver:'' };
 function exqDg(t){ return exq.dg==='en' ? String(t).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)) : String(t).replace(/[0-9]/g,d=>'٠١٢٣٤٥٦٧٨٩'[d]); }
 function exqTid(){ return exqIsT() ? currentTeacherId : (exq.forTid||''); }
 function exqClasses(tid){ tid=tid||exqTid(); const ids=new Set((config.assignments||[]).filter(a=>a.teacherId===tid).map(a=>a.classId)); return (config.classes||[]).filter(c=>ids.has(c.id)); }
@@ -14399,7 +14418,7 @@ function exqIsT(){ return currentRole==='teacher'; }
 function exqLangOf(name){ name=String(name||''); if(/عەرەب|عرب|arab/i.test(name)) return 'ar'; if(/ئینگلیز|انگلیز|english|ingl/i.test(name)) return 'en'; return 'ku'; }
 function exqIsSci(sid){ const sb=(config.subjects||[]).find(x=>x.id===sid); if(!sb) return false; const nm=String(sb.name||'').replace(/[كڪ]/g,'ک').replace(/[يىئ]/g,'ی').replace(/[ةھ]/g,'ە').replace(/[\u200c\u200d\s]+/g,''); return /فیزیا|فیزیک|کیمیا|زیندەزان|زیندەوەر|بایۆ|ژینەوەر|ژیانناسی|زانست|بیرکاری|بیرکار|ماتماتیک|ئەندازە|هەندەسە|فیزیاء|کیمیاء|احیاء|اححیاء|علوم|ریاضیات|physics|chemistry|biology|science|math/i.test(nm); }
 function exqTypeOf(k){ return EXQ_TYPES.find(x=>x[0]===k)||EXQ_TYPES[2]; }
-function exqNewItem(k){ return k==='mcq'?{ q:'', opts:['','','',''], ans:-1 }:(k==='blank'?{ q:'', ans:[] }:(k==='tf'?{ q:'', ans:'T', fixTxt:'' }:(k==='match'?{ a:'', b:'' }:{ q:'', ans:'' }))); }
+function exqNewItem(k){ k=exqB(k); return k==='mcq'?{ q:'', opts:['','','',''], ans:-1 }:(k==='blank'?{ q:'', ans:[] }:(k==='tf'?{ q:'', ans:'T', fixTxt:'' }:(k==='match'?{ a:'', b:'' }:{ q:'', ans:'' }))); }
 function exqEmptySecs(total){ const r=x=>Math.round(x*100)/100, o={}; EXQ_SECS.forEach(k=>{ o[k]={ on:false, total:0, branch:false, lq:1, ord:EXQ_SECS.indexOf(k), items:[exqNewItem(k)] }; }); o.mcq.on=true; o.mcq.total=r(exqMcqTot(total)); o.mcq.auto=true; o.tf.fix=false; o.other.head=''; return o; }
 function exqFill(sec,total){ const b=exqEmptySecs(total||60), old=!EXQ_SECS.some(k=>sec[k]&&typeof sec[k].lq==='number'); EXQ_SECS.forEach(k=>{ if(!sec[k]) sec[k]=b[k]; });
   EXQ_SECS.forEach((k,i)=>{ if(typeof sec[k].ord!=='number') sec[k].ord=i; });
@@ -14408,7 +14427,7 @@ function exqFill(sec,total){ const b=exqEmptySecs(total||60), old=!EXQ_SECS.some
   EXQ_SECS.forEach(k=>{ if(typeof sec[k].lq!=='number') sec[k].lq=1; });
   return sec; }
 /* ڕیزبەندی بەشەکان بەپێی ئەوەی کام جار سەحت لێدا (ord) */
-function exqOrd(sec){ return EXQ_SECS.filter(k=>sec[k]&&sec[k].on).sort((a,b)=>{ const x=typeof sec[a].ord==='number'?sec[a].ord:EXQ_SECS.indexOf(a), y=typeof sec[b].ord==='number'?sec[b].ord:EXQ_SECS.indexOf(b); return x-y||EXQ_SECS.indexOf(a)-EXQ_SECS.indexOf(b); }); }
+function exqOrd(sec){ const pr=k=>{ const q=exqP(k); return q?1+EXQ_PARTS.findIndex(x=>x[0]===q):0; }; return EXQ_SECS.filter(k=>sec[k]&&sec[k].on&&exqPartIs(sec,exqP(k))).sort((a,b)=>{ if(pr(a)!==pr(b)) return pr(a)-pr(b); const x=typeof sec[a].ord==='number'?sec[a].ord:EXQ_SECS.indexOf(a), y=typeof sec[b].ord==='number'?sec[b].ord:EXQ_SECS.indexOf(b); return x-y||EXQ_SECS.indexOf(a)-EXQ_SECS.indexOf(b); }); }
 /* لق: هەموو ئەو بەشانەی «لق»یان بۆ دیاری کراوە و یەک لە دوای یەکن، یەک ژمارەی پرسیار دەگرن (پ١/أ، پ١/ب ...)؛ هەر بەشێک (هەر چەند خاڵی هەبێت) یەک لقە */
 function exqPlan(sec, ok){
   /* ڕیز بەپێی ئەوەی کام جار سەحت لێداوە؛ هەر پرسیارێک ژمارەی لقەکانی (lq) هەیە: ئەو بەشانەی دوای ئەو سەحیان لێدەدرێت دەبنە لقی ب، ج ... هەتا لقەکان تەواو دەبن، پاشان پرسیاری نوێ دەست پێدەکات */
@@ -14430,7 +14449,7 @@ function exqPlan(sec, ok){
   });
   return plan;
 }
-function exqFilled(k,it){ return k==='match'?(String(it.a||'').trim()&&String(it.b||'').trim()):!!String(it.q||'').trim(); }
+function exqFilled(k,it){ k=exqB(k); return k==='match'?(String(it.a||'').trim()&&String(it.b||'').trim()):!!String(it.q||'').trim(); }
 function exqNew(){
   const tid=exqTid();
   if(!tid){ showAlert('سەرەتا مامۆستایەک هەڵبژێرە.'); return; }
@@ -14460,15 +14479,18 @@ function exqSecTotal(k,v){ const s=exq.cur.sec[k]; s.total=Number(v)||0; if(k===
 function exqSecOnQuiet(k){ const sec=exq.cur.sec; sec[k].ord=EXQ_SECS.reduce((m,x)=>Math.max(m,typeof sec[x].ord==='number'?sec[x].ord:-1),-1)+1; }
 function exqNoNum(k,v){ const s=exq.cur.sec[k]; if(v) s.nonum=true; else delete s.nonum; renderExamQ(); }
 function exqBranch(k,v){ const n=Math.max(1,Math.min(8,Number(v)||1)); exq.cur.sec[k].lq=n; exq.cur.sec[k].branch=n>1; renderExamQ(); }
-function exqHead(v){ exq.cur.sec.other.head=v; }
+function exqPartSet(p,v){ const sec=exq.cur.sec; sec.parts=sec.parts||{}; const o=sec.parts[p]=sec.parts[p]||{ on:false, total:0 }; o.on=!!v; renderExamQ(); }
+function exqPartTotal(p,v){ const sec=exq.cur.sec; sec.parts=sec.parts||{}; const o=sec.parts[p]=sec.parts[p]||{ on:false, total:0 }; o.total=Number(v)||0; renderExamQ(); }
+function exqHead(v,k){ exq.cur.sec[k||'other'].head=v; }
 function exqAdd(k){ exq.cur.sec[k].items.push(exqNewItem(k)); renderExamQ(); }
 function exqDel(k,i){ const s=exq.cur.sec[k]; if(s.items.length<=1) s.items=[exqNewItem(k)]; else s.items.splice(i,1); renderExamQ(); }
 function exqQ(k,i,v){ exq.cur.sec[k].items[i].q=v; }
-function exqMt(i,f,v){ exq.cur.sec.match.items[i][f]=v; }
+function exqMt(i,f,v,k){ exq.cur.sec[k||'match'].items[i][f]=v; }
 function exqOpt(i,j,v){ exq.cur.sec.mcq.items[i].opts[j]=v; }
 function exqAns(i,j){ exq.cur.sec.mcq.items[i].ans=j; renderExamQ(); }
-function exqTfAns(i,v){ exq.cur.sec.tf.items[i].ans=v; }
+function exqTfAns(i,v,k){ exq.cur.sec[k||'tf'].items[i].ans=v; }
 function exqTfHead(k,s,L){
+  k=exqB(k);
   if(k!=='tf' || !(s.fix||s.fixe||s.fixu||s.fixn)) return L.h[k];
   const lg=(L===EXQ_L.en)?'en':((L===EXQ_L.ar)?'ar':'ku');
   const T={
@@ -14485,9 +14507,9 @@ function exqTfHead(k,s,L){
   else { if(p.length) h+=noBase?p.join(' and '):(', and '+p.join(', ')); if(s.fixn) h+=p.length?T.nWith:(', and '+T.nAlone); if(noBase) h=h.charAt(0).toUpperCase()+h.slice(1); }
   return h;
 }
-function exqTfOpt(n,v){ const t=exq.cur.sec.tf; t[n]=!!v; if(v){ if(n==='fix') t.fixe=false; if(n==='fixe') t.fix=false; if(n==='fixu') t.fixn=false; if(n==='fixn') t.fixu=false; } renderExamQ(); }
-function exqTfTxt(i,v){ exq.cur.sec.tf.items[i].fixTxt=v; }
-function exqBlankAns(i,b,v){ const it=exq.cur.sec.blank.items[i]; it.ans=it.ans||[]; it.ans[b]=v; }
+function exqTfOpt(n,v,k){ const t=exq.cur.sec[k||'tf']; t[n]=!!v; if(v){ if(n==='fix') t.fixe=false; if(n==='fixe') t.fix=false; if(n==='fixu') t.fixn=false; if(n==='fixn') t.fixu=false; } renderExamQ(); }
+function exqTfTxt(i,v,k){ exq.cur.sec[k||'tf'].items[i].fixTxt=v; }
+function exqBlankAns(i,b,v,k){ const it=exq.cur.sec[k||'blank'].items[i]; it.ans=it.ans||[]; it.ans[b]=v; }
 function exqAl(k,i,v){ const it=exq.cur.sec[k].items[i]; if(v===''||v==null) delete it.al; else it.al=Math.max(0,Math.min(12,Number(v)||0)); }
 function exqTxtAns(k,i,v){ exq.cur.sec[k].items[i].ans=v; }
 const EXQ_BL=/(?:\.{2,}|…+|‥+)/g;
@@ -14499,7 +14521,7 @@ function exqBlankHtml(text,key,ans){
   return out;
 }
 function exqBl(x){ const t=String(x==null?'':x); if(!(t.match(EXQ_BL)||[]).length) return exqT(t); return exqBlankHtml(t,false).replace(/\[\[([^\[\]]+)\]\]/g,'<u>$1</u>').replace(/\n/g,'<br>'); }
-function exqSecSum(c){ return EXQ_SECS.reduce((a,k)=>a+((c.sec[k]&&c.sec[k].on)?(Number(c.sec[k].total)||0):0),0); }
+function exqSecSum(c){ return EXQ_SECS.reduce((a,k)=>a+((c.sec[k]&&c.sec[k].on&&exqPartIs(c.sec,exqP(k)))?(Number(c.sec[k].total)||0):0),0); }
 function exqPerm(n){ if(n<2) return [0]; let k=2; const g=(a,b)=>b?g(b,a%b):a; if(n===2) k=1; else while(g(k,n)!==1) k++; return Array.from({length:n},(_,i)=>(i*k+1)%n); }
 function exqRunConv(h,w){
   const D='0-9٠-٩۰-۹', B='[A-Za-z'+D+']', M='\u200E';
@@ -14654,37 +14676,49 @@ function exqSchoolName(lang){
   const tr=EXQ_TRL[lang]; const words=nm.split(/\s+/).filter(Boolean);
   return words.map(w=>{ if(tr[w]!==undefined&&w.length>1) return tr[w]; const base=w.replace(/ی$/,''); if(tr[w]!==undefined&&w.length>1) return tr[w]; if(lang==='ar') return w; return exqTranslit(w); }).filter(Boolean).join(' ');
 }
+function exqRng(seed){ let h=2166136261; String(seed).split('').forEach(c=>{ h^=c.charCodeAt(0); h=Math.imul(h,16777619); }); return ()=>{ h+=0x6D2B79F5; let t=h; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296; }; }
+function exqShuf(arr,rnd){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+/* وەشانی B: ڕیزبەندی پرسیارەکان و هەڵبژاردنەکانی (أ ب ج د) دەگۆڕدرێت؛ هەمان تۆو بۆ پرسیار و وەڵامنامە، بۆیە وەڵامنامەکە یەکسانە */
+function exqVerItems(items,k,rec){
+  if(exq.ver!=='B'&&exq.ver!=='C') return items;
+  const rnd=exqRng(exq.ver+'|'+(rec.title||'')+'|'+(rec.subjectId||rec.subjectName||'')+'|'+(rec.date||'')+'|'+k);
+  let out=exqShuf(items,rnd);
+  if(k==='mcq') out=out.map(it=>{ const idx=exqShuf([0,1,2,3],rnd); return Object.assign({},it,{ opts:idx.map(j=>(it.opts||[])[j]||''), ans:idx.indexOf(it.ans) }); });
+  return out;
+}
 function exqPaperHtml(rec, key){
   const L=EXQ_L[rec.lang]||EXQ_L.ku, E=escapeHtml, kd=x=>(rec.lang==='ku'?toKurdishDigits(x):String(x)), sc=config.school||{};
   let sec; try{ sec=typeof rec.sec==='object'?rec.sec:JSON.parse(rec.json); }catch(e){ sec={}; }
   const daily=rec.etype==='d', rd=x=>Math.round(x*100)/100, B='1px solid #000';
   const P=!!exq.pretty && !exq.w;
   const subj=exqWords(((config.subjects||[]).find(x=>x.id===rec.subjectId)||{}).name||rec.subjectName||'',rec.lang), cn=String(rec.clsText||'').trim()?String(rec.clsText).trim():exqClsAuto(rec.clsKu||((config.classes||[]).find(x=>x.id===rec.classId)||{}).name||rec.className||'',rec.lang);
-  let n=0; const blocks=[];
+  let n=0, lastPart=''; const blocks=[];
   const plan=exqPlan(sec,(k,s)=>(s.items||[]).some(it=>exqFilled(k,it)));
   exqOrd(sec).forEach(k=>{
-    const s=sec[k]; if(!s||!s.on) return;
-    const items=(s.items||[]).filter(it=>exqFilled(k,it)); if(!items.length) return;
-    const units=(k==='blank')?items.reduce((t,it)=>t+Math.max(1,exqBlankCount(it.q)),0):items.length;
+    const s=sec[k]; if(!s||!s.on) return; const kk=exqB(k), partK=exqP(k);
+    let items=(s.items||[]).filter(it=>exqFilled(k,it)); if(!items.length) return;
+    items=exqVerItems(items,k,rec);
+    const units=(kk==='blank')?items.reduce((t,it)=>t+Math.max(1,exqBlankCount(it.q)),0):items.length;
     const per=rd((Number(s.total)||0)/(units||1)), pl=plan[k], no=pl.no; if(!pl.nonum) n++;
     const br=!!pl.br, brL=br?`${L.qs}${kd(no)}/${L.l8[pl.idx]||kd(pl.idx+1)}`:'', single=br&&items.length===1;
-    const head=k==='other'?String(s.head||'').trim():((daily)?'':exqTfHead(k,s,L));
+    const head=exqIsOther(k)?String(s.head||'').trim():((daily)?'':exqTfHead(k,s,L));
     const mk=`&nbsp;<span dir="${L.dir}" style="unicode-bidi:isolate;font-weight:700;font-size:10.5pt;white-space:nowrap;">(${kd(per)} ${L.mark})</span>`;
     const mkN=nb=>`&nbsp;<span dir="${L.dir}" style="unicode-bidi:isolate;font-weight:700;font-size:10.5pt;white-space:nowrap;">(${kd(rd(per*Math.max(1,nb)))} ${L.mark})</span>`;
-    const eachT=(k==='blank')?({ku:'هەر بۆشاییەک',ar:'لكل فراغ',en:'each blank'}[rec.lang]||L.each):L.each;
+    const eachT=(kk==='blank')?({ku:'هەر بۆشاییەک',ar:'لكل فراغ',en:'each blank'}[rec.lang]||L.each):L.each;
     const lab=i=>single?'':`${kd(i+1)}.`;
     let hh='';
-    const subH=`<div style="margin:3mm 0 1.5mm;font-weight:900;font-size:12.5pt;">${brL}${head?': '+E(head):''}${single?'':` <span style="font-weight:700;font-size:11pt;">(${kd(rd(Number(s.total)||0))} ${L.mark}${k!=='open'?` — ${eachT}: ${kd(per)}`:''})</span>`}</div>`;
+    const subH=`<div style="margin:3mm 0 1.5mm;font-weight:900;font-size:12.5pt;">${brL}${head?': '+E(head):''}${single?'':` <span style="font-weight:700;font-size:11pt;">(${kd(rd(Number(s.total)||0))} ${L.mark}${kk!=='open'?` — ${eachT}: ${kd(per)}`:''})</span>`}</div>`;
     const grpT=br&&pl.idx===0?rd(pl.grp.secs.reduce((t,k2)=>t+(Number(sec[k2].total)||0),0)):0;
     if(br&&!daily) hh=(pl.idx===0?`<div style="margin:5mm 0 2mm;font-weight:900;font-size:13pt;">${L.q} ${L.ord[no-1]||kd(no)} <span style="font-weight:700;font-size:11pt;">(${kd(grpT)} ${L.mark})</span></div>`:'')+subH;
     else if(br) hh=subH;
-    else if(pl.nonum&&!daily) hh=`<div style="margin:5mm 0 2mm;font-weight:900;font-size:13pt;">${E(({ku:'هەڵبژاردن',ar:'اختيار من متعدد',en:'Multiple choice'}[rec.lang]||'هەڵبژاردن'))}<br>${E(head||exqTfHead(k,s,L))} <span style="font-weight:700;font-size:11pt;">(${kd(rd(Number(s.total)||0))} ${L.mark}${k!=='open'?` — ${eachT}: ${kd(per)}`:''})</span></div>`;
-    else if(!daily) hh=`<div style="margin:5mm 0 2mm;font-weight:900;font-size:13pt;">${L.q} ${L.ord[no-1]||kd(no)}${head?': '+E(head):''} <span style="font-weight:700;font-size:11pt;">(${kd(rd(Number(s.total)||0))} ${L.mark}${k!=='open'?` — ${eachT}: ${kd(per)}`:''})</span></div>`;
+    else if(pl.nonum&&!daily) hh=`<div style="margin:5mm 0 2mm;font-weight:900;font-size:13pt;">${E(({ku:'هەڵبژاردن',ar:'اختيار من متعدد',en:'Multiple choice'}[rec.lang]||'هەڵبژاردن'))}<br>${E(head||exqTfHead(k,s,L))} <span style="font-weight:700;font-size:11pt;">(${kd(rd(Number(s.total)||0))} ${L.mark}${kk!=='open'?` — ${eachT}: ${kd(per)}`:''})</span></div>`;
+    else if(!daily) hh=`<div style="margin:5mm 0 2mm;font-weight:900;font-size:13pt;">${L.q} ${L.ord[no-1]||kd(no)}${head?': '+E(head):''} <span style="font-weight:700;font-size:11pt;">(${kd(rd(Number(s.total)||0))} ${L.mark}${kk!=='open'?` — ${eachT}: ${kd(per)}`:''})</span></div>`;
     else if(head) hh=`<div style="margin:5mm 0 2mm;font-weight:900;font-size:13pt;">${E(head)}</div>`;
     else hh=`<div style="height:3mm;"></div>`;
     if(P) hh=hh.replace('margin:5mm 0 2mm;font-weight:900;font-size:13pt;','margin:5mm 0 2mm;font-weight:900;font-size:13pt;background:linear-gradient(90deg,#fde6cc,#fff);border-inline-start:1.2mm solid #f08a24;border-radius:1.5mm;padding:.8mm 3mm;');
     else if(!exq.w) hh=hh.replace('margin:5mm 0 2mm;font-weight:900;font-size:13pt;','margin:5mm 0 2mm;font-weight:900;font-size:13.5pt;color:#0f4c5a;background:#eaf4f6;border-inline-start:1.4mm solid #2a9db0;border-bottom:.3mm solid #2a9db0;border-radius:1.2mm;padding:.9mm 3mm;');
-    if(k==='match'){
+    if(partK && partK!==lastPart){ lastPart=partK; const pm=(sec.parts&&sec.parts[partK])||{}, pn=(EXQ_PARTS.find(x=>x[0]===partK)||[0,''])[1]; hh=`<div style="margin:6mm 0 1mm;text-align:center;font-weight:900;font-size:14.5pt;border-top:.4mm solid #000;border-bottom:.4mm solid #000;padding:.8mm 0;">${pn}${Number(pm.total)?` <span style="font-weight:700;font-size:11.5pt;">(${kd(rd(Number(pm.total)))} ${L.mark})</span>`:''}</div>`+hh; }
+    if(kk==='match'){
       const perm=exqPerm(items.length), L8=L.l8, cs='padding:1.2mm 3mm;font-size:12pt;';
       let h=hh+`<table style="width:100%;border-collapse:collapse;margin:1mm 0 2mm;"><tbody>${items.map((it,i)=>`<tr><td style="${cs}width:44%;border:${B};">${kd(i+1)}. ${exqT(it.a)}${mk}</td><td style="width:12%;text-align:center;">· · ·</td><td style="${cs}width:44%;border:${B};">${L8[i]||kd(i+1)}) ${exqT(items[perm[i]].b)}</td></tr>`).join('')}</tbody></table>`;
       if(key){ const pos=[]; perm.forEach((p,i)=>{ pos[p]=L8[i]||kd(i+1); }); h+=`<div style="margin:1mm 0 2mm;font-size:12pt;font-weight:900;text-decoration:underline;">${items.map((it,i)=>kd(i+1)+' ← '+pos[i]).join('&nbsp;&nbsp; ')}</div>`; }
@@ -14693,16 +14727,16 @@ function exqPaperHtml(rec, key){
     const W_=!!exq.w;
     items.forEach((it,i)=>{
       const q=exqT(it.q); let h='';
-      if(k==='mcq'){
+      if(kk==='mcq'){
         const od=j=>{ const ok=key&&it.ans===j; const lt=exqLets(rec,L)[j]; const lb=(L.dir==='rtl')?`<span dir="ltr" style="display:inline-block;unicode-bidi:isolate;min-width:8mm;text-align:right;">(${lt}</span>`:`${lt})`; return `<div style="${ok?'font-weight:900;text-decoration:underline;':''}">${lb} ${exqBl((it.opts||[])[j]||'')}${ok?' ✓':''}</div>`; };
         h=`<div style="margin:2mm 0 1mm;font-size:12pt;font-weight:700;">${lab(i)} ${exqBl(it.q)}${mk}</div>`+(W_?`<table style="width:100%;font-size:12pt;"><tr><td style="width:50%;">${od(0)}</td><td>${od(1)}</td></tr><tr><td>${od(2)}</td><td>${od(3)}</td></tr></table>`:`<div style="display:grid;grid-template-columns:1fr 1fr;gap:1mm 6mm;margin:0 6mm 2mm;font-size:12pt;">${[0,1,2,3].map(od).join('')}</div>`);
-      } else if(k==='blank'){
+      } else if(kk==='blank'){
         h=`<div style="margin:2mm 0;font-size:12pt;line-height:2;font-weight:700;">${lab(i)} ${exqBlankHtml(it.q,key,it.ans)}${mkN(exqBlankCount(it.q))}</div>`;
-      } else if(k==='tf'){
+      } else if(kk==='tf'){
         const mark=key?(it.ans==='F'?'✗':'✓'):'&nbsp;&nbsp;&nbsp;&nbsp;';
         h=(W_?`<table style="width:100%;font-size:12pt;"><tr><td style="width:8%;">${lab(i)}</td><td>${q}${mk}</td><td style="width:12%;border:${B};text-align:center;font-weight:900;">${mark}</td></tr></table>`:`<div style="margin:2mm 0;font-size:12pt;display:flex;gap:3mm;align-items:baseline;"><span>${lab(i)}</span><span style="flex:1;">${q}${mk}</span><span style="border:${B};min-width:12mm;text-align:center;font-weight:900;">${mark}</span></div>`)+`${(s.fix||s.fixe||s.fixu||s.fixn)?`<div style="margin:0 6mm 2mm;font-size:11pt;">${L.fix} ${key&&it.ans==='F'&&it.fixTxt?`<b style="text-decoration:underline;">${exqT(it.fixTxt)}</b>`:'.'.repeat(60)}</div>`:''}`;
       } else {
-        const lines=(it.al!=null&&it.al!=='')?Math.max(0,Number(it.al)||0):(k==='other'?5:3);
+        const lines=(it.al!=null&&it.al!=='')?Math.max(0,Number(it.al)||0):(exqIsOther(k)?5:3);
         h=`<div style="margin:2mm 0 1mm;font-size:12pt;font-weight:700;">${lab(i)} ${q}${mk}</div>${key?`<div style="margin:0 6mm 2mm;font-size:11.5pt;border:1px dashed #666;padding:1mm 2mm;">${exqT(it.ans||'')}</div>`:`${lines?`<div style="margin:0 6mm 2mm;font-size:11pt;">${('<div style="border-bottom:1px dotted #000;height:7mm;"></div>').repeat(lines)}</div>`:''}`}`;
       }
       blocks.push(i===0?hh+h:h);
@@ -14710,7 +14744,8 @@ function exqPaperHtml(rec, key){
   });
   if(!blocks.length) blocks.push('<p style="font-size:12pt;">—</p>');
   let tn=rec.teacherName||((config.teachers||[]).find(t=>t.id===currentTeacherId)||{}).name||''; tn=String(rec.tnText||'').trim()||exqTnAuto(tn,rec.lang);
-  const ttl=(daily&&rec.title&&rec.title!=='ڕۆژانە')?E(exqTitleTr(rec.title,rec.lang)):(L.exam+' '+E(exqTitleTr(String(rec.title||'').replace(/^تاقیکردنەوەی\s*/,''),rec.lang)));
+  const ttl0=(daily&&rec.title&&rec.title!=='ڕۆژانە')?E(exqTitleTr(rec.title,rec.lang)):(L.exam+' '+E(exqTitleTr(String(rec.title||'').replace(/^تاقیکردنەوەی\s*/,''),rec.lang)));
+  const ttl=ttl0+(exq.ver?` <span style="display:inline-block;border:.5mm solid currentColor;border-radius:1.2mm;padding:0 2.2mm;font-weight:900;">${exq.ver}</span>`:'');
   const hc='padding:0 2mm;vertical-align:top;font-size:11.5pt;line-height:1.8;';
   const headH=`<div style="${exq.w?'':'border:.45mm solid #2a9db0;border-radius:2.5mm;background:#f6fbfc;padding:1.5mm 2mm;margin-bottom:2.5mm;'}"><table style="width:100%;border-collapse:collapse;margin-bottom:1mm;"><tr>
     <td style="${hc}width:33%;text-align:${L.al};"><b>${E(exqSchoolName(rec.lang))}</b><br>${L.date}: ${rec.date?kd(fmtSlash(rec.date)):'.'.repeat(12)}</td>
@@ -14840,7 +14875,7 @@ async function exqLoad(){
 async function exqSave(){
   const c=exq.cur; if(!c||exq.busy) return;
   if(!c.classId||!c.subjectId){ showAlert('پۆل و وانە هەڵبژێرە.'); return; }
-  const has=EXQ_SECS.some(k=>c.sec[k].on && c.sec[k].items.some(it=>exqFilled(k,it)));
+  const has=EXQ_SECS.some(k=>c.sec[k].on && exqPartIs(c.sec,exqP(k)) && c.sec[k].items.some(it=>exqFilled(k,it)));
   if(!has){ showAlert('لانی کەم یەک پرسیار بنووسە.'); return; }
   if(!attFbReady()){ showAlert('ئینتەرنێت پێویستە.'); return; }
   const tid=c.ownerTid||currentTeacherId; if(!tid){ showAlert('مامۆستا دیاری نەکراوە.'); return; }
@@ -15262,23 +15297,28 @@ function renderExamQ(keep){
   const secBody=k=>{
     const s=c.sec[k]; if(!s.on) return '';
     const pl0=planFor(k)[k], nfl=s.items.filter(it=>exqFilled(k,it)).length, single0=!!(pl0&&pl0.br)&&(nfl||s.items.length)===1, brL0=(pl0&&pl0.br)?`${L.qs}${kd(pl0.no)}/${L.l8[pl0.idx]||kd(pl0.idx+1)}`:'';
-    const fl=s.items.filter(it=>exqFilled(k,it)), cntI=(k==='blank'?fl.reduce((t,it)=>t+Math.max(1,exqBlankCount(it.q)),0):fl.length)||s.items.length, per=Math.round(((Number(s.total)||0)/cntI)*100)/100;
+    const fl=s.items.filter(it=>exqFilled(k,it)), cntI=(exqB(k)==='blank'?fl.reduce((t,it)=>t+Math.max(1,exqBlankCount(it.q)),0):fl.length)||s.items.length, per=Math.round(((Number(s.total)||0)/cntI)*100)/100;
     const box='border:1px solid var(--rule);border-radius:8px;padding:8px;margin:6px 0;';
     const items=s.items.map((it,i)=>{
       const del=`<button class="btn btn-ghost btn-sm" onclick="exqDel('${k}',${i})">🗑️</button>`;
       const lb=single0?brL0:`${kd(i+1)}.`;
-      if(k==='match') return `<div style="${box}display:flex;gap:6px;align-items:center;"><b>${kd(i+1)}.</b><input type="text" style="flex:1;" value="${E(it.a||'')}" placeholder="لای یەکەم" oninput="exqMt(${i},'a',this.value)"><span>⟷</span><input type="text" style="flex:1;" value="${E(it.b||'')}" placeholder="دروستەکەی (لای دووەم)" oninput="exqMt(${i},'b',this.value)">${del}</div>`;
-      if(k==='mcq') return `<div style="${box}"><div style="display:flex;gap:6px;"><b>${lb}</b><textarea rows="2" style="flex:1;" placeholder="پرسیار..." oninput="exqQ('mcq',${i},this.value)">${E(it.q)}</textarea>${del}</div>${[0,1,2,3].map(j=>`<div style="display:flex;gap:6px;align-items:center;margin-top:4px;"><b style="width:22px;text-align:center;">${exqLets(c,L)[j]}</b><input type="text" style="flex:1;" value="${E((it.opts||[])[j]||'')}" oninput="exqOpt(${i},${j},this.value)" placeholder="ئۆپشن"><label style="white-space:nowrap;"><input type="radio" name="exq-a-${i}" ${it.ans===j?'checked':''} onchange="exqAns(${i},${j})"> ✓ دروست</label></div>`).join('')}</div>`;
-      if(k==='blank'){ const nb=exqBlankCount(it.q); return `<div style="${box}"><div style="display:flex;gap:6px;"><b>${lb}</b><textarea rows="2" style="flex:1;" placeholder="ڕستە بنووسە؛ بۆ بۆشایی دوو نوکتە (..) دابنێ" onchange="exqQ('blank',${i},this.value);renderExamQ()" oninput="exqQ('blank',${i},this.value)">${E(it.q)}</textarea>${del}</div>${Array.from({length:nb},(_,b)=>`<div style="display:flex;gap:6px;align-items:center;margin-top:4px;"><b style="min-width:26px;">(${kd(b+1)})</b><input type="text" style="flex:1;" value="${E((it.ans||[])[b]||'')}" placeholder="وەڵامی بۆشایی (تەنها بۆ ورەقەی وەڵام)" oninput="exqBlankAns(${i},${b},this.value)"></div>`).join('')}</div>`; }
-      if(k==='tf') return `<div style="${box}"><div style="display:flex;gap:6px;"><b>${lb}</b><textarea rows="2" style="flex:1;" placeholder="ڕستە..." oninput="exqQ('tf',${i},this.value)">${E(it.q)}</textarea>${del}</div><div style="margin-top:4px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;"><label><input type="radio" name="exq-t-${i}" ${it.ans!=='F'?'checked':''} onchange="exqTfAns(${i},'T')"> ڕاست</label><label><input type="radio" name="exq-t-${i}" ${it.ans==='F'?'checked':''} onchange="exqTfAns(${i},'F')"> هەڵە</label>${(s.fix||s.fixe||s.fixu||s.fixn)?`<input type="text" style="flex:1;min-width:160px;" value="${E(it.fixTxt||'')}" placeholder="${s.fixu?'ڕاستکراوەی وشە هێڵ بەژێرەکە (ئەگەر هەڵەیە)':'ڕاستکراوەی (ئەگەر هەڵەیە)'}" oninput="exqTfTxt(${i},this.value)">`:''}</div></div>`;
-      const big=k==='other';
+      if(exqB(k)==='match') return `<div style="${box}display:flex;gap:6px;align-items:center;"><b>${kd(i+1)}.</b><input type="text" style="flex:1;" value="${E(it.a||'')}" placeholder="لای یەکەم" oninput="exqMt(${i},'a',this.value,'${k}')"><span>⟷</span><input type="text" style="flex:1;" value="${E(it.b||'')}" placeholder="دروستەکەی (لای دووەم)" oninput="exqMt(${i},'b',this.value,'${k}')">${del}</div>`;
+      if(exqB(k)==='mcq') return `<div style="${box}"><div style="display:flex;gap:6px;"><b>${lb}</b><textarea rows="2" style="flex:1;" placeholder="پرسیار..." oninput="exqQ('mcq',${i},this.value)">${E(it.q)}</textarea>${del}</div>${[0,1,2,3].map(j=>`<div style="display:flex;gap:6px;align-items:center;margin-top:4px;"><b style="width:22px;text-align:center;">${exqLets(c,L)[j]}</b><input type="text" style="flex:1;" value="${E((it.opts||[])[j]||'')}" oninput="exqOpt(${i},${j},this.value)" placeholder="ئۆپشن"><label style="white-space:nowrap;"><input type="radio" name="exq-a-${i}" ${it.ans===j?'checked':''} onchange="exqAns(${i},${j})"> ✓ دروست</label></div>`).join('')}</div>`;
+      if(exqB(k)==='blank'){ const nb=exqBlankCount(it.q); return `<div style="${box}"><div style="display:flex;gap:6px;"><b>${lb}</b><textarea rows="2" style="flex:1;" placeholder="ڕستە بنووسە؛ بۆ بۆشایی دوو نوکتە (..) دابنێ" onchange="exqQ('blank',${i},this.value);renderExamQ()" oninput="exqQ('blank',${i},this.value)">${E(it.q)}</textarea>${del}</div>${Array.from({length:nb},(_,b)=>`<div style="display:flex;gap:6px;align-items:center;margin-top:4px;"><b style="min-width:26px;">(${kd(b+1)})</b><input type="text" style="flex:1;" value="${E((it.ans||[])[b]||'')}" placeholder="وەڵامی بۆشایی (تەنها بۆ ورەقەی وەڵام)" oninput="exqBlankAns(${i},${b},this.value,'${k}')"></div>`).join('')}</div>`; }
+      if(exqB(k)==='tf') return `<div style="${box}"><div style="display:flex;gap:6px;"><b>${lb}</b><textarea rows="2" style="flex:1;" placeholder="ڕستە..." oninput="exqQ('tf',${i},this.value)">${E(it.q)}</textarea>${del}</div><div style="margin-top:4px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;"><label><input type="radio" name="exq-t-${k}-${i}" ${it.ans!=='F'?'checked':''} onchange="exqTfAns(${i},'T','${k}')"> ڕاست</label><label><input type="radio" name="exq-t-${k}-${i}" ${it.ans==='F'?'checked':''} onchange="exqTfAns(${i},'F','${k}')"> هەڵە</label>${(s.fix||s.fixe||s.fixu||s.fixn)?`<input type="text" style="flex:1;min-width:160px;" value="${E(it.fixTxt||'')}" placeholder="${s.fixu?'ڕاستکراوەی وشە هێڵ بەژێرەکە (ئەگەر هەڵەیە)':'ڕاستکراوەی (ئەگەر هەڵەیە)'}" oninput="exqTfTxt(${i},this.value,'${k}')">`:''}</div></div>`;
+      const big=exqIsOther(k);
       return `<div style="${box}"><div style="display:flex;gap:6px;"><b>${lb}</b><textarea rows="${big?6:2}" style="flex:1;" placeholder="${big?'هەر جۆرە پرسیارێک بنووسە...':'پرسیار...'}" oninput="exqQ('${k}',${i},this.value)">${E(it.q)}</textarea>${del}</div><textarea rows="${big?4:2}" style="width:100%;margin-top:4px;" placeholder="وەڵام (لە ورەقەی وەڵام دەچاپکرێت)" oninput="exqTxtAns('${k}',${i},this.value)">${E(it.ans||'')}</textarea><div style="margin-top:4px;display:flex;gap:6px;align-items:center;"><span class="subtext">هێڵی وەڵام لە چاپی پرسیار:</span><select onchange="exqAl('${k}',${i},this.value)"><option value="" ${it.al==null?'selected':''}>خۆکار (${kd(k==='other'?5:3)})</option><option value="0" ${it.al===0?'selected':''}>بێ هێڵ (شوێنی وەڵام نەبێت)</option>${[1,2,3,4,5,6,7,8,9,10].map(n=>`<option value="${n}" ${it.al===n?'selected':''}>${kd(n)} هێڵ</option>`).join('')}</select></div></div>`;
     }).join('');
     const ub=`<div style="margin-bottom:6px;"><button type="button" class="btn btn-ghost btn-sm" onmousedown="event.preventDefault()" onclick="exqWrap('[[',']]')">U̲ هێڵ بەژێر کردنی وشە</button> <span class="subtext">وشەکە دیاری بکە لە ناو خانەی پرسیارەکە و ئەم دوگمەیە بدە؛ دەبێتە [[وشە]] و لە چاپدا هێڵی بەژێر دێت.</span></div>`;
-    const extra=ub+(k==='tf'?`<div class="field" style="margin-bottom:6px;"><label class="field-label">فەرمانی ڕاستکردنەوە (دەکرێت چەند دانەیەک پێکەوە هەڵبژێریت؛ لە سەردێڕەکە دەنووسرێت)</label><label style="display:flex;gap:6px;align-items:center;margin-bottom:4px;"><input type="checkbox" ${s.fix?'checked':''} onchange="exqTfOpt('fix',this.checked)"> هەڵەکان ڕاست بکەرەوە</label><label style="display:flex;gap:6px;align-items:center;margin-bottom:4px;"><input type="checkbox" ${s.fixe?'checked':''} onchange="exqTfOpt('fixe',this.checked)"> هەڵەی ئەمانە ڕاست بکەرەوە</label><label style="display:flex;gap:6px;align-items:center;margin-bottom:4px;"><input type="checkbox" ${s.fixu?'checked':''} onchange="exqTfOpt('fixu',this.checked)"> هێڵ بەژێرهاتووەکان ڕاست بکەرەوە</label><label style="display:flex;gap:6px;align-items:center;margin-bottom:4px;"><input type="checkbox" ${s.fixn?'checked':''} onchange="exqTfOpt('fixn',this.checked)"> هێڵ بەژێرهاتووەکان مەگۆڕە (دەکرێت لەگەڵ یەکێک لەوانی سەرەوە بێت)</label></div>`:(k==='other'?`<div class="field" style="margin-bottom:6px;"><label class="field-label">سەردێڕ (خۆت دەینووسیت؛ ئیختیاری)</label><input type="text" value="${E(s.head||'')}" oninput="exqHead(this.value)"></div>`:''));
-    return `<div style="margin-top:8px;">${extra}${items}<div class="btnrow"><button class="btn btn-ghost btn-sm" onclick="exqAdd('${k}')">➕ ${k==='match'?'هێڵ':'پرسیار'}</button><span class="subtext">نمرەی هەر ${k==='match'?'هێڵێک':(k==='blank'?'بۆشاییەک':'پرسیارێک')}: ${kd(per)}</span></div></div>`;
+    const extra=ub+(exqB(k)==='tf'?`<div class="field" style="margin-bottom:6px;"><label class="field-label">فەرمانی ڕاستکردنەوە (دەکرێت چەند دانەیەک پێکەوە هەڵبژێریت؛ لە سەردێڕەکە دەنووسرێت)</label><label style="display:flex;gap:6px;align-items:center;margin-bottom:4px;"><input type="checkbox" ${s.fix?'checked':''} onchange="exqTfOpt('fix',this.checked,'${k}')"> هەڵەکان ڕاست بکەرەوە</label><label style="display:flex;gap:6px;align-items:center;margin-bottom:4px;"><input type="checkbox" ${s.fixe?'checked':''} onchange="exqTfOpt('fixe',this.checked,'${k}')"> هەڵەی ئەمانە ڕاست بکەرەوە</label><label style="display:flex;gap:6px;align-items:center;margin-bottom:4px;"><input type="checkbox" ${s.fixu?'checked':''} onchange="exqTfOpt('fixu',this.checked,'${k}')"> هێڵ بەژێرهاتووەکان ڕاست بکەرەوە</label><label style="display:flex;gap:6px;align-items:center;margin-bottom:4px;"><input type="checkbox" ${s.fixn?'checked':''} onchange="exqTfOpt('fixn',this.checked,'${k}')"> هێڵ بەژێرهاتووەکان مەگۆڕە (دەکرێت لەگەڵ یەکێک لەوانی سەرەوە بێت)</label></div>`:(exqIsOther(k)?`<div class="field" style="margin-bottom:6px;"><label class="field-label">سەردێڕ (خۆت دەینووسیت؛ ئیختیاری)</label><input type="text" value="${E(s.head||'')}" oninput="exqHead(this.value,'${k}')"></div>`:''));
+    return `<div style="margin-top:8px;">${extra}${items}<div class="btnrow"><button class="btn btn-ghost btn-sm" onclick="exqAdd('${k}')">➕ ${exqB(k)==='match'?'هێڵ':'پرسیار'}</button><span class="subtext">نمرەی هەر ${exqB(k)==='match'?'هێڵێک':(exqB(k)==='blank'?'بۆشاییەک':'پرسیارێک')}: ${kd(per)}</span></div></div>`;
   };
-  const head=k=>{ const s=c.sec[k]; return `<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;"><label style="display:flex;gap:6px;align-items:center;font-weight:800;"><input type="checkbox" ${s.on?'checked':''} onchange="exqSecOn('${k}',this.checked)"> ${EXQ_SECT[k]}</label>${s.on?`<span style="display:flex;gap:6px;align-items:center;">نمرەی بەش: <input type="number" step="any" min="0" style="width:80px;" value="${s.total}" onchange="exqSecTotal('${k}',this.value)">${k==='mcq'&&c.total>5?`<span class="subtext">(٢٠٪ی ${kd(c.total)} = ${kd(Math.round(c.total*0.2*100)/100)})</span>`:''}</span>${(planFor(k)[k]&&planFor(k)[k].br&&planFor(k)[k].idx>0)?'':`<label style="display:flex;gap:4px;align-items:center;">چەند لق؟ <select onchange="exqBranch('${k}',this.value)">${[1,2,3,4,5,6].map(v=>`<option value="${v}" ${(Number(s.lq)||1)===v?'selected':''}>${v===1?'١ (بێ لق)':kd(v)+' لق'}</option>`).join('')}</select></label>`}${(k!=='mcq'||daily||(Number(s.lq)>1)||s.branch)?'':`<label style="display:flex;gap:4px;align-items:center;"><input type="checkbox" ${s.nonum?'checked':''} onchange="exqNoNum('${k}',this.checked)"> بێ ژمارەی پرسیار (سەرەوە بنووسرێت «هەڵبژاردن»)</label>`}${planFor(k)[k]?`<b>← ${planFor(k)[k].nonum?'بێ ژمارە':planFor(k)[k].br?`${L.qs}${kd(planFor(k)[k].no)}/${L.l8[planFor(k)[k].idx]||kd(planFor(k)[k].idx+1)}`:`${L.qs}${kd(planFor(k)[k].no)}`}</b>`:''}${daily?'':`<span class="subtext">سەردێڕ: ${E(k==='other'?(s.head||'—'):exqTfHead(k,s,L))}</span>`}`:''}</div>`; };
+  const head=k=>{ const s=c.sec[k]; return `<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;"><label style="display:flex;gap:6px;align-items:center;font-weight:800;"><input type="checkbox" ${s.on?'checked':''} onchange="exqSecOn('${k}',this.checked)"> ${EXQ_SECT[k]}</label>${s.on?`<span style="display:flex;gap:6px;align-items:center;">نمرەی بەش: <input type="number" step="any" min="0" style="width:80px;" value="${s.total}" onchange="exqSecTotal('${k}',this.value)">${exqB(k)==='mcq'&&c.total>5?`<span class="subtext">(٢٠٪ی ${kd(c.total)} = ${kd(Math.round(c.total*0.2*100)/100)})</span>`:''}</span>${(planFor(k)[k]&&planFor(k)[k].br&&planFor(k)[k].idx>0)?'':`<label style="display:flex;gap:4px;align-items:center;">چەند لق؟ <select onchange="exqBranch('${k}',this.value)">${[1,2,3,4,5,6].map(v=>`<option value="${v}" ${(Number(s.lq)||1)===v?'selected':''}>${v===1?'١ (بێ لق)':kd(v)+' لق'}</option>`).join('')}</select></label>`}${(exqB(k)!=='mcq'||daily||(Number(s.lq)>1)||s.branch)?'':`<label style="display:flex;gap:4px;align-items:center;"><input type="checkbox" ${s.nonum?'checked':''} onchange="exqNoNum('${k}',this.checked)"> بێ ژمارەی پرسیار (سەرەوە بنووسرێت «هەڵبژاردن»)</label>`}${planFor(k)[k]?`<b>← ${planFor(k)[k].nonum?'بێ ژمارە':planFor(k)[k].br?`${L.qs}${kd(planFor(k)[k].no)}/${L.l8[planFor(k)[k].idx]||kd(planFor(k)[k].idx+1)}`:`${L.qs}${kd(planFor(k)[k].no)}`}</b>`:''}${daily?'':`<span class="subtext">سەردێڕ: ${E(exqIsOther(k)?(s.head||'—'):exqTfHead(k,s,L))}</span>`}`:''}</div>`; };
+  const partsHtml=()=>EXQ_PARTS.map(([p,nm])=>{
+    const pm=(c.sec.parts&&c.sec.parts[p])||{}, on=!!pm.on, keys=EXQ_PSEC.map(t=>p+'.'+t);
+    const sum=keys.reduce((a,k)=>a+((c.sec[k]&&c.sec[k].on)?(Number(c.sec[k].total)||0):0),0), pt=Number(pm.total)||0, bad=pt&&Math.abs(sum-pt)>0.01;
+    return `<div class="card" style="padding:12px;margin-bottom:10px;border:2px solid ${on?'#2a9db0':'var(--rule)'};"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;"><label style="display:flex;gap:6px;align-items:center;font-weight:900;font-size:16px;"><input type="checkbox" ${on?'checked':''} onchange="exqPartSet('${p}',this.checked)"> بەشی ${nm}</label>${on?`<span style="display:flex;gap:6px;align-items:center;">نمرەی بەش: <input type="number" step="any" min="0" style="width:80px;" value="${pm.total||0}" onchange="exqPartTotal('${p}',this.value)"></span><span class="subtext" style="${bad?'color:#b00020;font-weight:700;':''}">کۆی نمرەی پرسیارەکانی ئەم بەشە: ${kd(sum)}${bad?' (لەگەڵ نمرەی بەش ناگونجێت)':''}</span>`:'<span class="subtext">تیکی بکە بۆ ئەوەی جۆرەکانی پرسیار دەربکەون</span>'}</div>${on?keys.map(k=>`<div class="card" style="padding:12px;margin:10px 0 0;">${head(k)}${secBody(k)}</div>`).join(''):''}</div>`;
+  }).join('');
   el.innerHTML=`<div class="btnrow" style="margin-bottom:10px;align-items:center;"><button class="btn btn-ghost" onclick="exqBack()">← گەڕانەوە</button>${T?'':`<b>مامۆستا: ${E(((config.teachers||[]).find(t=>t.id===c.ownerTid)||{}).name||'')}</b>`}</div>
   <div class="card" style="padding:12px;margin-bottom:10px;"><div class="row" style="gap:10px;flex-wrap:wrap;align-items:end;">
     <div class="field" style="min-width:160px;"><label class="field-label">پۆل و لق</label><select onchange="exqBase('classId',this.value)">${exqGradeOpts((c.ownerTid||exqTid())).map(g=>`<option value="g::${E(g)}" ${c.clsKu===g?'selected':''}>${E(g)} (هەموو لقەکان)</option>`).join('')}${cls.map(x=>`<option value="${x.id}" ${(!c.clsKu&&x.id===c.classId)?'selected':''}>${E(x.name)}</option>`).join('')}</select></div>
@@ -15298,7 +15338,9 @@ function renderExamQ(keep){
   <textarea id="exq-ai-prompt" data-nolat="1" readonly rows="6" style="display:none;width:100%;margin-top:6px;direction:ltr;font-size:13px;"></textarea>
   <label class="field-label" style="margin-top:8px;display:block;">دانانی وەڵامی AI</label><textarea id="exq-ai-paste" data-nolat="1" rows="6" style="width:100%;direction:ltr;font-size:13px;" placeholder="Q: ...\nA) ...\nB) ...\nANS: B"></textarea><div class="btnrow"><button class="btn btn-primary btn-sm" onclick="exqAiImport()">➕ زیادکردنی پرسیارەکان</button></div></details></div>
   ${(sci?'':'<details class="card" style="padding:8px 10px;margin-bottom:10px;"><summary style="cursor:pointer;font-weight:800;">🧮 بیرکاری، کیمیا، تیر و هێما (دوگمەکان)</summary>')+`<div class="card" style="padding:10px;margin-bottom:10px;"><div style="font-weight:800;margin-bottom:4px;">بیرکاری (لە خانەی نووسینەکان):</div><div class="btnrow"><button class="btn btn-ghost btn-sm" onmousedown="event.preventDefault()" onclick="exqIns(exqDg('{٣/٤}'))">کەرت ${exqDg('{٣/٤}')}</button><button class="btn btn-ghost btn-sm" onmousedown="event.preventDefault()" onclick="exqIns(exqDg('√{٢٥}'))">ڕەگ ${exqDg('√{٢٥}')}</button><button class="btn btn-ghost btn-sm" onmousedown="event.preventDefault()" onclick="exqIns(exqDg('^٢'))">توان ${exqDg('^٢')}</button><button class="btn btn-ghost btn-sm" onmousedown="event.preventDefault()" onclick="exqIns(exqDg('_{١}'))">خوار ${exqDg('_{١}')}</button><button class="btn ${exq.dg==='en'?'btn-primary':'btn-ghost'} btn-sm" onmousedown="event.preventDefault()" onclick="exq.dg=exq.dg==='en'?'ku':'en';renderExamQ()">🔢 ژمارە: ${exq.dg==='en'?'ئینگلیزی 0123':'کوردی ٠١٢٣'}</button></div><div class="subtext" style="margin-top:4px;">یەکەم لە خانەیەک کلیک بکە، پاشان دوگمە. کەرت: {سەرەوە/خوارەوە}. ڕەگ: √{ژمارە}. توان: x^2 یان x^{10}. خوار: H_{2}. ژمارەی کوردی و ئینگلیزی هەردووکیان کار دەکەن، و دوگمەی «ژمارە» ئەو ژمارەیە دیاری دەکات کە دوگمەکان دایدەنێن. تەنها ئەوەی نێو کەوانەی { } هەیە دەگۆڕێت.</div></div><div class="card" style="padding:10px;margin-bottom:10px;"><div style="font-weight:800;margin-bottom:4px;">⚗️ کیمیا، تیر و هێما (لە خانەی نووسینەکان):</div><div class="btnrow"><button class="btn btn-ghost btn-sm" onmousedown="event.preventDefault()" onclick="exqWrap('_{','}')">H₂ خوارەوە</button><button class="btn btn-ghost btn-sm" onmousedown="event.preventDefault()" onclick="exqWrap('^{','}')">O² سەرەوە</button><button class="btn btn-ghost btn-sm" onmousedown="event.preventDefault()" onclick="exqChem()">⚗️ خۆکار: H2O ← H₂O</button><button class="btn btn-ghost btn-sm" onmousedown="event.preventDefault()" onclick="exqWrap('⟦','⟧')">⟦ ⟧ هاوکێشە (چەپ ← ڕاست)</button></div><div class="btnrow" style="margin-top:6px;"><button class="btn btn-ghost btn-sm" onmousedown="event.preventDefault()" onclick="exqInsC('→{|}',2)">→ تیر + نووسین</button><button class="btn btn-ghost btn-sm" onmousedown="event.preventDefault()" onclick="exqInsC('→{Δ|}',3)">→ Δ گەرمی</button><button class="btn btn-ghost btn-sm" onmousedown="event.preventDefault()" onclick="exqInsC('⇌{|}',2)">⇌ گەڕاوە</button><button class="btn btn-ghost btn-sm" onmousedown="event.preventDefault()" onclick="exqInsC('⇄{|}',2)">⇄ دوو تیر</button></div><div class="btnrow" style="margin-top:6px;flex-wrap:wrap;">${['→','←','↔','⇌','⇄','↑','↓','Δ','°','±','×','÷','≤','≥','≠','≈','∞','π','α','β','γ','μ','Ω','⁺','⁻','✓','✗','∠','⊥','∥','△','∴'].map(x=>`<button class="btn btn-ghost btn-sm" style="min-width:34px;font-size:16px;" onmousedown="event.preventDefault()" onclick="exqIns('${x}')">${x}</button>`).join('')}</div><div class="subtext" style="margin-top:4px;line-height:1.9;">خوارەوە/سەرەوە: بنووسە <b dir="ltr">H_{2}O</b> یان <b dir="ltr">O^{2-}</b> — یان دەقەکە دیاری بکە و دوگمە بدە. «خۆکار» هەموو <b dir="ltr">H2O</b>ەکان دەکات بە <b dir="ltr">H₂O</b>. تیر لەگەڵ نووسین: <b dir="ltr">→{Δ|MnO_{2}}</b> (پێش | = سەر تیر، دوای | = ژێر تیر). تیری گەڕاوە: <b dir="ltr">⇌{|}</b>. هاوکێشەی کیمیایی بنووسە ناو ⟦ ⟧ تا بە ڕێکی چەپ ← ڕاست بێت (و لاتینی ← کوردی دەستی لێ نەدات). تیر و Δ لە Word دا بە شێوەی سادە دەردەکەون.</div></div>`+exqEqPanel()+(sci?'':'</details>')}
-  ${EXQ_SECS.filter(k=>k!=='analyze'||sci||c.sec.analyze.on).map(k=>`<div class="card" style="padding:12px;margin-bottom:10px;">${head(k)}${secBody(k)}</div>`).join('')}
+  ${EXQ_SECS.filter(k=>!exqP(k)&&(k!=='analyze'||sci||c.sec.analyze.on)).map(k=>`<div class="card" style="padding:12px;margin-bottom:10px;">${head(k)}${secBody(k)}</div>`).join('')}
+  ${(exqIsKu(c.subjectId)&&!daily)?`<div style="font-weight:900;margin:12px 0 6px;">بەشەکانی وانەی کوردی (ڕێزمان، ئەدەب، ڕەوانبێژی) — هەڵبژاردن لە سەرەوە یەک هەڵبژاردنە و بەشی نییە</div>`+partsHtml():''}
+  <div class="field" style="max-width:300px;margin:8px 0;"><label class="field-label">وەشانی وەرەقە (بۆ نزیکەکان)</label><select onchange="exq.ver=this.value"><option value="" ${!exq.ver?'selected':''}>ئاسایی (بێ پیت)</option><option value="A" ${exq.ver==='A'?'selected':''}>وەشانی A (وەک خۆی)</option><option value="B" ${exq.ver==='B'?'selected':''}>وەشانی B (ڕیزبەندی گۆڕاو)</option><option value="C" ${exq.ver==='C'?'selected':''}>وەشانی C (ڕیزبەندییەکی تری گۆڕاو)</option></select><div class="section-hint" style="margin:3px 0 0;">وەشانی B و C هەریەکەیان ڕیزبەندی پرسیار و (أ ب ج د) بە شێوەیەکی جیاواز دەگۆڕن. وەڵامنامەش لەگەڵ هەمان وەشان دروست دەبێت. هەموو دوگمەکانی چاپ و PDF ی خوارەوە بەپێی ئەمە کار دەکەن.</div></div>
   <div class="btnrow"><button class="btn btn-primary" onclick="exqSave()" ${exq.busy?'disabled':''}>💾 هەڵگرتن</button><button class="btn btn-ghost" onclick="exqPrintCur(false)">🖨️ چاپی پرسیار</button><button class="btn btn-primary" onclick="exqPrintCur(false,true)">🎨 چاپی پرسیار (دیزاینی جوان)</button><button class="btn btn-ghost" onclick="pdfRun(()=>{ exqPrintCur(false,true) })">📄 PDF (دیزاینی جوان)</button><button class="btn btn-ghost" onclick="exqPrintCur(true)">🔑 چاپی وەڵام</button><button class="btn btn-ghost" onclick="exqPdf(exqRecCur(),false)">📄 PDF پرسیار</button><button class="btn btn-ghost" onclick="exqPdf(exqRecCur(),true)">📄 PDF وەڵام</button><button class="btn btn-whatsapp" onclick="exqSend(exqRecCur())">📲 ناردن بە واتسئەپ</button>${c.locked?`<button class="btn btn-ghost" style="color:#b00020;" onclick="exqDeleteCur()">🗑️ سڕینەوەی ئەم تاقیکردنەوەیە</button>`:''}</div>`;
   exqUiLang(el,c.lang);
 }
