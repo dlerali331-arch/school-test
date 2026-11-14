@@ -1010,7 +1010,7 @@
     <section id="tab-attmonthreport"><h2 class="section-title">ڕاپۆرتی مانگانەی غیابات</h2><div id="attmonthreport-body"></div></section>
     <section id="tab-badges"><h2 class="section-title">باجی خوێندکار</h2><div id="badges-body"></div></section>
     <section id="tab-trainvis"><h2 class="section-title">سەردانی مامۆستای ڕاهێنەر</h2><div id="trainvis-body"></div></section>
-    <section id="tab-myvisits"><h2 class="section-title">سەردانەکانی بەڕێوەبەر بۆ من</h2><div id="myvisits-body"></div></section>
+    <section id="tab-myvisits"><h2 class="section-title">سەردانی بەڕێوەبەر و مامۆستای ڕاهێنەر</h2><div id="myvisits-body"></div></section>
     <section id="tab-ecofriends"><h2 class="section-title">هاوڕێیانی ژینگە</h2><div id="ecofriends-body"></div></section>
     <section id="tab-methods"><h2 class="section-title">میتۆدەکانی وانەوتنەوە</h2><div id="methods-body"></div></section>
     <section id="tab-schev"><h2 class="section-title">خود هەڵسەنگاندنی قوتابخانە</h2><div id="schev-body"></div></section>
@@ -9168,7 +9168,7 @@ const HOME_CARDS = [
   { id:'discmine', ico:'📋', title:'لیژنەی ڕێکاری: سەرپێچی خوێندکار', sub:'پڕکردنەوە و چاپی فۆرمی سەرپێچی (ئەندامی لیژنە)', teacherTop:true, teacherOnly:true },
   { id:'g_train', ico:'🎓', title:'بەشی ڕاهێنان', sub:'خۆهەڵسەنگاندن، پلانی وانە، میتۆدەکان، فیدباک', group:true, top:true, teacherTop:true },
   { id:'methods', ico:'🧠', title:'میتۆدەکانی وانەوتنەوە', sub:'میتۆدی نوێی وانەوتنەوە: پەزل، سوکراتی، ئەسکەلە و ...', parent:'g_train', tparent:'g_train' },
-  { id:'myvisits', ico:'🏫', title:'سەردانەکانی بەڕێوەبەر بۆ من', sub:'ئەنجام و ڕێنماییەکانی بەڕێوەبەر دوای سەردانی پۆل (دوای ئەوەی بەڕێوەبەر دەینێرێت)', tparent:'g_train', teacherOnly:true },
+  { id:'myvisits', ico:'🏫', title:'سەردانی بەڕێوەبەر و مامۆستای ڕاهێنەر', sub:'ئەنجام و ڕێنماییەکانی سەردانی بەڕێوەبەر و فیدباکی مامۆستای ڕاهێنەر', tparent:'g_train', teacherOnly:true },
   { id:'trainvis', ico:'🧑‍🏫', title:'سەردانی مامۆستای ڕاهێنەر', sub:'هەڵبژاردنی مامۆستایان، تۆمارکردنی سەردانی یەکەم و دووەم، فیدباک، و ئەوانەی ماون', parent:'g_train', adminOnly:true },
   { id:'schev', ico:'🏫', title:'خود هەڵسەنگاندنی قوتابخانە', sub:'فۆڕمی خەڵاتی ماف مرۆڤ و گۆڕانی کەش و هەوا (تەنها بەڕێوەبەر)', parent:'g_train', adminOnly:true },
   { id:'selfeval', ico:'🧾', title:'خۆهەڵسەنگاندن', sub:'فۆرمی خۆهەڵسەنگاندنی ساڵانە (بەڕێوەبەر، یاریدەدەر، مامۆستا)', parent:'g_train', tparent:'g_train' },
@@ -12864,13 +12864,17 @@ function mvUpdateBadge(){
   const set=(sel,v)=>document.querySelectorAll(sel).forEach(el=>{ el.textContent=toKurdishDigits(v); el.style.display=v>0?'flex':'none'; });
   set('[data-badge="myvisits"]',n); set('[data-badge="methods"]',m); set('[data-badge="g_train"]',n+m);
 }
+let mvTab='dir';
+function mvSetTab(t){ mvTab=t; renderMyVisits(); }
 function renderMyVisits(){
   const el=document.getElementById('myvisits-body'); if(!el) return; const E=escapeHtml, kd=toKurdishDigits, seen=new Set(mvSeen());
   const L=(config.myVisits||[]).slice().reverse();
   const mgr=((config.staff||[]).find(x=>x.job==='بەڕێوەبەر')||{}).name||'';
   const TR=(config.myTrainer||[]).slice().reverse();
   const trHtml=TR.length?`<div class="card" style="padding:12px;margin-bottom:12px;border:2px solid #5aae3f;"><div style="font-weight:900;font-size:17px;margin-bottom:6px;">🧑‍🏫 سەردانی مامۆستای ڕاهێنەر</div>${TR.map(x=>`<div style="padding:8px 0;border-top:1px solid var(--rule);"><b>سەردانی ${x.n===1?'یەکەم':'دووەم'}</b>${x.date?` — <span dir="ltr">${E(x.date)}</span>`:''}${String(x.fb||'').trim()?`<div style="margin-top:6px;white-space:pre-wrap;line-height:1.9;">${E(x.fb)}</div>`:'<div class="section-hint">فیدباک نەنووسراوە.</div>'}</div>`).join('')}</div>`:'';
-  el.innerHTML=trHtml+(L.length?L.map(v=>{
+  const tabs=`<div class="btnrow" style="margin-bottom:12px;"><button class="btn ${mvTab==='dir'?'btn-primary':'btn-ghost'}" onclick="mvSetTab('dir')">🏫 سەردانی بەڕێوەبەر${mvUnseen()?' 🔵':''}</button><button class="btn ${mvTab==='trn'?'btn-primary':'btn-ghost'}" onclick="mvSetTab('trn')">🧑‍🏫 سەردانی مامۆستای ڕاهێنەر</button></div>`;
+  if(mvTab==='trn'){ el.innerHTML=tabs+(TR.length?trHtml:'<p class="empty">هێشتا هیچ سەردانێکی مامۆستای ڕاهێنەر بۆت تۆمار نەکراوە.</p>'); return; }
+  el.innerHTML=tabs+(L.length?L.map(v=>{
     const isNew=!seen.has(v.id), lines=String(v.recs||'').split('\n').map(x=>x.trim()).filter(Boolean), th='border:1px solid var(--rule);padding:4px;background:#f4f1e4;font-size:13px;', td='border:1px solid var(--rule);padding:4px;font-size:13px;';
     let last=null; const rows=(v.rr||[]).map(r=>{ let h=''; if(r.g&&r.g!==last){ last=r.g; h=`<tr><td colspan="2" style="${td}background:#e6e6e6;font-weight:800;">${E(r.g)}</td></tr>`; } return h+`<tr><td style="${td}">${E(r.c)}</td><td style="${td}text-align:center;font-weight:800;width:60px;">${r.v===null?'—':kd(r.v)}</td></tr>`; }).join('');
     return `<div class="card" style="padding:12px;margin-bottom:12px;${isNew?'border:2px solid #1f6fb2;':''}"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"><b style="font-size:17px;">${v.ord?'سەردانی '+E(v.ord):'سەردان'} — ${v.date?dh(kd(fmtSlash(v.date))):''}</b>${isNew?'<span style="background:#1f6fb2;color:#fff;border-radius:10px;padding:1px 10px;font-size:12px;font-weight:800;">نوێ</span>':''}</div>
@@ -12879,7 +12883,7 @@ function renderMyVisits(){
       <div style="font-weight:800;margin:6px 0 2px;">ڕێنماییەکانی بەڕێوەبەر${mgr?' ('+E(mgr)+')':''}:</div>
       ${lines.length?lines.map((l,i)=>`<div style="padding:3px 0;border-bottom:1px dotted #999;">${kd(i+1)}- ${E(l)}</div>`).join(''):'<div class="section-hint">ڕێنمایی نەنووسراوە.</div>'}
       ${rows?`<details style="margin-top:8px;"><summary style="cursor:pointer;font-weight:700;">خاڵەکانی هەڵسەنگاندن و نمرەکان</summary><table style="border-collapse:collapse;width:100%;margin-top:6px;"><thead><tr><th style="${th}">خاڵ</th><th style="${th}">نمرە</th></tr></thead><tbody>${rows}</tbody></table></details>`:''}</div>`;
-  }).join(''):(TR.length?'':'<p class="empty">هێشتا هیچ ئەنجامێکی سەردان بۆت نەنێردراوە.</p>'));
+  }).join(''):'<p class="empty">هێشتا هیچ ئەنجامێکی سەردانی بەڕێوەبەر بۆت نەنێردراوە.</p>');
   mvMarkSeen(); mvUpdateBadge();
 }
 /* ---- تۆماری زانیاری مامۆستایان / فەرمانبەران / گرێبەستەکان ---- */
@@ -13632,7 +13636,7 @@ function renderMyGrades(keep){
 })();
 
 /* ---------------- سەردانی مامۆستای ڕاهێنەر (بەڕێوەبەر): مامۆستایان هەڵدەبژێرێت، سەردانی یەکەم/دووەم تۆمار دەکات، فیدباک (ئارەزوومەندانە)، و ئەوانەی ماون ---------------- */
-let tvTab='list', tvQ='', tvDate='';
+let tvTab='list', tvQ='', tvDate='', tvLQ='', tvVQ='';
 function tvData(){ if(!config.trainVis||typeof config.trainVis!=='object'||Array.isArray(config.trainVis)) config.trainVis={}; const d=config.trainVis; if(!Array.isArray(d.sel)) d.sel=[]; if(!d.rec||typeof d.rec!=='object') d.rec={}; if(!d.plan||typeof d.plan!=='object'||Array.isArray(d.plan)) d.plan={}; Object.keys(d.plan).forEach(k=>{ if(!d.plan[k]||!Array.isArray(d.plan[k].items)) delete d.plan[k]; }); return d; }
 function tvTeachers(){ return (config.staff||[]).filter(x=>x && x.job==='مامۆستا').slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),'ckb')); }
 function tvRec(tid,n){ const d=tvData(); d.rec[tid]=d.rec[tid]||{}; return d.rec[tid][n]=d.rec[tid][n]||{ done:false, date:'', fb:'' }; }
@@ -13666,6 +13670,22 @@ function tvPrint(n){
     rows:left.map((t,i)=>[kd(i+1),E(t.name),'&nbsp;','&nbsp;']),
     sign:[['ڕاهێنەر',''],['بەڕێوەبەر',dir]] });
 }
+function tvCardHtml(t){ const E=escapeHtml; return `<div class="card" style="padding:12px;margin-bottom:10px;"><div style="font-weight:900;margin-bottom:6px;">${E(t.name)}${t.specialty?` <span class="subtext">— ${E(t.specialty)}</span>`:''}</div>
+      ${[1,2].map(n=>{ const r=tvRec(t.id,n), nm=n===1?'یەکەم':'دووەم'; return `<div style="padding:6px 0;border-top:1px solid var(--rule);"><label style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-weight:800;"><input type="checkbox" ${r.done?'checked':''} onchange="tvTick('${t.id}',${n},this.checked)"> سەردانی ${nm} کرا ${r.done?`<input type="date" value="${E(r.date||'')}" onchange="tvField('${t.id}',${n},'date',this.value)" style="font-weight:400;">`:''}</label>${r.done?`<textarea rows="2" placeholder="فیدباک بۆ مامۆستا (ئارەزوومەندانە)" style="width:100%;margin-top:6px;" onchange="tvField('${t.id}',${n},'fb',this.value)">${E(r.fb||'')}</textarea>`:''}</div>`; }).join('')}</div>`; }
+function tvCardsHtml(list,q){ q=String(q||'').trim(); const L=list.filter(t=>!q||String(t.name).includes(q)); return L.length?L.map(tvCardHtml).join(''):'<p class="empty">هیچ مامۆستایەک نەدۆزرایەوە.</p>'; }
+function tvRefreshCards(){ const e=document.getElementById('tv-cards'); if(e) e.innerHTML=tvCardsHtml(tvSelected(),tvLQ); }
+function tvVisited(){ return tvTeachers().filter(t=>tvDone(t.id,1)||tvDone(t.id,2)); }
+function tvRefreshVis(){ const e=document.getElementById('tv-vlist'); if(e) e.innerHTML=tvCardsHtml(tvVisited(),tvVQ); }
+function tvPrintVisited(){
+  const E=escapeHtml, kd=toKurdishDigits, L=tvVisited(), dir=((config.exams||{}).director)!=null?config.exams.director:'';
+  if(!L.length){ showAlert('هێشتا هیچ مامۆستایەک سەردان نەکراوە.'); return; }
+  const dt=(t,n)=>{ if(!tvDone(t.id,n)) return '—'; const d=tvRec(t.id,n).date; return d?dh(fmtSlash(d)):'✓'; };
+  prettyTablePrint({ title:'مامۆستایانی سەردانکراو — سەردانی مامۆستای ڕاهێنەر',
+    pills:[['#2a9db0','ژمارە: '+kd(L.length)],['#5aae3f','بەروار: '+dh(fmtSlash(pvToday()))]],
+    cols:[{h:'ز',w:8},{h:'ناوی مامۆستا',w:44,al:'right'},{h:'بەرواری سەردانی یەکەم',w:24},{h:'بەرواری سەردانی دووەم',w:24}],
+    rows:L.map((t,i)=>[kd(i+1),E(t.name),dt(t,1),dt(t,2)]),
+    sign:[['ڕاهێنەر',''],['بەڕێوەبەر',dir]] });
+}
 function tvPlanDel(p,tid){ const P=tvData().plan[tvDate]; if(!P) return; P.items=P.items.filter(x=>!(x.p===p&&x.t===tid)); scheduleSave(); renderTrainVis(); }
 function tvPlanDone(tid,r){ const rec=tvRec(tid,r); rec.done=true; rec.date=tvDate||pvToday(); scheduleSave(); renderTrainVis(); }
 function tvSetTab(t){ tvTab=t; renderTrainVis(); }
@@ -13675,7 +13695,7 @@ function renderTrainVis(){
   const E=escapeHtml, kd=toKurdishDigits, all=tvTeachers(), sel=tvSelected(), d=tvData();
   const n1=sel.filter(t=>tvDone(t.id,1)).length, n2=sel.filter(t=>tvDone(t.id,2)).length;
   const tab=(k,l)=>`<button class="btn ${tvTab===k?'btn-primary':'btn-ghost'}" onclick="tvSetTab('${k}')">${l}</button>`;
-  const head=`<div class="btnrow" style="margin-bottom:12px;">${tab('list','👥 مامۆستایان و سەردانەکان')}${tab('plan','🗓️ پلان بۆ ڕۆژێک')}${tab('v1','⏳ سەردانی یەکەم — ماون ('+kd(sel.length-n1)+')')}${tab('v2','⏳ سەردانی دووەم — ماون ('+kd(sel.length-n2)+')')}</div>`;
+  const head=`<div class="btnrow" style="margin-bottom:12px;">${tab('list','👥 مامۆستایان و سەردانەکان')}${tab('vis','✅ سەردان کراوەکان ('+kd(tvVisited().length)+')')}${tab('plan','🗓️ پلان بۆ ڕۆژێک')}${tab('v1','⏳ سەردانی یەکەم — ماون ('+kd(sel.length-n1)+')')}${tab('v2','⏳ سەردانی دووەم — ماون ('+kd(sel.length-n2)+')')}</div>`;
   if(tvTab==='plan'){
     if(!tvDate) tvDate=pvToday();
     const [yy,mm,dd]=tvDate.split('-').map(Number), dn=JS_DAY_TO_KURDISH[new Date(yy,mm-1,dd,12).getDay()];
@@ -13696,6 +13716,13 @@ function renderTrainVis(){
     }
     el.innerHTML=head+h; return;
   }
+  if(tvTab==='vis'){
+    const V=tvVisited();
+    el.innerHTML=head+`<div class="card" style="padding:12px;margin-bottom:12px;"><div class="btnrow" style="align-items:center;"><div style="font-weight:900;flex:1;min-width:200px;">مامۆستایانی سەردانکراو: ${kd(V.length)}</div><button class="btn btn-primary btn-sm" onclick="tvPrintVisited()">🖨️ چاپکردن</button><button class="btn btn-ghost btn-sm" onclick="pdfRun(()=>{ tvPrintVisited() })">📄 PDF</button></div>
+      <input type="search" placeholder="🔍 گەڕان بە ناوی مامۆستا..." value="${E(tvVQ)}" oninput="tvVQ=this.value;tvRefreshVis()" style="width:100%;margin-top:8px;box-sizing:border-box;"></div>
+      <div id="tv-vlist">${tvCardsHtml(V,tvVQ)}</div>`;
+    return;
+  }
   if(tvTab==='v1'||tvTab==='v2'){
     const n=tvTab==='v1'?1:2, nm=n===1?'یەکەم':'دووەم', left=sel.filter(t=>!tvDone(t.id,n)), done=sel.filter(t=>tvDone(t.id,n));
     el.innerHTML=head+`<div class="card" style="padding:12px;margin-bottom:12px;"><div class="btnrow" style="margin-bottom:8px;align-items:center;"><div style="font-weight:900;flex:1;min-width:200px;">ئەم مامۆستایانە سەردانی ${nm}یان بۆ نەکراوە: ${kd(left.length)} لە ${kd(sel.length)}</div><button class="btn btn-primary btn-sm" onclick="tvPrint(${n})">🖨️ چاپکردن</button><button class="btn btn-ghost btn-sm" onclick="pdfRun(()=>{ tvPrint(${n}) })">📄 PDF</button></div>${left.length?left.map((t,i)=>`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:6px 0;border-top:1px solid var(--rule);"><b style="min-width:26px;">${kd(i+1)}</b><span style="flex:1;min-width:160px;">${E(t.name)}</span><button class="btn btn-ghost btn-sm" onclick="tvTick('${t.id}',${n},true)">☑ سەردان کرا</button></div>`).join(''):'<p class="empty">هەموو مامۆستا هەڵبژێردراوەکان سەردانیان کراوە.</p>'}</div>
@@ -13707,8 +13734,7 @@ function renderTrainVis(){
   el.innerHTML=head+`<details ${sel.length?'':'open'} style="margin-bottom:12px;"><summary style="cursor:pointer;font-weight:800;">✅ هەڵبژاردنی مامۆستایان (${kd(sel.length)} هەڵبژێردراوە لە ${kd(all.length)})</summary>
     <div class="btnrow" style="margin:8px 0;"><button class="btn btn-ghost btn-sm" onclick="tvSelAll(true)">هەموو</button><button class="btn btn-ghost btn-sm" onclick="tvSelAll(false)">هیچ</button><input type="search" placeholder="🔍 گەڕان..." value="${E(q)}" oninput="tvQ=this.value;renderTrainVisPick()" style="flex:1;min-width:160px;"></div>
     <div id="tv-pick">${tvPickHtml(pick)}</div></details>
-    ${sel.length?`<div class="section-hint" style="margin-bottom:8px;">سەردانی یەکەم: ${kd(n1)} لە ${kd(sel.length)} — سەردانی دووەم: ${kd(n2)} لە ${kd(sel.length)}</div>`+sel.map(t=>`<div class="card" style="padding:12px;margin-bottom:10px;"><div style="font-weight:900;margin-bottom:6px;">${E(t.name)}${t.specialty?` <span class="subtext">— ${E(t.specialty)}</span>`:''}</div>
-      ${[1,2].map(n=>{ const r=tvRec(t.id,n), nm=n===1?'یەکەم':'دووەم'; return `<div style="padding:6px 0;border-top:1px solid var(--rule);"><label style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-weight:800;"><input type="checkbox" ${r.done?'checked':''} onchange="tvTick('${t.id}',${n},this.checked)"> سەردانی ${nm} کرا ${r.done?`<input type="date" value="${E(r.date||'')}" onchange="tvField('${t.id}',${n},'date',this.value)" style="font-weight:400;">`:''}</label>${r.done?`<textarea rows="2" placeholder="فیدباک بۆ مامۆستا (ئارەزوومەندانە)" style="width:100%;margin-top:6px;" onchange="tvField('${t.id}',${n},'fb',this.value)">${E(r.fb||'')}</textarea>`:''}</div>`; }).join('')}</div>`).join(''):'<p class="empty">هیچ مامۆستایەک هەڵنەبژێردراوە. لە سەرەوە مامۆستایان هەڵبژێرە.</p>'}`;
+    ${sel.length?`<div class="section-hint" style="margin-bottom:8px;">سەردانی یەکەم: ${kd(n1)} لە ${kd(sel.length)} — سەردانی دووەم: ${kd(n2)} لە ${kd(sel.length)}</div>`+`<div class="btnrow" style="margin-bottom:8px;"><input type="search" placeholder="🔍 گەڕان لە مامۆستا هەڵبژێردراوەکان..." value="${E(tvLQ)}" oninput="tvLQ=this.value;tvRefreshCards()" style="flex:1;min-width:200px;"></div><div id="tv-cards">${tvCardsHtml(sel,tvLQ)}</div>`:'<p class="empty">هیچ مامۆستایەک هەڵنەبژێردراوە. لە سەرەوە مامۆستایان هەڵبژێرە.</p>'}`;
 }
 function tvPickHtml(list){ const d=tvData(), E=escapeHtml; return list.map(t=>`<label style="display:flex;gap:8px;align-items:center;padding:5px 0;border-top:1px solid var(--rule);"><input type="checkbox" ${d.sel.includes(t.id)?'checked':''} onchange="tvSelQuiet('${t.id}',this.checked)"> ${E(t.name)}</label>`).join('')||'<p class="empty">هیچ مامۆستایەک نییە.</p>'; }
 function renderTrainVisPick(){ const p=document.getElementById('tv-pick'); if(!p) return; const q=String(tvQ||'').trim(); p.innerHTML=tvPickHtml(tvTeachers().filter(t=>!q||String(t.name).includes(q))); }
@@ -14107,7 +14133,7 @@ function renderExamAbsence(){
   const el=document.getElementById('examabsence-body'); if(!el) return;
   const days=examDays().filter(d=>d.date).slice().sort((a,b)=>a.date<b.date?-1:1);
   if(!days.some(d=>d.id===examAbsDay)) examAbsDay='';
-  const tabs=`<div class="btnrow" style="margin-bottom:12px;"><button class="btn ${examAbsView==='all'?'btn-primary':'btn-ghost'}" onclick="examAbsSetView('all')">بەشی ١: خشتەی گشتی (هەموو ڕۆژەکان)</button><button class="btn ${examAbsView==='day'?'btn-primary':'btn-ghost'}" onclick="examAbsSetView('day')">بەشی ٢: فۆڕمی ڕۆژانە</button><button class="btn ${examAbsView==='rep'?'btn-primary':'btn-ghost'}" onclick="examAbsSetView('rep')">بەشی ٣: ڕاپۆرتی نەهاتوو / گزی کردوو / مۆڵەت / درەنگ هاتوو</button><button class="btn btn-ghost" onclick="examAbsPull(true)">⬇️ وەرگرتنی تۆماری چاودێران</button></div>`;
+  const tabs=`<div class="btnrow" style="margin-bottom:12px;"><button class="btn btn-accent" onclick="examAbsPull(true)">🔄 نوێکردنەوە</button><button class="btn ${examAbsView==='all'?'btn-primary':'btn-ghost'}" onclick="examAbsSetView('all')">بەشی ١: خشتەی گشتی (هەموو ڕۆژەکان)</button><button class="btn ${examAbsView==='day'?'btn-primary':'btn-ghost'}" onclick="examAbsSetView('day')">بەشی ٢: فۆڕمی ڕۆژانە</button><button class="btn ${examAbsView==='rep'?'btn-primary':'btn-ghost'}" onclick="examAbsSetView('rep')">بەشی ٣: ڕاپۆرتی نەهاتوو / گزی کردوو / مۆڵەت / درەنگ هاتوو</button><button class="btn btn-ghost" onclick="examAbsPull(true)">⬇️ وەرگرتنی تۆماری چاودێران</button></div>`;
   if(examAbsView==='rep'){ el.innerHTML=examRoundBar()+tabs+examRepHtml(); return; }
   if(examAbsView==='day' && !examAbsDay){
     el.innerHTML=examRoundBar()+tabs+`<div class="card" style="padding:14px;"><h3 style="font-size:18px;">تۆماری نەهاتوو</h3><p class="section-hint">سەرەتا ڕۆژ و ڕێکەوتی تاقیکردنەوە هەڵبژێرە، پاشان فۆڕمەکە بۆ قوتابیانی ئەو ڕۆژە دەکرێتەوە.</p>
